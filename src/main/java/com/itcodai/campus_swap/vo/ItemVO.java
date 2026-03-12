@@ -1,0 +1,24 @@
+package com.itcodai.campus_swap.vo;
+
+import lombok.Data;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
+/**
+ * 商品信息 VO
+ */
+@Data
+public class ItemVO {
+    private Long id;
+    private String title;
+    private BigDecimal price;
+    private String category;
+    private String description;
+    private String coverImage;
+    private Long sellerId;
+    private String sellerNickname;
+    private String sellerAvatar;
+    private Integer status;
+    private LocalDateTime createdAt;
+}
