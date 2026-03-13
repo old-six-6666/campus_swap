@@ -53,17 +53,30 @@ const routes = [
     path: '/admin',
     component: () => import('@/layouts/AdminLayout.vue'),
     meta: { requiresAuth: true, requiresAdmin: true },
-    redirect: '/admin/users',
     children: [
       {
         path: 'users',
         name: 'AdminUsers',
         component: () => import('@/views/admin/UserManageView.vue'),
+        meta: { requiresPermission: 'USER_MANAGE' },
       },
       {
         path: 'items',
         name: 'AdminItems',
         component: () => import('@/views/admin/ItemManageView.vue'),
+        meta: { requiresPermission: 'ITEM_MANAGE' },
+      },
+      {
+        path: 'items/audit',
+        name: 'ItemAudit',
+        component: () => import('@/views/admin/ItemAuditView.vue'),
+        meta: { requiresPermission: 'ITEM_AUDIT' },
+      },
+      {
+        path: 'admins',
+        name: 'AdminManage',
+        component: () => import('@/views/admin/AdminManageView.vue'),
+        meta: { requiresSuperAdmin: true },
       },
     ],
   },
@@ -98,6 +111,15 @@ const router = createRouter({
   scrollBehavior: () => ({ top: 0 }),
 })
 
+/** 按用户权限返回管理台的第一个可访问路由名称，无权限时返回 null */
+function firstAdminRoute(userStore) {
+  if (userStore.hasPermission('USER_MANAGE')) return { name: 'AdminUsers' }
+  if (userStore.hasPermission('ITEM_MANAGE')) return { name: 'AdminItems' }
+  if (userStore.hasPermission('ITEM_AUDIT'))  return { name: 'ItemAudit' }
+  if (userStore.isSuperAdmin)                 return { name: 'AdminManage' }
+  return null
+}
+
 // 路由守卫
 router.beforeEach((to) => {
   const userStore = useUserStore()
@@ -106,6 +128,18 @@ router.beforeEach((to) => {
   }
   if (to.meta.requiresAdmin && !userStore.isAdmin) {
     return { name: 'Home' }
+  }
+  // /admin 根路径：动态跳转到第一个有权访问的子页面
+  if (to.path === '/admin') {
+    return firstAdminRoute(userStore) ?? { name: 'Home' }
+  }
+  // 超级管理员专属页面
+  if (to.meta.requiresSuperAdmin && !userStore.isSuperAdmin) {
+    return firstAdminRoute(userStore) ?? { name: 'Home' }
+  }
+  // 细粒度权限检查（超管直接放行）
+  if (to.meta.requiresPermission && !userStore.hasPermission(to.meta.requiresPermission)) {
+    return firstAdminRoute(userStore) ?? { name: 'Home' }
   }
   if (to.meta.guestOnly && userStore.isLoggedIn) {
     return { name: 'Home' }

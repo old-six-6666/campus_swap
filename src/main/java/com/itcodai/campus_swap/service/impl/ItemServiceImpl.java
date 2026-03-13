@@ -35,6 +35,7 @@ public class ItemServiceImpl implements ItemService {
     public PageVO<ItemVO> listItems(String keyword, String category, int page, int size) {
         LambdaQueryWrapper<Item> wrapper = new LambdaQueryWrapper<Item>()
                 .eq(Item::getStatus, 0)
+                .eq(Item::getAuditStatus, 1)   // 只展示已通过审核的商品
                 .eq(StringUtils.hasText(category), Item::getCategory, category)
                 .like(StringUtils.hasText(keyword), Item::getTitle, keyword)
                 .orderByDesc(Item::getCreatedAt);
@@ -60,13 +61,13 @@ public class ItemServiceImpl implements ItemService {
     @Override
     public Long publishItem(Long sellerId, ItemPublishDTO dto) {
         Item item = new Item();
-        // 手动复制，跳过 images（类型不同：DTO 是 List，Entity 是 String）
         item.setTitle(dto.getTitle());
         item.setPrice(dto.getPrice());
         item.setCategory(dto.getCategory());
         item.setDescription(dto.getDescription());
         item.setSellerId(sellerId);
         item.setStatus(0);
+        item.setAuditStatus(0);   // 新发布商品默认待审核
         List<String> imgs = dto.getImages();
         if (imgs != null && !imgs.isEmpty()) {
             item.setCoverImage(imgs.get(0));
@@ -84,6 +85,9 @@ public class ItemServiceImpl implements ItemService {
         item.setPrice(dto.getPrice());
         item.setCategory(dto.getCategory());
         item.setDescription(dto.getDescription());
+        // 编辑后重置为待审核
+        item.setAuditStatus(0);
+        item.setAuditRemark(null);
         List<String> imgs = dto.getImages();
         if (imgs != null && !imgs.isEmpty()) {
             item.setCoverImage(imgs.get(0));
@@ -127,7 +131,6 @@ public class ItemServiceImpl implements ItemService {
 
     private ItemVO toVO(Item item) {
         ItemVO vo = new ItemVO();
-        // 手动复制，跳过 images（类型不同：Entity 是 String，VO 是 List）
         vo.setId(item.getId());
         vo.setTitle(item.getTitle());
         vo.setPrice(item.getPrice());
@@ -135,9 +138,10 @@ public class ItemServiceImpl implements ItemService {
         vo.setDescription(item.getDescription());
         vo.setCoverImage(item.getCoverImage());
         vo.setStatus(item.getStatus());
+        vo.setAuditStatus(item.getAuditStatus());
+        vo.setAuditRemark(item.getAuditRemark());
         vo.setCreatedAt(item.getCreatedAt());
         vo.setSellerId(item.getSellerId());
-        // 将 JSON 字符串反序列化为 List<String>
         if (StringUtils.hasText(item.getImages())) {
             vo.setImages(JSONUtil.toList(item.getImages(), String.class));
         } else {

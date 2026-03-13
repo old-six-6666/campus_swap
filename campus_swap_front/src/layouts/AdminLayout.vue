@@ -11,10 +11,20 @@ const ROLE_LABEL = { 0: '普通用户', 1: '管理员', 2: '超级管理员' }
 const roleLabel = computed(() => ROLE_LABEL[userStore.userInfo?.role] ?? '')
 
 const menuItems = computed(() => {
-  const items = [
-    { index: '/admin/users', label: '用户管理', icon: 'User' },
-    { index: '/admin/items', label: '商品管理', icon: 'Goods' },
-  ]
+  const items = []
+  // 只显示有权限的菜单项（超管全显示，普通管理员按权限过滤）
+  if (userStore.hasPermission('USER_MANAGE')) {
+    items.push({ index: '/admin/users', label: '用户管理', icon: 'User' })
+  }
+  if (userStore.hasPermission('ITEM_MANAGE')) {
+    items.push({ index: '/admin/items', label: '商品管理', icon: 'Goods' })
+  }
+  if (userStore.hasPermission('ITEM_AUDIT')) {
+    items.push({ index: '/admin/items/audit', label: '商品审核', icon: 'Checked' })
+  }
+  if (userStore.isSuperAdmin) {
+    items.push({ index: '/admin/admins', label: '管理员管理', icon: 'Setting' })
+  }
   return items
 })
 
@@ -28,7 +38,7 @@ function handleLogout() {
   <el-container class="admin-wrapper">
     <!-- 侧边栏 -->
     <el-aside width="200px" class="aside">
-      <div class="aside-logo">管理控制台</div>
+      <div class="aside-logo">换了吗 · 管理台</div>
       <el-menu
         :default-active="route.path"
         router

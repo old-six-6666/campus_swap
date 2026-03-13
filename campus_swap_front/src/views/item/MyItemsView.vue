@@ -16,6 +16,11 @@ const STATUS_MAP = {
   1: { label: '已下架', type: 'info' },
   2: { label: '已售出', type: 'warning' },
 }
+const AUDIT_MAP = {
+  0: { label: '待审核', type: 'warning' },
+  1: { label: '已通过', type: 'success' },
+  2: { label: '已拒绝', type: 'danger' },
+}
 
 async function fetchMyItems() {
   loading.value = true
@@ -86,10 +91,19 @@ onMounted(fetchMyItems)
             </div>
             <div class="item-meta">
               <span class="price">¥ {{ item.price }}</span>
-              <el-tag :type="STATUS_MAP[item.status]?.type" size="small">
+              <!-- 审核状态（优先展示，未通过时覆盖显示意义） -->
+              <el-tag :type="AUDIT_MAP[item.auditStatus]?.type" size="small">
+                {{ AUDIT_MAP[item.auditStatus]?.label }}
+              </el-tag>
+              <!-- 已通过审核时才显示上架状态 -->
+              <el-tag v-if="item.auditStatus === 1" :type="STATUS_MAP[item.status]?.type" size="small">
                 {{ STATUS_MAP[item.status]?.label }}
               </el-tag>
               <span class="category">{{ item.category }}</span>
+            </div>
+            <!-- 拒绝原因提示 -->
+            <div v-if="item.auditStatus === 2 && item.auditRemark" class="audit-remark">
+              拒绝原因：{{ item.auditRemark }}
             </div>
             <div class="item-time">{{ item.createdAt?.slice(0, 10) }}</div>
           </div>
@@ -204,6 +218,12 @@ onMounted(fetchMyItems)
   .item-time {
     font-size: 12px;
     color: #c0c4cc;
+  }
+
+  .audit-remark {
+    font-size: 12px;
+    color: #f56c6c;
+    margin-top: 4px;
   }
 }
 

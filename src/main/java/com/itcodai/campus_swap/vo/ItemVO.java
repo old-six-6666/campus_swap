@@ -22,5 +22,9 @@ public class ItemVO {
     private String sellerNickname;
     private String sellerAvatar;
     private Integer status;
+    /** 审核状态：0-待审核 1-已通过 2-已拒绝 */
+    private Integer auditStatus;
+    /** 拒绝原因 */
+    private String auditRemark;
     private LocalDateTime createdAt;
 }
