@@ -2,19 +2,22 @@ package com.itcodai.campus_swap.vo;
 
 import lombok.Data;
 
+import java.time.LocalDateTime;
+
 /**
- * 用户信息 VO
+ * 管理端用户信息 VO
  */
 @Data
-public class UserVO {
+public class AdminUserVO {
     private Long id;
     private String email;
     private String nickname;
     private String school;
-    private String avatar;
     private String phone;
+    private String avatar;
     /** 角色：0-普通用户  1-管理员  2-超级管理员 */
     private Integer role;
-    /** 账号状态：0-正常  1-禁用 */
+    /** 状态：0-正常  1-禁用 */
     private Integer status;
+    private LocalDateTime createdAt;
 }

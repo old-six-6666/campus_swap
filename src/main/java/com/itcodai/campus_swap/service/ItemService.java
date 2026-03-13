@@ -23,4 +23,7 @@ public interface ItemService {
 
     /** 删除商品（仅本人，逻辑删除） */
     void deleteItem(Long sellerId, Long itemId);
+
+    /** 查询当前用户发布的商品列表 */
+    PageVO<ItemVO> getMyItems(Long sellerId, int page, int size);
 }

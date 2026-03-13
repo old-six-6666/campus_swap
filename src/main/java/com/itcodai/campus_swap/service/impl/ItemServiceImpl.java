@@ -12,11 +12,12 @@ import com.itcodai.campus_swap.mapper.UserMapper;
 import com.itcodai.campus_swap.service.ItemService;
 import com.itcodai.campus_swap.vo.ItemVO;
 import com.itcodai.campus_swap.vo.PageVO;
+import cn.hutool.json.JSONUtil;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -59,9 +60,18 @@ public class ItemServiceImpl implements ItemService {
     @Override
     public Long publishItem(Long sellerId, ItemPublishDTO dto) {
         Item item = new Item();
-        BeanUtils.copyProperties(dto, item);
+        // 手动复制，跳过 images（类型不同：DTO 是 List，Entity 是 String）
+        item.setTitle(dto.getTitle());
+        item.setPrice(dto.getPrice());
+        item.setCategory(dto.getCategory());
+        item.setDescription(dto.getDescription());
         item.setSellerId(sellerId);
         item.setStatus(0);
+        List<String> imgs = dto.getImages();
+        if (imgs != null && !imgs.isEmpty()) {
+            item.setCoverImage(imgs.get(0));
+            item.setImages(JSONUtil.toJsonStr(imgs));
+        }
         itemMapper.insert(item);
         return item.getId();
     }
@@ -70,7 +80,18 @@ public class ItemServiceImpl implements ItemService {
     public void updateItem(Long sellerId, Long itemId, ItemPublishDTO dto) {
         Item item = itemMapper.selectById(itemId);
         checkOwnership(item, sellerId, itemId);
-        BeanUtils.copyProperties(dto, item);
+        item.setTitle(dto.getTitle());
+        item.setPrice(dto.getPrice());
+        item.setCategory(dto.getCategory());
+        item.setDescription(dto.getDescription());
+        List<String> imgs = dto.getImages();
+        if (imgs != null && !imgs.isEmpty()) {
+            item.setCoverImage(imgs.get(0));
+            item.setImages(JSONUtil.toJsonStr(imgs));
+        } else {
+            item.setCoverImage(null);
+            item.setImages(null);
+        }
         itemMapper.updateById(item);
     }
 
@@ -79,6 +100,18 @@ public class ItemServiceImpl implements ItemService {
         Item item = itemMapper.selectById(itemId);
         checkOwnership(item, sellerId, itemId);
         itemMapper.deleteById(itemId);
+    }
+
+    @Override
+    public PageVO<ItemVO> getMyItems(Long sellerId, int page, int size) {
+        LambdaQueryWrapper<Item> wrapper = new LambdaQueryWrapper<Item>()
+                .eq(Item::getSellerId, sellerId)
+                .orderByDesc(Item::getCreatedAt);
+        Page<Item> pageResult = itemMapper.selectPage(new Page<>(page, size), wrapper);
+        List<ItemVO> records = pageResult.getRecords().stream()
+                .map(this::toVO)
+                .collect(Collectors.toList());
+        return PageVO.of(records, pageResult.getTotal(), page, size);
     }
 
     // ---- 私有辅助方法 ----
@@ -94,7 +127,22 @@ public class ItemServiceImpl implements ItemService {
 
     private ItemVO toVO(Item item) {
         ItemVO vo = new ItemVO();
-        BeanUtils.copyProperties(item, vo);
+        // 手动复制，跳过 images（类型不同：Entity 是 String，VO 是 List）
+        vo.setId(item.getId());
+        vo.setTitle(item.getTitle());
+        vo.setPrice(item.getPrice());
+        vo.setCategory(item.getCategory());
+        vo.setDescription(item.getDescription());
+        vo.setCoverImage(item.getCoverImage());
+        vo.setStatus(item.getStatus());
+        vo.setCreatedAt(item.getCreatedAt());
+        vo.setSellerId(item.getSellerId());
+        // 将 JSON 字符串反序列化为 List<String>
+        if (StringUtils.hasText(item.getImages())) {
+            vo.setImages(JSONUtil.toList(item.getImages(), String.class));
+        } else {
+            vo.setImages(Collections.emptyList());
+        }
         User seller = userMapper.selectById(item.getSellerId());
         if (seller != null) {
             vo.setSellerNickname(seller.getNickname());

@@ -11,8 +11,12 @@ function handleCommand(command) {
     router.push('/login')
   } else if (command === 'profile') {
     router.push('/profile')
+  } else if (command === 'myItems') {
+    router.push('/my-items')
   } else if (command === 'changePassword') {
     router.push('/change-password')
+  } else if (command === 'admin') {
+    router.push('/admin')
   }
 }
 </script>
@@ -29,6 +33,15 @@ function handleCommand(command) {
           <RouterLink to="/publish">
             <el-button type="primary" size="small">发布闲置</el-button>
           </RouterLink>
+          <!-- 管理员专属入口按钮 -->
+          <RouterLink v-if="userStore.isAdmin" to="/admin">
+            <el-button
+              size="small"
+              :type="userStore.isSuperAdmin ? 'danger' : 'warning'"
+            >
+              {{ userStore.isSuperAdmin ? '超级管理员' : '管理员' }} 后台
+            </el-button>
+          </RouterLink>
           <el-dropdown @command="handleCommand">
             <span class="user-avatar">
               {{ userStore.userInfo?.nickname || '用户' }}
@@ -37,8 +50,12 @@ function handleCommand(command) {
             <template #dropdown>
               <el-dropdown-menu>
                 <el-dropdown-item command="profile">个人中心</el-dropdown-item>
+                <el-dropdown-item command="myItems">我的闲置</el-dropdown-item>
                 <el-dropdown-item command="changePassword">修改密码</el-dropdown-item>
-                <el-dropdown-item command="logout" divided>退出登录</el-dropdown-item>
+                <el-dropdown-item v-if="userStore.isAdmin" command="admin" divided>
+                  管理控制台
+                </el-dropdown-item>
+                <el-dropdown-item command="logout" :divided="!userStore.isAdmin">退出登录</el-dropdown-item>
               </el-dropdown-menu>
             </template>
           </el-dropdown>

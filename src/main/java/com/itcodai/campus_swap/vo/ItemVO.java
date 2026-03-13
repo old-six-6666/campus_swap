@@ -4,6 +4,7 @@ import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * 商品信息 VO
@@ -16,6 +17,7 @@ public class ItemVO {
     private String category;
     private String description;
     private String coverImage;
+    private List<String> images;
     private Long sellerId;
     private String sellerNickname;
     private String sellerAvatar;

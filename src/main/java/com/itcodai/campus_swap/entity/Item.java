@@ -28,8 +28,11 @@ public class Item {
     /** 详细描述 */
     private String description;
 
-    /** 封面图片 URL */
+    /** 封面图片 URL（取 images 第一张，冗余存储方便列表查询） */
     private String coverImage;
+
+    /** 所有图片 URL 列表（JSON 字符串存储，如 ["url1","url2"]） */
+    private String images;
 
     /** 发布者 ID */
     private Long sellerId;
