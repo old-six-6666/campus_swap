@@ -35,6 +35,9 @@ public class UserServiceImpl implements UserService {
         if (user == null || !BCrypt.checkpw(dto.getPassword(), user.getPassword())) {
             throw new BusinessException(ResultCode.BAD_REQUEST, "邮箱或密码错误");
         }
+        if (Integer.valueOf(1).equals(user.getStatus())) {
+            throw new BusinessException(ResultCode.FORBIDDEN, "账号已被禁用，请联系管理员");
+        }
 
         String token = jwtUtils.generateToken(user.getId());
 

@@ -31,10 +31,20 @@ public class ItemController {
         return Result.success(itemService.listItems(keyword, category, page, size));
     }
 
-    /** GET /api/item/{id} — 获取商品详情（公开） */
-    @GetMapping("/{id}")
+    /** GET /api/item/{id} — 获取商品详情（公开），仅匹配纯数字 ID */
+    @GetMapping("/{id:\\d+}")
     public Result<ItemVO> getDetail(@PathVariable Long id) {
         return Result.success(itemService.getItemById(id));
+    }
+
+    /** GET /api/item/my — 查询当前用户的商品列表（需登录） */
+    @GetMapping("/my")
+    public Result<PageVO<ItemVO>> myItems(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "20") int size,
+            HttpServletRequest request) {
+        Long userId = (Long) request.getAttribute("userId");
+        return Result.success(itemService.getMyItems(userId, page, size));
     }
 
     /** POST /api/item/publish — 发布商品（需登录） */

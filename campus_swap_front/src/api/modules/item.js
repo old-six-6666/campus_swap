@@ -18,4 +18,16 @@ export const itemApi = {
 
   /** 搜索商品（ES） */
   search: (params) => request.get('/item/search', { params }),
+
+  /** 查询当前用户发布的商品列表 */
+  getMyItems: (params) => request.get('/item/my', { params }),
+
+  /** 上传图片，返回可访问的 URL */
+  uploadImage: (file) => {
+    const form = new FormData()
+    form.append('file', file)
+    return request.post('/upload', form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+  },
 }

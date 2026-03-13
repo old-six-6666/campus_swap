@@ -33,6 +33,16 @@ public class User {
     /** 手机号 */
     private String phone;
 
+    /**
+     * 角色：0-普通用户  1-管理员  2-超级管理员
+     */
+    private Integer role;
+
+    /**
+     * 账号状态：0-正常  1-禁用
+     */
+    private Integer status;
+
     /** 逻辑删除 */
     @TableLogic
     private Integer deleted;

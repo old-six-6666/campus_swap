@@ -23,6 +23,18 @@ const routes = [
         meta: { requiresAuth: true },
       },
       {
+        path: 'my-items',
+        name: 'MyItems',
+        component: () => import('@/views/item/MyItemsView.vue'),
+        meta: { requiresAuth: true },
+      },
+      {
+        path: 'item/edit/:id',
+        name: 'EditItem',
+        component: () => import('@/views/item/EditView.vue'),
+        meta: { requiresAuth: true },
+      },
+      {
         path: 'profile',
         name: 'Profile',
         component: () => import('@/views/user/ProfileView.vue'),
@@ -33,6 +45,25 @@ const routes = [
         name: 'ChangePassword',
         component: () => import('@/views/user/ChangePasswordView.vue'),
         meta: { requiresAuth: true },
+      },
+    ],
+  },
+  // ===== 管理端（需要 admin role） =====
+  {
+    path: '/admin',
+    component: () => import('@/layouts/AdminLayout.vue'),
+    meta: { requiresAuth: true, requiresAdmin: true },
+    redirect: '/admin/users',
+    children: [
+      {
+        path: 'users',
+        name: 'AdminUsers',
+        component: () => import('@/views/admin/UserManageView.vue'),
+      },
+      {
+        path: 'items',
+        name: 'AdminItems',
+        component: () => import('@/views/admin/ItemManageView.vue'),
       },
     ],
   },
@@ -72,6 +103,9 @@ router.beforeEach((to) => {
   const userStore = useUserStore()
   if (to.meta.requiresAuth && !userStore.isLoggedIn) {
     return { name: 'Login', query: { redirect: to.fullPath } }
+  }
+  if (to.meta.requiresAdmin && !userStore.isAdmin) {
+    return { name: 'Home' }
   }
   if (to.meta.guestOnly && userStore.isLoggedIn) {
     return { name: 'Home' }

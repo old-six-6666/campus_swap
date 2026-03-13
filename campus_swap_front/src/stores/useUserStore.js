@@ -19,6 +19,8 @@ export const useUserStore = defineStore('user', () => {
   const userInfo = ref(saved.userInfo || null)
 
   const isLoggedIn = computed(() => !!token.value)
+  const isAdmin = computed(() => userInfo.value?.role >= 1)
+  const isSuperAdmin = computed(() => userInfo.value?.role >= 2)
 
   function _persist() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({ token: token.value, userInfo: userInfo.value }))
@@ -42,5 +44,5 @@ export const useUserStore = defineStore('user', () => {
     localStorage.removeItem(STORAGE_KEY)
   }
 
-  return { token, userInfo, isLoggedIn, login, fetchProfile, logout }
+  return { token, userInfo, isLoggedIn, isAdmin, isSuperAdmin, login, fetchProfile, logout }
 })

@@ -21,6 +21,12 @@ public class JwtInterceptor implements HandlerInterceptor {
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
+        // 商品详情是公开的只读接口：GET /api/item/{纯数字 id}，无需登录
+        if ("GET".equalsIgnoreCase(request.getMethod())
+                && request.getRequestURI().matches("/api/item/\\d+")) {
+            return true;
+        }
+
         String token = request.getHeader("Authorization");
         if (!StringUtils.hasText(token) || !token.startsWith("Bearer ")) {
             throw new BusinessException(ResultCode.UNAUTHORIZED);

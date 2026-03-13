@@ -24,6 +24,8 @@ CREATE TABLE t_user (
   school      VARCHAR(100) DEFAULT NULL            COMMENT '学校',
   avatar      VARCHAR(255) DEFAULT NULL            COMMENT '头像 URL',
   phone       VARCHAR(20)  DEFAULT NULL            COMMENT '手机号',
+  role        TINYINT      NOT NULL DEFAULT 0      COMMENT '角色: 0-普通用户 1-管理员 2-超级管理员',
+  status      TINYINT      NOT NULL DEFAULT 0      COMMENT '账号状态: 0-正常 1-禁用',
   deleted     TINYINT      NOT NULL DEFAULT 0      COMMENT '逻辑删除: 0-正常 1-已删除',
   created_at  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   updated_at  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
@@ -51,6 +53,7 @@ CREATE TABLE t_item (
   description  TEXT           DEFAULT NULL            COMMENT '商品描述',
   cover_image  VARCHAR(255)   DEFAULT NULL            COMMENT '封面图 URL',
   seller_id    BIGINT         NOT NULL                COMMENT '发布者用户 ID',
+  images       TEXT           DEFAULT NULL            COMMENT '图片 URL 列表（JSON 数组）',
   status       TINYINT        NOT NULL DEFAULT 0      COMMENT '状态: 0-在售 1-已下架 2-已售出',
   deleted      TINYINT        NOT NULL DEFAULT 0      COMMENT '逻辑删除: 0-正常 1-已删除',
   created_at   DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '发布时间',
@@ -82,7 +85,18 @@ INSERT INTO t_item (title, price, category, description, cover_image, seller_id,
 ('有机化学（第四版）',            15.00,  '书籍',     '期末复习完就出，几乎全新', NULL, 3, 0);
 
 -- ============================================================
--- 5. 常用查询示例
+-- 5. 迁移：为已有库执行以下 ALTER（已重建的库跳过）
+-- ============================================================
+-- ALTER TABLE t_item ADD COLUMN images TEXT DEFAULT NULL COMMENT '图片 URL 列表（JSON 数组）' AFTER cover_image;
+-- ALTER TABLE t_user ADD COLUMN role   TINYINT NOT NULL DEFAULT 0 COMMENT '角色: 0-普通用户 1-管理员 2-超级管理员' AFTER phone;
+-- ALTER TABLE t_user ADD COLUMN status TINYINT NOT NULL DEFAULT 0 COMMENT '账号状态: 0-正常 1-禁用' AFTER role;
+
+-- 初始超级管理员（密码 Admin@2025，BCrypt 加密）
+-- INSERT INTO t_user (email, password, nickname, role)
+-- VALUES ('admin@campus.com', '$2a$10$7EqJtq98hPqEX7fNZaFWoOe3d9DVHM3eAt5IG5lMRMqY8x7tqq7Oa', '超级管理员', 2);
+
+-- ============================================================
+-- 6. 常用查询示例
 -- ============================================================
 
 -- 查询所有在售商品（按发布时间倒序）
@@ -122,3 +136,21 @@ INSERT INTO t_item (title, price, category, description, cover_image, seller_id,
 
 -- 查看各分类商品数量
 -- SELECT category, COUNT(*) AS cnt FROM t_item WHERE deleted = 0 GROUP BY category;
+
+ALTER TABLE t_item
+    ADD COLUMN images TEXT DEFAULT NULL COMMENT '图片 URL 列表（JSON 数组）' AFTER cover_image;
+
+
+ALTER TABLE t_user ADD COLUMN role   TINYINT NOT NULL DEFAULT 0 AFTER phone;
+ALTER TABLE t_user ADD COLUMN status TINYINT NOT NULL DEFAULT 0 AFTER role;
+
+-- 创建超级管理员（推荐做法）：
+--   1. 通过前台 /register 页面正常注册账号（密码由应用 BCrypt 加密，hash 一定正确）
+--   2. 执行下方 UPDATE 将该账号提升为超级管理员
+-- UPDATE t_user SET role = 2 WHERE email = 'your_admin@example.com';
+
+DELETE FROM t_user WHERE email = 'admin@campus.com';
+
+UPDATE t_user SET role = 2 WHERE email = '19971516560@163.com';
+
+

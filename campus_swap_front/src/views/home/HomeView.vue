@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted } from 'vue'
-import { Search } from '@element-plus/icons-vue'
+import { Search, Picture } from '@element-plus/icons-vue'
 import { itemApi } from '@/api/modules/item'
 
 const items = ref([])
@@ -51,7 +51,18 @@ onMounted(fetchItems)
       >
         <RouterLink :to="`/item/${item.id}`" class="item-card-link">
           <el-card shadow="hover" class="item-card">
-            <el-image :src="item.coverImage" fit="cover" class="item-image" />
+            <el-image
+              :src="item.coverImage"
+              fit="cover"
+              class="item-image"
+              lazy
+            >
+              <template #error>
+                <div class="image-placeholder">
+                  <el-icon size="32"><Picture /></el-icon>
+                </div>
+              </template>
+            </el-image>
             <div class="item-info">
               <p class="item-title">{{ item.title }}</p>
               <p class="item-price">¥ {{ item.price }}</p>
@@ -89,6 +100,17 @@ onMounted(fetchItems)
   .item-image {
     width: 100%;
     height: 160px;
+    border-radius: 4px;
+  }
+
+  .image-placeholder {
+    width: 100%;
+    height: 160px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f5f7fa;
+    color: #c0c4cc;
     border-radius: 4px;
   }
 

@@ -1,17 +1,19 @@
 <script setup>
-import { reactive, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { reactive, ref, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { itemApi } from '@/api/modules/item'
 import { ElMessage } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 
 const router = useRouter()
+const route = useRoute()
 const formRef = ref(null)
 const loading = ref(false)
+const pageLoading = ref(true)
 
 const form = reactive({
   title: '',
-  price: '',
+  price: null,
   category: '',
   description: '',
   images: [],
@@ -25,10 +27,33 @@ const rules = {
 
 const categories = ['数码', '书籍', '服饰', '生活用品', '其他']
 
-// el-upload 文件列表（用于显示预览）
+// el-upload 展示用文件列表（含已有图片）
 const fileList = ref([])
 
-// 自定义上传：通过 axios 上传，获取 token 并拿到 URL
+// 加载现有商品数据
+onMounted(async () => {
+  try {
+    const item = await itemApi.getDetail(route.params.id)
+    form.title = item.title
+    form.price = Number(item.price)
+    form.category = item.category
+    form.description = item.description
+    form.images = item.images ? [...item.images] : []
+    // 初始化 el-upload 文件列表，展示已有图片
+    fileList.value = form.images.map((url, idx) => ({
+      name: `image-${idx}`,
+      url,
+      status: 'success',
+      response: url, // handleRemove 通过 response 或 url 找到对应 URL
+    }))
+  } catch {
+    ElMessage.error('商品信息加载失败')
+    router.back()
+  } finally {
+    pageLoading.value = false
+  }
+})
+
 async function handleUpload({ file, onSuccess, onError }) {
   try {
     const url = await itemApi.uploadImage(file)
@@ -40,24 +65,22 @@ async function handleUpload({ file, onSuccess, onError }) {
   }
 }
 
-// 删除图片时同步 form.images
 function handleRemove(uploadFile) {
   const url = uploadFile.response ?? uploadFile.url
   form.images = form.images.filter((u) => u !== url)
 }
 
-// 限制图片数量
 function handleExceed() {
   ElMessage.warning('最多上传 9 张图片')
 }
 
-async function handlePublish() {
+async function handleSave() {
   await formRef.value.validate()
   loading.value = true
   try {
-    await itemApi.publish(form)
-    ElMessage.success('发布成功')
-    router.push('/')
+    await itemApi.update(route.params.id, form)
+    ElMessage.success('保存成功')
+    router.push('/my-items')
   } finally {
     loading.value = false
   }
@@ -65,18 +88,25 @@ async function handlePublish() {
 </script>
 
 <template>
-  <div class="publish-view">
+  <div v-loading="pageLoading" class="edit-view">
     <el-card>
       <template #header>
-        <h3>发布闲置</h3>
+        <h3>编辑闲置</h3>
       </template>
-      <el-form ref="formRef" :model="form" :rules="rules" label-width="80px">
+
+      <el-form
+        v-if="!pageLoading"
+        ref="formRef"
+        :model="form"
+        :rules="rules"
+        label-width="80px"
+      >
         <el-form-item label="标题" prop="title">
           <el-input v-model="form.title" placeholder="请输入商品标题" />
         </el-form-item>
 
         <el-form-item label="价格" prop="price">
-          <el-input-number v-model="form.price" :min="0" :precision="2" placeholder="请输入价格" />
+          <el-input-number v-model="form.price" :min="0" :precision="2" />
         </el-form-item>
 
         <el-form-item label="分类" prop="category">
@@ -90,7 +120,7 @@ async function handlePublish() {
             v-model="form.description"
             type="textarea"
             :rows="4"
-            placeholder="请描述商品情况（新旧程度、配件、购入时间等）"
+            placeholder="请描述商品情况"
           />
         </el-form-item>
 
@@ -110,7 +140,7 @@ async function handlePublish() {
         </el-form-item>
 
         <el-form-item>
-          <el-button type="primary" :loading="loading" @click="handlePublish">发布</el-button>
+          <el-button type="primary" :loading="loading" @click="handleSave">保存</el-button>
           <el-button @click="router.back()">取消</el-button>
         </el-form-item>
       </el-form>
@@ -119,7 +149,7 @@ async function handlePublish() {
 </template>
 
 <style scoped lang="scss">
-.publish-view {
+.edit-view {
   max-width: 700px;
   margin: 0 auto;
 }

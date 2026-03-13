@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 /**
  * 发布商品请求 DTO
@@ -25,6 +26,6 @@ public class ItemPublishDTO {
 
     private String description;
 
-    /** 封面图 URL（可为空） */
-    private String coverImage;
+    /** 图片 URL 列表（第一张自动作为封面） */
+    private List<String> images;
 }
