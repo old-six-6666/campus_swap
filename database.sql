@@ -36,10 +36,10 @@ CREATE TABLE t_user (
 -- ============================================================
 -- 如果已有旧表，执行此迁移语句替代重建（二选一）
 -- ============================================================
--- ALTER TABLE t_user
---   ADD COLUMN email VARCHAR(100) UNIQUE COMMENT '邮箱（登录账号，唯一）' AFTER id,
---   DROP INDEX uk_username,
---   DROP COLUMN username;
+# ALTER TABLE t_user
+#   ADD COLUMN email VARCHAR(100) UNIQUE COMMENT '邮箱（登录账号，唯一）' AFTER id,
+#   DROP INDEX uk_username,
+#   DROP COLUMN username;
 
 -- ============================================================
 -- 3. 商品表 t_item
