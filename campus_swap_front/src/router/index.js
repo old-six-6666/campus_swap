@@ -46,6 +46,16 @@ const routes = [
         component: () => import('@/views/user/ChangePasswordView.vue'),
         meta: { requiresAuth: true },
       },
+      {
+        path: 'category',
+        name: 'Category',
+        component: () => import('@/views/category/CategoryView.vue'),
+      },
+      {
+        path: 'square',
+        name: 'Square',
+        component: () => import('@/views/home/HomeView.vue'), // 暂时使用首页组件
+      },
     ],
   },
   // ===== 管理端（需要 admin role） =====

@@ -28,11 +28,17 @@ function handleCommand(command) {
       <div class="header-left">
         <RouterLink to="/" class="logo">换了吗</RouterLink>
       </div>
+      
+      <!-- 导航菜单 -->
+      <div class="header-nav">
+        <RouterLink :to="{ name: 'Home' }" class="nav-item" active-class="active">首页</RouterLink>
+        <RouterLink :to="{ name: 'Category' }" class="nav-item" active-class="active">物品分类</RouterLink>
+        <RouterLink :to="{ name: 'Publish' }" class="nav-item" active-class="active">发布闲置</RouterLink>
+        <RouterLink :to="{ name: 'Square' }" class="nav-item" active-class="active">广场</RouterLink>
+      </div>
+      
       <div class="header-right">
         <template v-if="userStore.isLoggedIn">
-          <RouterLink to="/publish">
-            <el-button type="primary" size="small">发布闲置</el-button>
-          </RouterLink>
           <el-dropdown @command="handleCommand">
             <span class="user-avatar">
               <el-tag
@@ -87,39 +93,169 @@ function handleCommand(command) {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: #fff;
-  border-bottom: 1px solid #ebeef5;
-  padding: 0 24px;
+  background: rgb(27, 153, 170);
+  padding: 0 32px;
+  height: 64px;
+  box-shadow: 0 4px 20px rgba(27, 153, 170, 0.2);
+  border-radius: 16px;
+  margin: 12px 12px 0 12px;
+  position: sticky;
+  top: 12px;
+  z-index: 1000;
+  transition: all 0.3s ease;
+
+  &:hover {
+    box-shadow: 0 6px 30px rgba(27, 153, 170, 0.3);
+    transform: translateY(-2px);
+  }
 
   .logo {
-    font-size: 18px;
-    font-weight: 600;
-    color: #409eff;
+    font-size: 22px;
+    font-weight: 700;
+    color: #fff;
     text-decoration: none;
+    letter-spacing: 0.5px;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease;
+
+    &:hover {
+      color: #ffd700;
+      transform: scale(1.05);
+    }
+  }
+
+  .header-nav {
+    display: flex;
+    align-items: center;
+    gap: 32px;
+    margin: 0 32px;
+    
+    .nav-item {
+      color: rgba(255, 255, 255, 0.85);
+      text-decoration: none;
+      font-size: 15px;
+      font-weight: 500;
+      padding: 8px 0;
+      position: relative;
+      transition: all 0.3s ease;
+      
+      &:hover {
+        color: #ffd700;
+        transform: translateY(-2px);
+      }
+      
+      &.active {
+        color: #ffd700;
+        font-weight: 600;
+        
+        &::after {
+          content: '';
+          position: absolute;
+          bottom: 0;
+          left: 0;
+          right: 0;
+          height: 2px;
+          background: #ffd700;
+          border-radius: 1px;
+          animation: slideIn 0.3s ease;
+        }
+      }
+    }
   }
 
   .header-right {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 16px;
   }
 
   .user-avatar {
     display: flex;
     align-items: center;
     cursor: pointer;
-    color: #606266;
+    color: #fff;
     font-size: 14px;
+    font-weight: 500;
+    padding: 8px 16px;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 50px;
+    transition: all 0.3s ease;
+    border: 1px solid rgba(255, 255, 255, 0.2);
 
     &:hover {
-      color: #409eff;
+      background: rgba(255, 255, 255, 0.25);
+      color: #ffd700;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .el-icon {
+      margin-left: 6px;
+      transition: transform 0.3s ease;
+    }
+
+    &:hover .el-icon {
+      transform: rotate(180deg);
+    }
+  }
+
+  :deep(.el-button) {
+    border-radius: 50px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    border: none;
+
+    &.el-button--primary {
+      background: linear-gradient(135deg, #ff9a9e 0%, #fad0c4 100%);
+      color: #333;
+      box-shadow: 0 4px 15px rgba(255, 154, 158, 0.3);
+
+      &:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 20px rgba(255, 154, 158, 0.4);
+      }
+    }
+
+    &.el-button--default {
+      background: rgba(255, 255, 255, 0.2);
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.3);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(255, 255, 255, 0.2);
+      }
+    }
+  }
+
+  :deep(.el-dropdown) {
+    .el-dropdown-link {
+      display: flex;
+      align-items: center;
+    }
+  }
+  
+  // 导航项下划线动画
+  @keyframes slideIn {
+    from {
+      transform: scaleX(0);
+      opacity: 0;
+    }
+    to {
+      transform: scaleX(1);
+      opacity: 1;
     }
   }
 }
 
 .main-content {
-  background: #f5f7fa;
+  background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
   padding: 24px;
+  min-height: calc(100vh - 180px);
+  margin: 0 12px;
+  border-radius: 16px;
+  margin-top: 12px;
 }
 
 .footer {
@@ -127,5 +263,38 @@ function handleCommand(command) {
   color: #909399;
   font-size: 13px;
   line-height: 60px;
+  background: #fff;
+  border-radius: 16px;
+  margin: 12px;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.05);
+}
+
+// 响应式调整
+@media (max-width: 768px) {
+  .header {
+    padding: 0 16px;
+    border-radius: 0 0 12px 12px;
+
+    .logo {
+      font-size: 18px;
+    }
+
+    .header-nav {
+      display: none; // 在小屏幕上隐藏导航菜单，或者可以改为下拉菜单
+    }
+
+    .header-right {
+      gap: 8px;
+    }
+
+    .user-avatar {
+      padding: 6px 12px;
+      font-size: 13px;
+    }
+  }
+
+  .main-content {
+    padding: 16px;
+  }
 }
 </style>
