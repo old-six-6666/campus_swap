@@ -21,10 +21,10 @@ const STATUS_MAP = {
   0: { label: '正常', type: 'success' },
   1: { label: '禁用', type: 'info' },
 }
+// 超级管理员唯一，不允许通过界面将任何人提升为超级管理员
 const roleOptions = [
   { value: 0, label: '普通用户' },
   { value: 1, label: '管理员' },
-  { value: 2, label: '超级管理员' },
 ]
 
 async function fetchUsers() {
@@ -75,9 +75,10 @@ async function handleDelete(row) {
 function isSelf(row) {
   return row.id === userStore.userInfo?.id
 }
-// 管理员不能操作同级或更高权限用户
+// 管理员不能操作同级或更高权限用户；超级管理员账号不可被任何人操作
 function canOperate(row) {
   if (isSelf(row)) return false
+  if (row.role >= 2) return false  // 超级管理员账号只读
   if (userStore.isSuperAdmin) return true
   return row.role < 1
 }
@@ -110,9 +111,9 @@ onMounted(fetchUsers)
       <el-table-column prop="school" label="学校" min-width="120" show-overflow-tooltip />
       <el-table-column label="角色" width="160">
         <template #default="{ row }">
-          <!-- 超管可以修改任意人的角色（除自己外），管理员只读 -->
+          <!-- 超管只能修改普通用户/管理员的角色，超管账号本身只读 -->
           <el-select
-            v-if="userStore.isSuperAdmin && !isSelf(row)"
+            v-if="userStore.isSuperAdmin && !isSelf(row) && row.role < 2"
             :model-value="row.role"
             size="small"
             style="width: 120px"

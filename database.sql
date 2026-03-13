@@ -70,19 +70,19 @@ CREATE TABLE t_item (
 -- ============================================================
 
 -- 测试用户（密码均为 123456，BCrypt 加密）
-INSERT INTO t_user (email, password, nickname, school) VALUES
-('test1@campus.com', '$2a$10$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW', '张三', '北京大学'),
-('test2@campus.com', '$2a$10$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW', '李四', '清华大学'),
-('test3@campus.com', '$2a$10$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW', '王五', '复旦大学');
-
--- 测试商品
-INSERT INTO t_item (title, price, category, description, cover_image, seller_id, status) VALUES
-('九成新 MacBook Air M1',        4500.00, '数码',     'M1 芯片，8G 内存，256G 存储，电池健康 92%，配原装充电器', NULL, 1, 0),
-('高等数学（同济第七版）上下册', 20.00,   '书籍',     '少量笔记，无缺页，适合大一新生', NULL, 1, 0),
-('Nike Air Force 1 白鞋 42码',   280.00,  '服饰',     '穿了三次，鞋盒在，95新', NULL, 2, 0),
-('宿舍台灯（带 USB 充电口）',    35.00,   '生活用品', '换宿舍用不上，正常使用无损坏', NULL, 2, 0),
-('iPad 2021 10.2寸 64G WiFi',    1600.00, '数码',     '含钢化膜和保护套，性能完好', NULL, 3, 0),
-('有机化学（第四版）',            15.00,  '书籍',     '期末复习完就出，几乎全新', NULL, 3, 0);
+# INSERT INTO t_user (email, password, nickname, school) VALUES
+# ('test1@campus.com', '$2a$10$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW', '张三', '北京大学'),
+# ('test2@campus.com', '$2a$10$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW', '李四', '清华大学'),
+# ('test3@campus.com', '$2a$10$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW', '王五', '复旦大学');
+#
+# -- 测试商品
+# INSERT INTO t_item (title, price, category, description, cover_image, seller_id, status) VALUES
+# ('九成新 MacBook Air M1',        4500.00, '数码',     'M1 芯片，8G 内存，256G 存储，电池健康 92%，配原装充电器', NULL, 1, 0),
+# ('高等数学（同济第七版）上下册', 20.00,   '书籍',     '少量笔记，无缺页，适合大一新生', NULL, 1, 0),
+# ('Nike Air Force 1 白鞋 42码',   280.00,  '服饰',     '穿了三次，鞋盒在，95新', NULL, 2, 0),
+# ('宿舍台灯（带 USB 充电口）',    35.00,   '生活用品', '换宿舍用不上，正常使用无损坏', NULL, 2, 0),
+# ('iPad 2021 10.2寸 64G WiFi',    1600.00, '数码',     '含钢化膜和保护套，性能完好', NULL, 3, 0),
+# ('有机化学（第四版）',            15.00,  '书籍',     '期末复习完就出，几乎全新', NULL, 3, 0);
 
 -- ============================================================
 -- 5. 迁移：为已有库执行以下 ALTER（已重建的库跳过）
@@ -153,4 +153,28 @@ DELETE FROM t_user WHERE email = 'admin@campus.com';
 
 UPDATE t_user SET role = 2 WHERE email = '19971516560@163.com';
 
+-- ============================================================
+-- 管理员权限表 t_admin_permission
+-- ============================================================
+CREATE TABLE IF NOT EXISTS t_admin_permission (
+  id         BIGINT      NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  admin_id   BIGINT      NOT NULL COMMENT '管理员用户ID（role=1的用户）',
+  perm_code  VARCHAR(50) NOT NULL COMMENT '权限码：USER_MANAGE / ITEM_MANAGE',
+  created_at DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '授权时间',
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_admin_perm (admin_id, perm_code)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='管理员权限表';
+
+-- ============================================================
+-- 商品审核状态字段
+-- audit_status: 0-待审核  1-已通过  2-已拒绝
+-- ============================================================
+ALTER TABLE t_item
+  ADD COLUMN audit_status TINYINT NOT NULL DEFAULT 0
+    COMMENT '审核状态: 0-待审核 1-已通过 2-已拒绝' AFTER status,
+  ADD COLUMN audit_remark VARCHAR(200) DEFAULT NULL
+    COMMENT '审核备注（拒绝原因）' AFTER audit_status;
+
+-- 已有数据默认视为已通过
+UPDATE t_item SET audit_status = 1 WHERE audit_status = 0;
 

@@ -18,6 +18,11 @@ const STATUS_MAP = {
   1: { label: '已下架', type: 'info' },
   2: { label: '已售出', type: 'warning' },
 }
+const AUDIT_MAP = {
+  0: { label: '待审核', type: 'warning' },
+  1: { label: '已通过', type: 'success' },
+  2: { label: '已拒绝', type: 'danger' },
+}
 const statusOptions = [
   { value: null, label: '全部' },
   { value: 0, label: '在售' },
@@ -119,6 +124,13 @@ onMounted(fetchItems)
         <template #default="{ row }">¥ {{ row.price }}</template>
       </el-table-column>
       <el-table-column prop="sellerNickname" label="发布者" width="100" />
+      <el-table-column label="审核" width="90">
+        <template #default="{ row }">
+          <el-tag :type="AUDIT_MAP[row.auditStatus]?.type" size="small">
+            {{ AUDIT_MAP[row.auditStatus]?.label }}
+          </el-tag>
+        </template>
+      </el-table-column>
       <el-table-column label="状态" width="140">
         <template #default="{ row }">
           <el-select

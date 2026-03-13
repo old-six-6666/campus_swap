@@ -26,24 +26,21 @@ function handleCommand(command) {
     <!-- 顶部导航 -->
     <el-header class="header">
       <div class="header-left">
-        <RouterLink to="/" class="logo">校园闲置交换</RouterLink>
+        <RouterLink to="/" class="logo">换了吗</RouterLink>
       </div>
       <div class="header-right">
         <template v-if="userStore.isLoggedIn">
           <RouterLink to="/publish">
             <el-button type="primary" size="small">发布闲置</el-button>
           </RouterLink>
-          <!-- 管理员专属入口按钮 -->
-          <RouterLink v-if="userStore.isAdmin" to="/admin">
-            <el-button
-              size="small"
-              :type="userStore.isSuperAdmin ? 'danger' : 'warning'"
-            >
-              {{ userStore.isSuperAdmin ? '超级管理员' : '管理员' }} 后台
-            </el-button>
-          </RouterLink>
           <el-dropdown @command="handleCommand">
             <span class="user-avatar">
+              <el-tag
+                v-if="userStore.isAdmin"
+                :type="userStore.isSuperAdmin ? 'danger' : 'warning'"
+                size="small"
+                style="margin-right:6px"
+              >{{ userStore.isSuperAdmin ? '超管' : '管理员' }}</el-tag>
               {{ userStore.userInfo?.nickname || '用户' }}
               <el-icon style="margin-left:2px;vertical-align:middle;"><arrow-down /></el-icon>
             </span>
@@ -53,7 +50,7 @@ function handleCommand(command) {
                 <el-dropdown-item command="myItems">我的闲置</el-dropdown-item>
                 <el-dropdown-item command="changePassword">修改密码</el-dropdown-item>
                 <el-dropdown-item v-if="userStore.isAdmin" command="admin" divided>
-                  管理控制台
+                  管理面板
                 </el-dropdown-item>
                 <el-dropdown-item command="logout" :divided="!userStore.isAdmin">退出登录</el-dropdown-item>
               </el-dropdown-menu>
@@ -77,7 +74,7 @@ function handleCommand(command) {
     </el-main>
 
     <!-- 底部 -->
-    <el-footer class="footer">© 2025 校园闲置交换平台</el-footer>
+    <el-footer class="footer">© 2025 换了吗</el-footer>
   </el-container>
 </template>
 

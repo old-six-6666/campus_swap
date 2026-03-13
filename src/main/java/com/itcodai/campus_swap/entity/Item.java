@@ -42,6 +42,14 @@ public class Item {
      */
     private Integer status;
 
+    /**
+     * 审核状态：0-待审核 1-已通过 2-已拒绝
+     */
+    private Integer auditStatus;
+
+    /** 审核备注（拒绝原因） */
+    private String auditRemark;
+
     /** 逻辑删除 */
     @TableLogic
     private Integer deleted;

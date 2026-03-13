@@ -3,13 +3,18 @@ package com.itcodai.campus_swap.controller;
 import com.itcodai.campus_swap.common.exception.BusinessException;
 import com.itcodai.campus_swap.common.result.Result;
 import com.itcodai.campus_swap.common.result.ResultCode;
+import com.itcodai.campus_swap.dto.AdminPermissionsDTO;
+import com.itcodai.campus_swap.dto.ItemAuditDTO;
 import com.itcodai.campus_swap.service.AdminService;
+import com.itcodai.campus_swap.vo.AdminDetailVO;
 import com.itcodai.campus_swap.vo.AdminUserVO;
 import com.itcodai.campus_swap.vo.ItemVO;
 import com.itcodai.campus_swap.vo.PageVO;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 /**
  * 管理端接口（需 role >= 1）
@@ -25,12 +30,14 @@ public class AdminController {
     //  用户管理
     // ================================================================
 
-    /** 分页查询用户列表 */
+    /** 分页查询用户列表（需 USER_MANAGE 权限或超级管理员） */
     @GetMapping("/users")
     public Result<PageVO<AdminUserVO>> listUsers(
             @RequestParam(required = false) String keyword,
             @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "15") int size) {
+            @RequestParam(defaultValue = "15") int size,
+            HttpServletRequest request) {
+        requirePermission(request, "USER_MANAGE");
         return Result.success(adminService.listUsers(keyword, page, size));
     }
 
@@ -39,6 +46,7 @@ public class AdminController {
     public Result<Void> updateUserStatus(@PathVariable Long id,
                                          @RequestParam int status,
                                          HttpServletRequest request) {
+        requirePermission(request, "USER_MANAGE");
         Long operatorId = (Long) request.getAttribute("userId");
         int operatorRole = (int) request.getAttribute("userRole");
         adminService.updateUserStatus(operatorId, operatorRole, id, status);
@@ -68,30 +76,107 @@ public class AdminController {
     //  商品管理
     // ================================================================
 
-    /** 分页查询所有商品 */
+    /** 分页查询所有商品（需 ITEM_MANAGE 权限或超级管理员） */
     @GetMapping("/items")
     public Result<PageVO<ItemVO>> listAllItems(
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) String category,
             @RequestParam(required = false) Integer status,
             @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "15") int size) {
+            @RequestParam(defaultValue = "15") int size,
+            HttpServletRequest request) {
+        requirePermission(request, "ITEM_MANAGE");
         return Result.success(adminService.listAllItems(keyword, category, status, page, size));
     }
 
     /** 修改商品状态（0-在售 1-已下架 2-已售出） */
     @PutMapping("/items/{id:\\d+}/status")
     public Result<Void> updateItemStatus(@PathVariable Long id,
-                                         @RequestParam int status) {
+                                         @RequestParam int status,
+                                         HttpServletRequest request) {
+        requirePermission(request, "ITEM_MANAGE");
         adminService.updateItemStatus(id, status);
         return Result.success();
     }
 
     /** 强制删除商品 */
     @DeleteMapping("/items/{id:\\d+}")
-    public Result<Void> deleteItem(@PathVariable Long id) {
+    public Result<Void> deleteItem(@PathVariable Long id,
+                                   HttpServletRequest request) {
+        requirePermission(request, "ITEM_MANAGE");
         adminService.forceDeleteItem(id);
         return Result.success();
+    }
+
+    // ================================================================
+    //  商品审核（需 ITEM_AUDIT 权限）
+    // ================================================================
+
+    /** 分页查询待审核商品 */
+    @GetMapping("/items/pending")
+    public Result<PageVO<ItemVO>> listPendingItems(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String category,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "15") int size,
+            HttpServletRequest request) {
+        requirePermission(request, "ITEM_AUDIT");
+        return Result.success(adminService.listPendingItems(keyword, category, page, size));
+    }
+
+    /** 审核商品（通过/拒绝） */
+    @PutMapping("/items/{id:\\d+}/audit")
+    public Result<Void> auditItem(@PathVariable Long id,
+                                  @RequestBody ItemAuditDTO dto,
+                                  HttpServletRequest request) {
+        requirePermission(request, "ITEM_AUDIT");
+        adminService.auditItem(id, dto.getAction(), dto.getRemark());
+        return Result.success();
+    }
+
+    // ================================================================
+    //  管理员管理（仅超级管理员）
+    // ================================================================
+
+    /** 分页查询所有管理员（role=1），含权限列表 */
+    @GetMapping("/admins")
+    public Result<PageVO<AdminDetailVO>> listAdmins(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "15") int size,
+            HttpServletRequest request) {
+        requireSuperAdmin(request);
+        return Result.success(adminService.listAdmins(keyword, page, size));
+    }
+
+    /** 获取某管理员的权限列表（超级管理员专用） */
+    @GetMapping("/admins/{id:\\d+}/permissions")
+    public Result<List<String>> getAdminPermissions(@PathVariable Long id,
+                                                     HttpServletRequest request) {
+        requireSuperAdmin(request);
+        return Result.success(adminService.getAdminPermissions(id));
+    }
+
+    /** 全量覆盖某管理员的权限（超级管理员专用） */
+    @PutMapping("/admins/{id:\\d+}/permissions")
+    public Result<Void> setAdminPermissions(@PathVariable Long id,
+                                             @RequestBody AdminPermissionsDTO dto,
+                                             HttpServletRequest request) {
+        requireSuperAdmin(request);
+        adminService.setAdminPermissions(id, dto.getPermissions());
+        return Result.success();
+    }
+
+    /** 当前管理员查询自己的权限（普通管理员可用，超级管理员返回全部权限） */
+    @GetMapping("/me/permissions")
+    public Result<List<String>> getMyPermissions(HttpServletRequest request) {
+        int role = (int) request.getAttribute("userRole");
+        if (role >= 2) {
+            // 超级管理员拥有所有权限
+            return Result.success(List.of("USER_MANAGE", "ITEM_MANAGE", "ITEM_AUDIT"));
+        }
+        Long userId = (Long) request.getAttribute("userId");
+        return Result.success(adminService.getAdminPermissions(userId));
     }
 
     // ================================================================
@@ -102,6 +187,19 @@ public class AdminController {
         int role = (int) request.getAttribute("userRole");
         if (role < 2) {
             throw new BusinessException(ResultCode.FORBIDDEN, "该操作仅超级管理员可用");
+        }
+    }
+
+    /**
+     * 权限检查：超级管理员直接放行；普通管理员需具备指定权限码
+     */
+    private void requirePermission(HttpServletRequest request, String permCode) {
+        int role = (int) request.getAttribute("userRole");
+        if (role >= 2) return; // 超管放行
+        Long userId = (Long) request.getAttribute("userId");
+        List<String> perms = adminService.getAdminPermissions(userId);
+        if (!perms.contains(permCode)) {
+            throw new BusinessException(ResultCode.FORBIDDEN, "无操作权限，需要 " + permCode);
         }
     }
 }

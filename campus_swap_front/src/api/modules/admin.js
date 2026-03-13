@@ -18,4 +18,20 @@ export const adminApi = {
   updateItemStatus: (id, status) => request.put(`/admin/items/${id}/status`, null, { params: { status } }),
   /** 强制删除商品 */
   deleteItem: (id) => request.delete(`/admin/items/${id}`),
+
+  // ===== 管理员权限管理（超管专用） =====
+  /** 分页查询所有管理员（role=1），含权限 */
+  listAdmins: (params) => request.get('/admin/admins', { params }),
+  /** 全量覆盖某管理员的权限 */
+  setAdminPermissions: (id, permissions) => request.put(`/admin/admins/${id}/permissions`, { permissions }),
+
+  // ===== 商品审核（ITEM_AUDIT） =====
+  /** 分页查询待审核商品 */
+  listPendingItems: (params) => request.get('/admin/items/pending', { params }),
+  /** 审核商品：action=1 通过  action=2 拒绝 */
+  auditItem: (id, action, remark) => request.put(`/admin/items/${id}/audit`, { action, remark }),
+
+  // ===== 当前用户权限 =====
+  /** 获取当前登录管理员的权限列表 */
+  getMyPermissions: () => request.get('/admin/me/permissions'),
 }
