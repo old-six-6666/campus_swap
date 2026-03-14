@@ -9,6 +9,7 @@ import com.itcodai.campus_swap.service.VerifyCodeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import jakarta.annotation.PostConstruct;
 
 /**
  * 验证码服务（Hutool TimedCache 内存缓存，过期自动失效）
@@ -26,8 +27,14 @@ public class VerifyCodeServiceImpl implements VerifyCodeService {
      * 主缓存：key="email:scene" → 验证码，过期时间由 expireMinutes 决定
      * 冷却缓存：key="cool:email:scene" → 固定值，60 秒过期，防频繁发送
      */
-    private final TimedCache<String, String> codeCache = new TimedCache<>(5 * 60 * 1000L);
-    private final TimedCache<String, String> coolCache = new TimedCache<>(60 * 1000L);
+    private final TimedCache<String, String> codeCache = new TimedCache<>(1000L);
+    private final TimedCache<String, String> coolCache = new TimedCache<>(1000L);
+
+    @PostConstruct
+    public void init() {
+        codeCache.schedulePrune(1000L);
+        coolCache.schedulePrune(1000L);
+    }
 
     @Override
     public void sendCode(String email, String scene) {
