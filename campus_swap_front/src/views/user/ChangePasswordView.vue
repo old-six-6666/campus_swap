@@ -3,7 +3,7 @@ import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/useUserStore'
 import { userApi } from '@/api/modules/user'
-import { ElMessage } from 'element-plus'
+import { showSuccess, showError } from '@/utils/notify'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -36,7 +36,7 @@ async function handleChangeByOld() {
       oldPassword: oldForm.oldPassword,
       newPassword: oldForm.newPassword,
     })
-    ElMessage.success('密码修改成功，请重新登录')
+    await showSuccess('密码修改成功，请重新登录')
     userStore.logout()
     router.push('/login')
   } finally {
@@ -70,13 +70,13 @@ let timer = null
 async function handleSendCode() {
   const email = userStore.userInfo?.email
   if (!email) {
-    ElMessage.error('获取用户邮箱失败，请重新登录')
+    showError('获取用户邮箱失败，请重新登录')
     return
   }
   codeSending.value = true
   try {
     await userApi.sendCode({ email, scene: 'CHANGE_PASSWORD' })
-    ElMessage.success(`验证码已发送至 ${email}，请查收`)
+    showSuccess(`验证码已发送至 ${email}，请查收`)
     countdown.value = 60
     timer = setInterval(() => {
       countdown.value--
@@ -98,7 +98,7 @@ async function handleChangeByEmail() {
       code: emailForm.code,
       newPassword: emailForm.newPassword,
     })
-    ElMessage.success('密码修改成功，请重新登录')
+    await showSuccess('密码修改成功，请重新登录')
     userStore.logout()
     router.push('/login')
   } finally {

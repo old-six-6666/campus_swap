@@ -27,4 +27,7 @@ export const userApi = {
 
   /** 退出登录 */
   logout: () => request.post('/user/logout'),
+
+  /** 按昵称搜索用户（用于添加好友） */
+  searchUsers: (keyword) => request.get('/user/search', { params: { keyword } }),
 }

@@ -2,7 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useUserStore } from '@/stores/useUserStore'
 import { userApi } from '@/api/modules/user'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { showSuccess, showError, showWarning } from '@/utils/notify'
 
 const userStore = useUserStore()
 
@@ -79,7 +79,7 @@ async function searchSchools(query) {
     console.error('搜索学校失败:', error)
     // 提供静态备选列表
     schoolOptions.value = getFallbackSchools(query)
-    ElMessage.warning('学校搜索服务暂时不可用，已显示常用学校列表')
+    showWarning('学校搜索服务暂时不可用，已显示常用学校列表')
   } finally {
     schoolLoading.value = false
   }
@@ -133,7 +133,7 @@ function cancelEdit() {
 // 保存个人信息
 async function saveProfile() {
   if (!form.value.nickname.trim()) {
-    ElMessage.warning('请输入昵称')
+    showWarning('请输入昵称')
     return
   }
   
@@ -148,10 +148,10 @@ async function saveProfile() {
     // 更新本地存储的用户信息
     await userStore.fetchProfile()
     
-    ElMessage.success('个人信息更新成功')
+    showSuccess('个人信息更新成功')
     isEditing.value = false
   } catch (error) {
-    ElMessage.error(`更新失败: ${error.message || '未知错误'}`)
+    showError(`更新失败: ${error.message || '未知错误'}`)
   } finally {
     loading.value = false
   }

@@ -26,7 +26,9 @@ export const itemApi = {
   uploadImage: (file) => {
     const form = new FormData()
     form.append('file', file)
-    return request.post('/api/upload', form, {
+    // 注意：不要写 '/api/upload'，axios baseURL 已经是 '/api'，
+    // 写 '/api/upload' 会被组合成 '/api/api/upload'（双重前缀，404）
+    return request.post('/upload', form, {
       headers: { 'Content-Type': 'multipart/form-data' },
     })
   },

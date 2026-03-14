@@ -29,4 +29,7 @@ public interface UserService {
 
     /** 修改密码：通过邮箱验证码验证（需登录） */
     void changePasswordByEmail(Long userId, ChangePasswordByEmailDTO dto);
+
+    /** 按昵称搜索用户（排除自己，仅正常状态），用于添加好友 */
+    java.util.List<UserVO> searchUsers(Long currentUserId, String keyword);
 }

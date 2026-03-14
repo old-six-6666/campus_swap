@@ -11,6 +11,8 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 /**
  * 用户相关接口
  */
@@ -80,6 +82,15 @@ public class UserController {
         Long userId = (Long) request.getAttribute("userId");
         userService.changePasswordByEmail(userId, dto);
         return Result.success();
+    }
+
+    /** GET /api/user/search — 按昵称搜索用户（需登录），用于添加好友 */
+    @GetMapping("/search")
+    public Result<List<UserVO>> searchUsers(
+            @RequestParam(defaultValue = "") String keyword,
+            HttpServletRequest request) {
+        Long userId = (Long) request.getAttribute("userId");
+        return Result.success(userService.searchUsers(userId, keyword));
     }
 
     /** POST /api/user/logout — 退出登录（前端清除 token 即可，后端无状态） */

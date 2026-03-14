@@ -2,7 +2,7 @@
 import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { userApi } from '@/api/modules/user'
-import { ElMessage } from 'element-plus'
+import { showSuccess, showWarning } from '@/utils/notify'
 
 const router = useRouter()
 const formRef = ref(null)
@@ -35,13 +35,13 @@ let timer = null
 
 async function handleSendCode() {
   if (!form.email) {
-    ElMessage.warning('请先输入邮箱')
+    showWarning('请先输入邮箱')
     return
   }
   codeSending.value = true
   try {
     await userApi.sendCode({ email: form.email, scene: 'FORGOT_PASSWORD' })
-    ElMessage.success('验证码已发送，请查收邮件')
+    showSuccess('验证码已发送，请查收邮件')
     countdown.value = 60
     timer = setInterval(() => {
       countdown.value--
@@ -64,7 +64,7 @@ async function handleSubmit() {
       code: form.code,
       newPassword: form.newPassword,
     })
-    ElMessage.success('密码重置成功，请重新登录')
+    await showSuccess('密码重置成功，请重新登录')
     router.push('/login')
   } finally {
     loading.value = false

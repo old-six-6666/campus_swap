@@ -42,7 +42,8 @@ public class WebConfig implements WebMvcConfigurer {
                         "/api/user/register",
                         "/api/user/send-code",
                         "/api/user/forgot-password",
-                        "/api/item/list"
+                        "/api/item/list",
+                        "/api/trade/item/*"
                 );
 
         // 角色拦截器：验证管理员权限（在 JWT 拦截器之后执行）

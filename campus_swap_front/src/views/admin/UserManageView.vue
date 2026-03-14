@@ -2,7 +2,8 @@
 import { ref, onMounted } from 'vue'
 import { adminApi } from '@/api/modules/admin'
 import { useUserStore } from '@/stores/useUserStore'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessageBox } from 'element-plus'
+import { showSuccess } from '@/utils/notify'
 
 const userStore = useUserStore()
 const list = ref([])
@@ -41,35 +42,49 @@ async function fetchUsers() {
 async function toggleStatus(row) {
   const newStatus = row.status === 1 ? 0 : 1
   const label = newStatus === 1 ? '禁用' : '启用'
-  await ElMessageBox.confirm(`确定${label}用户「${row.nickname}」吗？`, `${label}用户`, {
-    type: 'warning',
-    confirmButtonText: label,
-  })
-  await adminApi.updateUserStatus(row.id, newStatus)
-  ElMessage.success(`已${label}`)
-  fetchUsers()
+  try {
+    await ElMessageBox.confirm(`确定${label}用户「${row.nickname}」吗？`, `${label}用户`, {
+      type: 'warning',
+      confirmButtonText: label,
+      cancelButtonText: '取消',
+    })
+    await adminApi.updateUserStatus(row.id, newStatus)
+    showSuccess(`已${label}`)
+    fetchUsers()
+  } catch (e) {
+    if (e !== 'cancel' && e?.message !== 'cancel') throw e
+  }
 }
 
 async function changeRole(row, newRole) {
   if (newRole === row.role) return
   const label = roleOptions.find(r => r.value === newRole)?.label
-  await ElMessageBox.confirm(`确定将「${row.nickname}」的角色改为「${label}」吗？`, '修改角色', {
-    type: 'warning',
-  })
-  await adminApi.updateUserRole(row.id, newRole)
-  ElMessage.success('角色已更新')
-  fetchUsers()
+  try {
+    await ElMessageBox.confirm(`确定将「${row.nickname}」的角色改为「${label}」吗？`, '修改角色', {
+      type: 'warning',
+      cancelButtonText: '取消',
+    })
+    await adminApi.updateUserRole(row.id, newRole)
+    showSuccess('角色已更新')
+    fetchUsers()
+  } catch (e) {
+    if (e !== 'cancel' && e?.message !== 'cancel') throw e
+  }
 }
 
 async function handleDelete(row) {
-  await ElMessageBox.confirm(`确定永久删除用户「${row.nickname}」吗？此操作不可恢复！`, '删除用户', {
-    type: 'error',
-    confirmButtonText: '删除',
-    confirmButtonClass: 'el-button--danger',
-  })
-  await adminApi.deleteUser(row.id)
-  ElMessage.success('已删除')
-  fetchUsers()
+  try {
+    await ElMessageBox.confirm(`确定永久删除用户「${row.nickname}」吗？此操作不可恢复！`, '删除用户', {
+      type: 'error',
+      confirmButtonText: '删除',
+      cancelButtonText: '取消',
+    })
+    await adminApi.deleteUser(row.id)
+    showSuccess('已删除')
+    fetchUsers()
+  } catch (e) {
+    if (e !== 'cancel' && e?.message !== 'cancel') throw e
+  }
 }
 
 function isSelf(row) {
