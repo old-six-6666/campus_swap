@@ -4,13 +4,20 @@ import com.itcodai.campus_swap.common.exception.BusinessException;
 import com.itcodai.campus_swap.common.result.Result;
 import com.itcodai.campus_swap.common.result.ResultCode;
 import com.itcodai.campus_swap.dto.AdminPermissionsDTO;
+import com.itcodai.campus_swap.dto.BatchStudentRecordDTO;
 import com.itcodai.campus_swap.dto.ItemAuditDTO;
+import com.itcodai.campus_swap.dto.StudentRecordDTO;
+import com.itcodai.campus_swap.dto.StudentVerifyReviewDTO;
 import com.itcodai.campus_swap.service.AdminService;
+import com.itcodai.campus_swap.service.StudentService;
 import com.itcodai.campus_swap.vo.AdminDetailVO;
 import com.itcodai.campus_swap.vo.AdminUserVO;
 import com.itcodai.campus_swap.vo.ItemVO;
 import com.itcodai.campus_swap.vo.PageVO;
+import com.itcodai.campus_swap.vo.StudentRecordVO;
+import com.itcodai.campus_swap.vo.StudentVerifyVO;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -25,6 +32,7 @@ import java.util.List;
 public class AdminController {
 
     private final AdminService adminService;
+    private final StudentService studentService;
 
     // ================================================================
     //  用户管理
@@ -173,10 +181,82 @@ public class AdminController {
         int role = (int) request.getAttribute("userRole");
         if (role >= 2) {
             // 超级管理员拥有所有权限
-            return Result.success(List.of("USER_MANAGE", "ITEM_MANAGE", "ITEM_AUDIT"));
+            return Result.success(List.of("USER_MANAGE", "ITEM_MANAGE", "ITEM_AUDIT", "STUDENT_MANAGE"));
         }
         Long userId = (Long) request.getAttribute("userId");
         return Result.success(adminService.getAdminPermissions(userId));
+    }
+
+    // ================================================================
+    //  学生档案管理（需 STUDENT_MANAGE 权限）
+    // ================================================================
+
+    /** 分页查询学生档案 */
+    @GetMapping("/students")
+    public Result<PageVO<StudentRecordVO>> listStudentRecords(
+            @RequestParam(required = false) String school,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "15") int size,
+            HttpServletRequest request) {
+        requirePermission(request, "STUDENT_MANAGE");
+        return Result.success(studentService.listRecords(school, keyword, page, size));
+    }
+
+    /** 添加单条学生档案 */
+    @PostMapping("/students")
+    public Result<Void> addStudentRecord(@Valid @RequestBody StudentRecordDTO dto,
+                                         HttpServletRequest request) {
+        requirePermission(request, "STUDENT_MANAGE");
+        Long operatorId = (Long) request.getAttribute("userId");
+        studentService.addRecord(dto, operatorId);
+        return Result.success();
+    }
+
+    /** 批量导入学生档案 */
+    @PostMapping("/students/batch")
+    public Result<Integer> batchImportStudentRecords(@Valid @RequestBody BatchStudentRecordDTO dto,
+                                                      HttpServletRequest request) {
+        requirePermission(request, "STUDENT_MANAGE");
+        Long operatorId = (Long) request.getAttribute("userId");
+        int count = studentService.batchImportRecords(dto, operatorId);
+        return Result.success(count);
+    }
+
+    /** 删除学生档案 */
+    @DeleteMapping("/students/{id:\\d+}")
+    public Result<Void> deleteStudentRecord(@PathVariable Long id,
+                                             HttpServletRequest request) {
+        requirePermission(request, "STUDENT_MANAGE");
+        studentService.deleteRecord(id);
+        return Result.success();
+    }
+
+    // ================================================================
+    //  学生认证申请审核（需 STUDENT_MANAGE 权限）
+    // ================================================================
+
+    /** 分页查询认证申请列表 */
+    @GetMapping("/verifications")
+    public Result<PageVO<StudentVerifyVO>> listVerifications(
+            @RequestParam(required = false) Integer status,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "15") int size,
+            HttpServletRequest request) {
+        requirePermission(request, "STUDENT_MANAGE");
+        return Result.success(studentService.listVerifications(status, keyword, page, size));
+    }
+
+    /** 审核认证申请 */
+    @PutMapping("/verifications/{id:\\d+}/review")
+    public Result<Void> reviewVerification(@PathVariable Long id,
+                                            @Valid @RequestBody StudentVerifyReviewDTO dto,
+                                            HttpServletRequest request) {
+        requirePermission(request, "STUDENT_MANAGE");
+        Long reviewerId = (Long) request.getAttribute("userId");
+        studentService.reviewVerification(id, dto.getAction(), dto.getRemark(), reviewerId);
+        return Result.success();
     }
 
     // ================================================================

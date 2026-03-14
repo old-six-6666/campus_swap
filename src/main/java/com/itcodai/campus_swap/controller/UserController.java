@@ -2,9 +2,11 @@ package com.itcodai.campus_swap.controller;
 
 import com.itcodai.campus_swap.common.result.Result;
 import com.itcodai.campus_swap.dto.*;
+import com.itcodai.campus_swap.service.StudentService;
 import com.itcodai.campus_swap.service.UserService;
 import com.itcodai.campus_swap.service.VerifyCodeService;
 import com.itcodai.campus_swap.vo.LoginVO;
+import com.itcodai.campus_swap.vo.StudentVerifyVO;
 import com.itcodai.campus_swap.vo.UserVO;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -21,6 +23,7 @@ public class UserController {
 
     private final UserService userService;
     private final VerifyCodeService verifyCodeService;
+    private final StudentService studentService;
 
     /** POST /api/user/send-code — 发送验证码（公开） */
     @PostMapping("/send-code")
@@ -86,5 +89,21 @@ public class UserController {
     @PostMapping("/logout")
     public Result<Void> logout() {
         return Result.success();
+    }
+
+    /** POST /api/user/verify — 提交学生认证申请（需登录） */
+    @PostMapping("/verify")
+    public Result<Void> applyVerify(@Valid @RequestBody StudentVerifyApplyDTO dto,
+                                    HttpServletRequest request) {
+        Long userId = (Long) request.getAttribute("userId");
+        studentService.applyVerify(userId, dto);
+        return Result.success();
+    }
+
+    /** GET /api/user/verify — 查询当前用户的认证申请状态（需登录） */
+    @GetMapping("/verify")
+    public Result<StudentVerifyVO> getMyVerification(HttpServletRequest request) {
+        Long userId = (Long) request.getAttribute("userId");
+        return Result.success(studentService.getMyVerification(userId));
     }
 }
