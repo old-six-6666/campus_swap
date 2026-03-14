@@ -17,4 +17,6 @@ public class UserVO {
     private Integer role;
     /** 账号状态：0-正常  1-禁用 */
     private Integer status;
+    /** 学生认证状态：0-未认证  1-已认证 */
+    private Integer isVerified;
 }

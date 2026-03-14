@@ -27,4 +27,10 @@ export const userApi = {
 
   /** 退出登录 */
   logout: () => request.post('/user/logout'),
+
+  /** 提交学生认证申请 */
+  applyVerify: (data) => request.post('/user/verify', data),
+
+  /** 查询当前用户的认证申请状态 */
+  getMyVerification: () => request.get('/user/verify'),
 }

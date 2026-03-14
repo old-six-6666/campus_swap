@@ -22,6 +22,10 @@ const menuItems = computed(() => {
   if (userStore.hasPermission('ITEM_AUDIT')) {
     items.push({ index: '/admin/items/audit', label: '商品审核', icon: 'Checked' })
   }
+  if (userStore.hasPermission('STUDENT_MANAGE')) {
+    items.push({ index: '/admin/students', label: '学生档案', icon: 'Notebook' })
+    items.push({ index: '/admin/verifications', label: '认证审核', icon: 'CircleCheck' })
+  }
   if (userStore.isSuperAdmin) {
     items.push({ index: '/admin/admins', label: '管理员管理', icon: 'Setting' })
   }
