@@ -12,6 +12,9 @@ async function fetchItems() {
   try {
     const data = await itemApi.getList({ keyword: keyword.value, page: 1, size: 20 })
     items.value = data.records || []
+  } catch (error) {
+    // 错误已由响应拦截器统一提示，此处静默处理
+    console.error('加载商品列表失败:', error)
   } finally {
     loading.value = false
   }
