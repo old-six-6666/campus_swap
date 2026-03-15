@@ -1,10 +1,34 @@
 <script setup>
+import { ref, onMounted, onUnmounted } from 'vue'
 import { RouterView, useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/useUserStore'
+import { chatApi } from '@/api/modules/chat'
 
 const router = useRouter()
 const route = useRoute()
 const userStore = useUserStore()
+
+const unreadCount = ref(0)
+let unreadTimer = null
+
+async function fetchUnread() {
+  if (!userStore.isLoggedIn) return
+  try {
+    const data = await chatApi.getUnreadCount()
+    unreadCount.value = data?.totalUnread || 0
+  } catch {
+    // ignore
+  }
+}
+
+onMounted(() => {
+  fetchUnread()
+  unreadTimer = setInterval(fetchUnread, 15000)
+})
+
+onUnmounted(() => {
+  clearInterval(unreadTimer)
+})
 
 function handleCommand(command) {
   if (command === 'logout') {
@@ -14,10 +38,14 @@ function handleCommand(command) {
     router.push('/profile')
   } else if (command === 'myItems') {
     router.push('/my-items')
+  } else if (command === 'myTrades') {
+    router.push('/trade')
   } else if (command === 'changePassword') {
     router.push('/change-password')
   } else if (command === 'admin') {
     router.push('/admin')
+  } else if (command === 'chat') {
+    router.push('/chat')
   }
 }
 </script>
@@ -36,6 +64,14 @@ function handleCommand(command) {
         <RouterLink :to="{ name: 'Category' }" class="nav-item" :class="{ active: route.name === 'Category' }">物品分类</RouterLink>
         <RouterLink :to="{ name: 'Publish' }" class="nav-item" :class="{ active: route.name === 'Publish' }">发布闲置</RouterLink>
         <RouterLink :to="{ name: 'Square' }" class="nav-item" :class="{ active: route.name === 'Square' }">广场</RouterLink>
+        <RouterLink v-if="userStore.isLoggedIn" :to="{ name: 'Chat' }" class="nav-item" active-class="active">
+          <el-badge :value="unreadCount || 0" :hidden="!unreadCount" class="msg-badge">
+            消息
+          </el-badge>
+        </RouterLink>
+        <RouterLink v-if="userStore.isLoggedIn" :to="{ name: 'MyTrades' }" class="nav-item" active-class="active">
+          交易
+        </RouterLink>
       </div>
       
       <div class="header-right">
@@ -55,6 +91,11 @@ function handleCommand(command) {
               <el-dropdown-menu>
                 <el-dropdown-item command="profile">个人中心</el-dropdown-item>
                 <el-dropdown-item command="myItems">我的闲置</el-dropdown-item>
+                <el-dropdown-item command="myTrades">我的交易</el-dropdown-item>
+                <el-dropdown-item command="chat">
+                  消息
+                  <el-badge v-if="unreadCount" :value="unreadCount" style="margin-left:6px" />
+                </el-dropdown-item>
                 <el-dropdown-item command="changePassword">修改密码</el-dropdown-item>
                 <el-dropdown-item v-if="userStore.isAdmin" command="admin" divided>
                   管理面板
@@ -131,6 +172,13 @@ function handleCommand(command) {
     gap: 32px;
     margin: 0 32px;
     
+    .msg-badge {
+      :deep(.el-badge__content) {
+        top: -4px;
+        right: -16px;
+      }
+    }
+
     .nav-item {
       color: rgba(255, 255, 255, 0.85);
       text-decoration: none;

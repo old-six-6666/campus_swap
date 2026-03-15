@@ -16,6 +16,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
+
 /**
  * 用户服务实现
  */
@@ -137,5 +141,27 @@ public class UserServiceImpl implements UserService {
 
         user.setPassword(BCrypt.hashpw(dto.getNewPassword()));
         userMapper.updateById(user);
+    }
+
+    @Override
+    public List<UserVO> searchUsers(Long currentUserId, String keyword) {
+        if (keyword == null || keyword.isBlank()) {
+            return Collections.emptyList();
+        }
+        List<User> users = userMapper.selectList(
+                new LambdaQueryWrapper<User>()
+                        .ne(User::getId, currentUserId)
+                        .eq(User::getStatus, 0)
+                        .like(User::getNickname, keyword)
+                        .last("LIMIT 10")
+        );
+        return users.stream().map(u -> {
+            UserVO vo = new UserVO();
+            vo.setId(u.getId());
+            vo.setNickname(u.getNickname());
+            vo.setAvatar(u.getAvatar());
+            vo.setSchool(u.getSchool());
+            return vo;
+        }).collect(Collectors.toList());
     }
 }

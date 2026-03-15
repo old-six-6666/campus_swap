@@ -33,4 +33,7 @@ export const userApi = {
 
   /** 查询当前用户的认证申请状态 */
   getMyVerification: () => request.get('/user/verify'),
+
+  /** 按昵称搜索用户（用于添加好友） */
+  searchUsers: (keyword) => request.get('/user/search', { params: { keyword } }),
 }

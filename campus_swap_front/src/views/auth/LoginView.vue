@@ -2,7 +2,7 @@
 import { reactive, ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/useUserStore'
-import { ElMessage } from 'element-plus'
+import { showSuccess } from '@/utils/notify'
 
 const router = useRouter()
 const route = useRoute()
@@ -26,7 +26,7 @@ async function handleLogin() {
   loading.value = true
   try {
     await userStore.login(form)
-    ElMessage.success('登录成功')
+    await showSuccess('登录成功')
     const redirect = route.query.redirect || '/'
     router.push(redirect)
   } finally {
