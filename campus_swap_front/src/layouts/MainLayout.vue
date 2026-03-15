@@ -1,8 +1,9 @@
 <script setup>
-import { RouterView, useRouter } from 'vue-router'
+import { RouterView, useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/useUserStore'
 
 const router = useRouter()
+const route = useRoute()
 const userStore = useUserStore()
 
 function handleCommand(command) {
@@ -31,10 +32,10 @@ function handleCommand(command) {
       
       <!-- 导航菜单 -->
       <div class="header-nav">
-        <RouterLink :to="{ name: 'Home' }" class="nav-item" active-class="active">首页</RouterLink>
-        <RouterLink :to="{ name: 'Category' }" class="nav-item" active-class="active">物品分类</RouterLink>
-        <RouterLink :to="{ name: 'Publish' }" class="nav-item" active-class="active">发布闲置</RouterLink>
-        <RouterLink :to="{ name: 'Square' }" class="nav-item" active-class="active">广场</RouterLink>
+        <RouterLink :to="{ name: 'Home' }" class="nav-item" :class="{ active: route.name === 'Home' }">首页</RouterLink>
+        <RouterLink :to="{ name: 'Category' }" class="nav-item" :class="{ active: route.name === 'Category' }">物品分类</RouterLink>
+        <RouterLink :to="{ name: 'Publish' }" class="nav-item" :class="{ active: route.name === 'Publish' }">发布闲置</RouterLink>
+        <RouterLink :to="{ name: 'Square' }" class="nav-item" :class="{ active: route.name === 'Square' }">广场</RouterLink>
       </div>
       
       <div class="header-right">
