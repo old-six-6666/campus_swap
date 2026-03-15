@@ -34,15 +34,18 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        // JWT 拦截器：验证登录状态（对所有 /api/** 路由生效）
+        // JWT 拦截器：验证登录状态（对所有 /api/** 和 /post/** 路由生效）
         registry.addInterceptor(jwtInterceptor)
-                .addPathPatterns("/api/**")
+                .addPathPatterns("/api/**", "/post/**")
                 .excludePathPatterns(
                         "/api/user/login",
                         "/api/user/register",
                         "/api/user/send-code",
                         "/api/user/forgot-password",
-                        "/api/item/list"
+                        "/api/item/list",
+                        "/api/post/list",
+                        "/post/list",
+                        "/post/stats"
                 );
 
         // 角色拦截器：验证管理员权限（在 JWT 拦截器之后执行）
