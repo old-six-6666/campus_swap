@@ -56,6 +56,24 @@ const routes = [
         name: 'Square',
         component: () => import('@/views/square/SquareView.vue'),
       },
+      {
+        path: 'chat',
+        name: 'Chat',
+        component: () => import('@/views/chat/ChatView.vue'),
+        meta: { requiresAuth: true },
+      },
+      {
+        path: 'trade',
+        name: 'MyTrades',
+        component: () => import('@/views/trade/TradeView.vue'),
+        meta: { requiresAuth: true },
+      },
+      {
+        path: 'trade/:id',
+        name: 'TradeDetail',
+        component: () => import('@/views/trade/TradeDetailView.vue'),
+        meta: { requiresAuth: true },
+      },
     ],
   },
   // ===== 管理端（需要 admin role） =====
