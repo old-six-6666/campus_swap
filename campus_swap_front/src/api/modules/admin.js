@@ -34,4 +34,20 @@ export const adminApi = {
   // ===== 当前用户权限 =====
   /** 获取当前登录管理员的权限列表 */
   getMyPermissions: () => request.get('/admin/me/permissions'),
+
+  // ===== 学生档案管理（STUDENT_MANAGE） =====
+  /** 分页查询学生档案 */
+  listStudentRecords: (params) => request.get('/admin/students', { params }),
+  /** 添加单条学生档案 */
+  addStudentRecord: (data) => request.post('/admin/students', data),
+  /** 批量导入学生档案 */
+  batchImportStudentRecords: (data) => request.post('/admin/students/batch', data),
+  /** 删除学生档案 */
+  deleteStudentRecord: (id) => request.delete(`/admin/students/${id}`),
+
+  // ===== 学生认证审核（STUDENT_MANAGE） =====
+  /** 分页查询认证申请列表 */
+  listVerifications: (params) => request.get('/admin/verifications', { params }),
+  /** 审核认证申请：action=1 通过  action=2 拒绝 */
+  reviewVerification: (id, action, remark) => request.put(`/admin/verifications/${id}/review`, { action, remark }),
 }

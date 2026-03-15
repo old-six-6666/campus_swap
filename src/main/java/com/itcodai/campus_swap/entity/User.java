@@ -43,6 +43,11 @@ public class User {
      */
     private Integer status;
 
+    /**
+     * 是否已完成学生认证：0-未认证  1-已认证
+     */
+    private Integer isVerified;
+
     /** 逻辑删除 */
     @TableLogic
     private Integer deleted;
