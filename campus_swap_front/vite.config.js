@@ -41,6 +41,21 @@ export default defineConfig({
         target: 'http://localhost:8080',
         changeOrigin: true,
       },
+      // 代理动态相关的API请求
+      '/post': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+      },
+      // 代理物品相关的API请求（如果使用/item/my-for-post）
+      '/item': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+      },
+      // 代理换物记录相关的API请求
+      '/swap': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+      },
     },
   },
 })

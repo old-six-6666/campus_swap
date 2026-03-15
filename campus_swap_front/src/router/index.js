@@ -54,7 +54,7 @@ const routes = [
       {
         path: 'square',
         name: 'Square',
-        component: () => import('@/views/home/HomeView.vue'), // 暂时使用首页组件
+        component: () => import('@/views/square/SquareView.vue'),
       },
     ],
   },
