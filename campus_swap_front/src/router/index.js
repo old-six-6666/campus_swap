@@ -88,6 +88,18 @@ const routes = [
         component: () => import('@/views/admin/AdminManageView.vue'),
         meta: { requiresSuperAdmin: true },
       },
+      {
+        path: 'students',
+        name: 'StudentManage',
+        component: () => import('@/views/admin/StudentManageView.vue'),
+        meta: { requiresPermission: 'STUDENT_MANAGE' },
+      },
+      {
+        path: 'verifications',
+        name: 'VerifyManage',
+        component: () => import('@/views/admin/VerifyManageView.vue'),
+        meta: { requiresPermission: 'STUDENT_MANAGE' },
+      },
     ],
   },
   {
