@@ -2,7 +2,8 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { itemApi } from '@/api/modules/item'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessageBox } from 'element-plus'
+import { showSuccess } from '@/utils/notify'
 
 const router = useRouter()
 const items = ref([])
@@ -34,20 +35,18 @@ async function fetchMyItems() {
 }
 
 async function handleDelete(item) {
-  await ElMessageBox.confirm(`确定删除「${item.title}」吗？`, '删除确认', {
-    type: 'warning',
-    confirmButtonText: '删除',
-    cancelButtonText: '取消',
-    confirmButtonClass: 'el-button--danger',
-  })
   try {
+    await ElMessageBox.confirm(`确定删除「${item.title}」吗？`, '删除确认', {
+      type: 'warning',
+      confirmButtonText: '删除',
+      cancelButtonText: '取消',
+    })
     await itemApi.remove(item.id)
-    ElMessage.success('删除成功')
-    // 若当前页只有一条，回到上一页
+    showSuccess('删除成功')
     if (items.value.length === 1 && page.value > 1) page.value--
     fetchMyItems()
-  } catch {
-    // 错误已由拦截器提示
+  } catch (e) {
+    if (e !== 'cancel' && e?.message !== 'cancel') throw e
   }
 }
 

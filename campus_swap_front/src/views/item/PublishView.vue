@@ -2,7 +2,7 @@
 import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { itemApi } from '@/api/modules/item'
-import { ElMessage } from 'element-plus'
+import { showSuccess, showError, showWarning } from '@/utils/notify'
 import { Plus } from '@element-plus/icons-vue'
 
 const router = useRouter()
@@ -36,7 +36,7 @@ async function handleUpload({ file, onSuccess, onError }) {
     onSuccess(url)
   } catch (e) {
     onError(e)
-    ElMessage.error('图片上传失败')
+    showError('图片上传失败')
   }
 }
 
@@ -48,7 +48,7 @@ function handleRemove(uploadFile) {
 
 // 限制图片数量
 function handleExceed() {
-  ElMessage.warning('最多上传 9 张图片')
+  showWarning('最多上传 9 张图片')
 }
 
 async function handlePublish() {
@@ -56,7 +56,7 @@ async function handlePublish() {
   loading.value = true
   try {
     await itemApi.publish(form)
-    ElMessage.success('发布成功')
+    await showSuccess('发布成功')
     router.push('/')
   } finally {
     loading.value = false

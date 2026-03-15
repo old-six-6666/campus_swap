@@ -1,7 +1,8 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { adminApi } from '@/api/modules/admin'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessageBox } from 'element-plus'
+import { showSuccess, showWarning } from '@/utils/notify'
 
 const list = ref([])
 const loading = ref(false)
@@ -51,14 +52,19 @@ function openDetail(row) {
 }
 
 async function handleApprove(row) {
-  await ElMessageBox.confirm(`确定通过商品「${row.title}」的审核？通过后将在主页展示。`, '通过审核', {
-    type: 'success',
-    confirmButtonText: '通过',
-  })
-  await adminApi.auditItem(row.id, 1, '')
-  ElMessage.success('已通过')
-  detailDialog.value = false
-  fetchItems()
+  try {
+    await ElMessageBox.confirm(`确定通过商品「${row.title}」的审核？通过后将在主页展示。`, '通过审核', {
+      type: 'success',
+      confirmButtonText: '通过',
+      cancelButtonText: '取消',
+    })
+    await adminApi.auditItem(row.id, 1, '')
+    showSuccess('已通过')
+    detailDialog.value = false
+    fetchItems()
+  } catch (e) {
+    if (e !== 'cancel' && e?.message !== 'cancel') throw e
+  }
 }
 
 function openRejectDialog(row) {
@@ -69,13 +75,13 @@ function openRejectDialog(row) {
 
 async function confirmReject() {
   if (!rejectRemark.value.trim()) {
-    ElMessage.warning('请填写拒绝原因')
+    showWarning('请填写拒绝原因')
     return
   }
   rejectSaving.value = true
   try {
     await adminApi.auditItem(rejectTarget.value.id, 2, rejectRemark.value.trim())
-    ElMessage.success('已拒绝')
+    showSuccess('已拒绝')
     rejectDialog.value = false
     detailDialog.value = false
     fetchItems()

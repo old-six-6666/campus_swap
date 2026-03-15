@@ -178,3 +178,102 @@ ALTER TABLE t_item
 -- 已有数据默认视为已通过
 UPDATE t_item SET audit_status = 1 WHERE audit_status = 0;
 
+CREATE TABLE t_conversation (
+                                id            BIGINT       NOT NULL AUTO_INCREMENT,
+                                user1_id      BIGINT       NOT NULL COMMENT '较小userId',
+                                user2_id      BIGINT       NOT NULL COMMENT '较大userId',
+                                item_id       BIGINT       NOT NULL DEFAULT 0 COMMENT '关联商品，0表示无',
+                                last_msg      VARCHAR(500) DEFAULT NULL,
+                                last_msg_time DATETIME     DEFAULT NULL,
+                                user1_unread  INT          NOT NULL DEFAULT 0,
+                                user2_unread  INT          NOT NULL DEFAULT 0,
+                                created_at    DATETIME     NOT NULL,
+                                updated_at    DATETIME     NOT NULL,
+                                PRIMARY KEY (id),
+                                UNIQUE KEY uk_conv (user1_id, user2_id, item_id),
+                                INDEX idx_user1 (user1_id, last_msg_time),
+                                INDEX idx_user2 (user2_id, last_msg_time)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 消息表
+CREATE TABLE t_message (
+                           id              BIGINT     NOT NULL AUTO_INCREMENT,
+                           conversation_id BIGINT     NOT NULL,
+                           sender_id       BIGINT     NOT NULL,
+                           receiver_id     BIGINT     NOT NULL,
+                           content         TEXT       NOT NULL,
+                           is_read         TINYINT(1) NOT NULL DEFAULT 0,
+                           created_at      DATETIME   NOT NULL,
+                           updated_at      DATETIME   NOT NULL,
+                           PRIMARY KEY (id),
+                           INDEX idx_conv_time (conversation_id, created_at),
+                           INDEX idx_receiver_unread (receiver_id, is_read)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ============================================================
+-- 以物换物交易模块（v2.0 新增）
+-- ============================================================
+
+-- 交易单表
+CREATE TABLE IF NOT EXISTS t_trade (
+    id                          BIGINT       NOT NULL AUTO_INCREMENT COMMENT '交易ID',
+    trade_no                    VARCHAR(32)  NOT NULL COMMENT '业务编号（唯一）',
+    initiator_id                BIGINT       NOT NULL COMMENT '甲方用户ID',
+    receiver_id                 BIGINT                COMMENT '乙方用户ID（PENDING_MATCH 阶段可为空）',
+    initiator_item_id           BIGINT       NOT NULL COMMENT '甲方物品ID',
+    receiver_item_id            BIGINT                COMMENT '乙方物品ID（MATCHED 后填入）',
+    status                      VARCHAR(32)  NOT NULL DEFAULT 'PENDING_MATCH' COMMENT '当前状态',
+    audit_mode                  TINYINT      NOT NULL DEFAULT 1 COMMENT '审核模式：0=无需审核 1=平台审核 2=双方互审',
+    audit_by                    BIGINT                COMMENT '审核人ID',
+    audit_remark                VARCHAR(500)          COMMENT '审核备注/驳回原因',
+    initiator_delivered         TINYINT(1)   NOT NULL DEFAULT 0 COMMENT '甲方是否已发货',
+    receiver_delivered          TINYINT(1)   NOT NULL DEFAULT 0 COMMENT '乙方是否已发货',
+    initiator_logistics         VARCHAR(500)          COMMENT '甲方物流凭证',
+    receiver_logistics          VARCHAR(500)          COMMENT '乙方物流凭证',
+    initiator_confirmed_receipt TINYINT(1)   NOT NULL DEFAULT 0 COMMENT '甲方是否已确认收货',
+    receiver_confirmed_receipt  TINYINT(1)   NOT NULL DEFAULT 0 COMMENT '乙方是否已确认收货',
+    terminate_reason            VARCHAR(500)          COMMENT '终止原因',
+    delivery_timeout_hours      INT          NOT NULL DEFAULT 48 COMMENT '发货超时小时数',
+    receipt_timeout_hours       INT          NOT NULL DEFAULT 72 COMMENT '收货确认超时小时数',
+    delivery_deadline           DATETIME              COMMENT '发货截止时间',
+    receipt_deadline            DATETIME              COMMENT '收货确认截止时间',
+    matched_at                  DATETIME              COMMENT '匹配时间',
+    audit_passed_at             DATETIME              COMMENT '审核通过时间',
+    waiting_delivery_at         DATETIME              COMMENT '进入等待发货时间',
+    both_delivered_at           DATETIME              COMMENT '双方均发货时间',
+    completed_at                DATETIME              COMMENT '交易完成时间',
+    terminated_at               DATETIME              COMMENT '交易终止时间',
+    version                     INT          NOT NULL DEFAULT 0 COMMENT '乐观锁版本号',
+    deleted                     TINYINT(1)   NOT NULL DEFAULT 0 COMMENT '逻辑删除：0=正常 1=已删除',
+    created_at                  DATETIME     NOT NULL COMMENT '创建时间',
+    updated_at                  DATETIME     NOT NULL COMMENT '更新时间',
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_trade_no (trade_no),
+    INDEX idx_initiator (initiator_id),
+    INDEX idx_receiver  (receiver_id),
+    INDEX idx_status    (status),
+    INDEX idx_delivery_deadline (status, delivery_deadline),
+    INDEX idx_receipt_deadline  (status, receipt_deadline)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='交易单表（以物换物）';
+
+-- 交易状态变更日志表
+CREATE TABLE IF NOT EXISTS t_trade_log (
+    id           BIGINT       NOT NULL AUTO_INCREMENT COMMENT '日志ID',
+    trade_id     BIGINT       NOT NULL COMMENT '关联交易ID',
+    from_status  VARCHAR(32)           COMMENT '变更前状态（首次创建时为空）',
+    to_status    VARCHAR(32)  NOT NULL COMMENT '变更后状态',
+    trigger_type TINYINT      NOT NULL DEFAULT 0 COMMENT '触发方式：0=手动操作 1=系统自动',
+    operator_id  BIGINT                COMMENT '操作人用户ID（系统触发时为空）',
+    remark       VARCHAR(500)          COMMENT '备注',
+    created_at   DATETIME     NOT NULL COMMENT '操作时间',
+    PRIMARY KEY (id),
+    INDEX idx_trade (trade_id),
+    INDEX idx_created (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='交易状态变更日志表';
+
+
+UPDATE t_trade
+SET status = 'TERMINATED',
+    terminate_reason = '手动清理：无效的遗留申请',
+    terminated_at = NOW()
+WHERE trade_no = 'TRADE20260314154610286556';

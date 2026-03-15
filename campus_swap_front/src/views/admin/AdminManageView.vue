@@ -2,7 +2,8 @@
 import { ref, onMounted } from 'vue'
 import { adminApi } from '@/api/modules/admin'
 import { useUserStore } from '@/stores/useUserStore'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessageBox } from 'element-plus'
+import { showSuccess } from '@/utils/notify'
 
 const userStore = useUserStore()
 
@@ -53,7 +54,7 @@ async function savePermissions() {
   permSaving.value = true
   try {
     await adminApi.setAdminPermissions(permTarget.value.id, permChecked.value)
-    ElMessage.success('权限已更新')
+    showSuccess('权限已更新')
     permDialog.value = false
     // 同步列表中该行的权限
     permTarget.value.permissions = [...permChecked.value]
@@ -64,16 +65,20 @@ async function savePermissions() {
 
 /** 将管理员降为普通用户 */
 async function demoteToUser(row) {
-  await ElMessageBox.confirm(
-    `确定将「${row.nickname}」降级为普通用户吗？该操作会清空其所有权限。`,
-    '降级管理员',
-    { type: 'warning', confirmButtonText: '确认降级' }
-  )
-  await adminApi.updateUserRole(row.id, 0)
-  // 同时清空权限
-  await adminApi.setAdminPermissions(row.id, [])
-  ElMessage.success('已降为普通用户')
-  fetchAdmins()
+  try {
+    await ElMessageBox.confirm(
+      `确定将「${row.nickname}」降级为普通用户吗？该操作会清空其所有权限。`,
+      '降级管理员',
+      { type: 'warning', confirmButtonText: '确认降级', cancelButtonText: '取消' }
+    )
+    await adminApi.updateUserRole(row.id, 0)
+    // 同时清空权限
+    await adminApi.setAdminPermissions(row.id, [])
+    showSuccess('已降为普通用户')
+    fetchAdmins()
+  } catch (e) {
+    if (e !== 'cancel' && e?.message !== 'cancel') throw e
+  }
 }
 
 function permLabel(code) {

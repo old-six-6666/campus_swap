@@ -1,7 +1,8 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { adminApi } from '@/api/modules/admin'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessageBox } from 'element-plus'
+import { showSuccess, showError, showWarning } from '@/utils/notify'
 import * as XLSX from 'xlsx'
 import { saveAs } from 'file-saver'
 import { Download } from '@element-plus/icons-vue'
@@ -70,11 +71,11 @@ async function handleStatusChange(row, newStatus) {
     
     // 执行状态修改
     await adminApi.updateItemStatus(row.id, newStatus)
-    ElMessage.success('状态已更新')
+    showSuccess('状态已更新')
     fetchItems()
   } catch (error) {
     if (error !== 'cancel') {
-      ElMessage.error(`状态修改失败: ${error.message || '未知错误'}`)
+      showError(`状态修改失败: ${error.message || '未知错误'}`)
     }
   }
 }
@@ -92,11 +93,11 @@ async function handleDelete(row) {
     )
     
     await adminApi.deleteItem(row.id)
-    ElMessage.success('已删除')
+    showSuccess('已删除')
     fetchItems()
   } catch (error) {
     if (error !== 'cancel') {
-      ElMessage.error(`删除失败: ${error.message || '未知错误'}`)
+      showError(`删除失败: ${error.message || '未知错误'}`)
     }
   }
 }
@@ -124,7 +125,7 @@ async function exportToExcel() {
     const items = data.records || []
     
     if (items.length === 0) {
-      ElMessage.warning('没有数据可导出')
+      showWarning('没有数据可导出')
       return
     }
     
@@ -176,11 +177,11 @@ async function exportToExcel() {
     
     // 下载文件
     saveAs(blob, filename)
-    ElMessage.success(`已导出 ${items.length} 条数据`)
+    showSuccess(`已导出 ${items.length} 条数据`)
     
   } catch (error) {
     console.error('导出Excel失败:', error)
-    ElMessage.error('导出失败: ' + (error.message || '未知错误'))
+    showError('导出失败: ' + (error.message || '未知错误'))
   } finally {
     loading.value = false
   }
@@ -309,63 +310,3 @@ onMounted(fetchItems)
 }
 </style>
 
-<style lang="scss">
-/* 消息提示美化 */
-.el-message {
-  border-radius: 10px;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
-  border: none;
-  padding: 15px 20px;
-  
-  &--success {
-    background: linear-gradient(135deg, #67C23A, #529b2d);
-    border-left: 4px solid #85ce61;
-  }
-  
-  &--error {
-    background: linear-gradient(135deg, #F56C6C, #d64545);
-    border-left: 4px solid #f78989;
-  }
-  
-  &--info {
-    background: linear-gradient(135deg, #909399, #73767a);
-    border-left: 4px solid #a6a9ad;
-  }
-  
-  &--warning {
-    background: linear-gradient(135deg, #E6A23C, #c99133);
-    border-left: 4px solid #ebb563;
-  }
-  
-  .el-message__content {
-    color: white;
-    font-weight: 500;
-    font-size: 14px;
-  }
-  
-  .el-icon {
-    color: white;
-  }
-}
-
-/* 强制弹窗居中 */
-.el-overlay {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  
-  .el-overlay-dialog {
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    
-    .el-message-box {
-      position: relative !important;
-      top: auto !important;
-      left: auto !important;
-      transform: none !important;
-      margin: 0 !important;
-    }
-  }
-}
-</style>

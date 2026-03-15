@@ -2,7 +2,7 @@
 import { reactive, ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { itemApi } from '@/api/modules/item'
-import { ElMessage } from 'element-plus'
+import { showSuccess, showError, showWarning } from '@/utils/notify'
 import { Plus } from '@element-plus/icons-vue'
 
 const router = useRouter()
@@ -47,7 +47,7 @@ onMounted(async () => {
       response: url, // handleRemove 通过 response 或 url 找到对应 URL
     }))
   } catch {
-    ElMessage.error('商品信息加载失败')
+    showError('商品信息加载失败')
     router.back()
   } finally {
     pageLoading.value = false
@@ -61,7 +61,7 @@ async function handleUpload({ file, onSuccess, onError }) {
     onSuccess(url)
   } catch (e) {
     onError(e)
-    ElMessage.error('图片上传失败')
+    showError('图片上传失败')
   }
 }
 
@@ -71,7 +71,7 @@ function handleRemove(uploadFile) {
 }
 
 function handleExceed() {
-  ElMessage.warning('最多上传 9 张图片')
+  showWarning('最多上传 9 张图片')
 }
 
 async function handleSave() {
@@ -79,7 +79,7 @@ async function handleSave() {
   loading.value = true
   try {
     await itemApi.update(route.params.id, form)
-    ElMessage.success('保存成功')
+    await showSuccess('保存成功')
     router.push('/my-items')
   } finally {
     loading.value = false

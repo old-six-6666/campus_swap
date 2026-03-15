@@ -1,7 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "Bash(find \"D:/Idea project/campus_swap/src\" -name \"*.java\" 2>/dev/null | head -50)"
+      "Bash(find \"D:/Idea project/campus_swap/src\" -name \"*.java\" 2>/dev/null | head -50)",
+      "Bash(ls:*)",
+      "Bash(cat:*)"
     ]
   }
 }

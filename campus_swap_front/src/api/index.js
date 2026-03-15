@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { ElMessage } from 'element-plus'
+import { showError } from '@/utils/notify'
 import { useUserStore } from '@/stores/useUserStore'
 
 const request = axios.create({
@@ -20,13 +20,16 @@ request.interceptors.request.use(
 )
 
 // 响应拦截器：统一处理业务错误与 Token 失效
+// 请求 config 中可传 { silent: true } 来静默处理错误（不弹出提示）
 request.interceptors.response.use(
   (response) => {
     const { code, message, data } = response.data
     if (code === 200) {
       return data
     }
-    ElMessage.error(message || '请求失败')
+    if (!response.config?.silent) {
+      showError(message || '请求失败')
+    }
     return Promise.reject(new Error(message))
   },
   (error) => {
@@ -34,8 +37,8 @@ request.interceptors.response.use(
       const userStore = useUserStore()
       userStore.logout()
       window.location.href = '/login'
-    } else {
-      ElMessage.error(error.response?.data?.message || '网络错误，请稍后重试')
+    } else if (!error.config?.silent) {
+      showError(error.response?.data?.message || '网络错误，请稍后重试')
     }
     return Promise.reject(error)
   }
