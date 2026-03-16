@@ -253,6 +253,24 @@ const isCurrentUserPost = computed(() => {
     <!-- 动态内容 -->
     <div class="post-content" @click="router.push({ name: 'PostDetail', params: { id: post.id } })" style="cursor: pointer;">
       <p v-if="post.content" class="content-text">{{ post.content }}</p>
+
+      <!-- 帖子图片 -->
+      <div v-if="post.images?.length" class="post-images" :class="`count-${Math.min(post.images.length, 9)}`">
+        <el-image
+          v-for="(img, idx) in post.images"
+          :key="idx"
+          :src="img"
+          fit="cover"
+          class="post-image"
+          :preview-src-list="post.images"
+          :initial-index="idx"
+          @click.stop
+        >
+          <template #error>
+            <div class="post-image-error"><el-icon><Picture /></el-icon></div>
+          </template>
+        </el-image>
+      </div>
       
       <!-- 物品信息（如果是发布物品类型） -->
       <div v-if="post.type === 1 && post.item" class="item-info">
@@ -476,9 +494,45 @@ const isCurrentUserPost = computed(() => {
     font-size: 15px;
     line-height: 1.6;
     color: #303133;
-    margin-bottom: 16px;
+    margin-bottom: 12px;
     white-space: pre-wrap;
     word-break: break-word;
+  }
+
+  .post-images {
+    display: grid;
+    gap: 4px;
+    margin-bottom: 12px;
+
+    &.count-1 {
+      grid-template-columns: 1fr;
+      .post-image { height: 200px; border-radius: 8px; }
+    }
+    &.count-2, &.count-4 {
+      grid-template-columns: repeat(2, 1fr);
+      .post-image { height: 140px; border-radius: 6px; }
+    }
+    &.count-3, &.count-5, &.count-6,
+    &.count-7, &.count-8, &.count-9 {
+      grid-template-columns: repeat(3, 1fr);
+      .post-image { height: 110px; border-radius: 6px; }
+    }
+
+    .post-image {
+      width: 100%;
+      object-fit: cover;
+      cursor: pointer;
+    }
+
+    .post-image-error {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f5f7fa;
+      color: #c0c4cc;
+    }
   }
   
   .item-info {

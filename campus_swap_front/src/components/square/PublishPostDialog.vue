@@ -10,6 +10,29 @@ import {
   Close
 } from '@element-plus/icons-vue'
 import { squareApi } from '@/api/modules/square'
+import request from '@/api/index'
+
+// 图片上传
+const uploadFileList = ref([])
+
+async function handleImageUpload({ file, onSuccess, onError }) {
+  try {
+    const formData = new FormData()
+    formData.append('file', file)
+    const url = await request({ url: '/upload', method: 'post', data: formData, headers: { 'Content-Type': 'multipart/form-data' } })
+    form.imageList.push(url)
+    onSuccess(url)
+  } catch (e) {
+    onError(e)
+    ElMessage.error('图片上传失败')
+  }
+}
+
+function handleImageRemove(file) {
+  const url = file.response || file.url
+  const idx = form.imageList.indexOf(url)
+  if (idx !== -1) form.imageList.splice(idx, 1)
+}
 
 const props = defineProps({
   visible: {
@@ -34,7 +57,8 @@ const form = reactive({
   content: '',
   itemId: null,
   swapRecordId: null,
-  tagIds: []
+  tagIds: [],
+  imageList: []
 })
 
 // 状态
@@ -91,6 +115,8 @@ function resetForm() {
   form.itemId = null
   form.swapRecordId = null
   form.tagIds = []
+  form.imageList = []
+  uploadFileList.value = []
 }
 
 async function loadMyItems() {
@@ -191,7 +217,8 @@ async function handleSubmit() {
     const postData = {
       type: form.type,
       content: form.content.trim(),
-      tagIds: form.tagIds
+      tagIds: form.tagIds,
+      imageList: form.imageList
     }
     
     if (form.type === 1) {
@@ -292,6 +319,22 @@ watch(() => props.visible, (newVal) => {
             show-word-limit
             class="content-input"
           />
+        </div>
+
+        <!-- 图片上传 -->
+        <div class="form-section">
+          <div class="section-title">添加图片 <span class="section-hint">（最多9张）</span></div>
+          <el-upload
+            :file-list="uploadFileList"
+            list-type="picture-card"
+            :http-request="handleImageUpload"
+            :on-remove="handleImageRemove"
+            :limit="9"
+            accept="image/jpeg,image/png,image/gif,image/webp"
+            class="image-uploader"
+          >
+            <el-icon><Plus /></el-icon>
+          </el-upload>
         </div>
 
         <!-- 关联物品（类型1） -->
@@ -554,6 +597,24 @@ watch(() => props.visible, (newVal) => {
       .content-input {
         :deep(.el-textarea__inner) {
           resize: none;
+        }
+      }
+
+      .section-hint {
+        font-size: 12px;
+        font-weight: 400;
+        color: #909399;
+      }
+
+      .image-uploader {
+        :deep(.el-upload--picture-card) {
+          width: 80px;
+          height: 80px;
+          line-height: 80px;
+        }
+        :deep(.el-upload-list--picture-card .el-upload-list__item) {
+          width: 80px;
+          height: 80px;
         }
       }
       
