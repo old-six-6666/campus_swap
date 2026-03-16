@@ -5,6 +5,40 @@ import request from '@/api/index'
  */
 export const squareApi = {
   /**
+   * 分享动态（share_count +1）
+   */
+  sharePost(postId) {
+    return request({
+      url: `/post/${postId}/share`,
+      method: 'post'
+    })
+  },
+
+  /**
+   * 获取单个动态详情
+   * @param {number} postId 动态ID
+   * @returns {Promise}
+   */
+  getPostDetail(postId) {
+    return request({
+      url: `/post/${postId}`,
+      method: 'get'
+    })
+  },
+
+  /**
+   * 获取动态评论列表
+   * @param {number} postId 动态ID
+   * @returns {Promise}
+   */
+  getComments(postId) {
+    return request({
+      url: `/square/comments/${postId}`,
+      method: 'get'
+    })
+  },
+
+  /**
    * 获取动态列表
    * @param {Object} params 查询参数
    * @param {number} params.page 页码
@@ -27,46 +61,35 @@ export const squareApi = {
    * @param {number} postId 动态ID
    * @returns {Promise}
    */
-  likePost(postId) {
+  likePost(postId, config) {
     return request({
       url: `/post/${postId}/like`,
-      method: 'post'
+      method: 'post',
+      ...config
     })
   },
 
-  /**
-   * 取消点赞
-   * @param {number} postId 动态ID
-   * @returns {Promise}
-   */
-  unlikePost(postId) {
+  unlikePost(postId, config) {
     return request({
       url: `/post/${postId}/like`,
-      method: 'delete'
+      method: 'delete',
+      ...config
     })
   },
 
-  /**
-   * 收藏动态
-   * @param {number} postId 动态ID
-   * @returns {Promise}
-   */
-  favoritePost(postId) {
+  favoritePost(postId, config) {
     return request({
       url: `/post/${postId}/favorite`,
-      method: 'post'
+      method: 'post',
+      ...config
     })
   },
 
-  /**
-   * 取消收藏
-   * @param {number} postId 动态ID
-   * @returns {Promise}
-   */
-  unfavoritePost(postId) {
+  unfavoritePost(postId, config) {
     return request({
       url: `/post/${postId}/favorite`,
-      method: 'delete'
+      method: 'delete',
+      ...config
     })
   },
 
@@ -185,7 +208,7 @@ export const squareApi = {
    */
   getMySwapRecords() {
     return request({
-      url: '/square/my-swaps',
+      url: '/post/my-swaps',
       method: 'get'
     })
   }

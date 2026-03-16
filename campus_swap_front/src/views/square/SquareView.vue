@@ -89,27 +89,23 @@ async function fetchStats() {
 // 搜索
 function handleSearch() {
   reset()
-  fetchData()
 }
 
 // 清空搜索
 function clearSearch() {
   keyword.value = ''
   reset()
-  fetchData()
 }
 
 // 切换Tab
 function handleTabChange(tab) {
   activeTab.value = tab
   reset()
-  fetchData()
 }
 
 // 刷新数据
 function handleRefresh() {
   reset()
-  fetchData()
   fetchStats()
 }
 
@@ -153,13 +149,11 @@ function handlePostDeleted(postId) {
 // 监听Tab变化
 watch(activeTab, () => {
   reset()
-  fetchData()
 })
 
 // 监听标签变化
 watch(selectedTags, () => {
   reset()
-  fetchData()
 }, { deep: true })
 
 onMounted(() => {
@@ -176,8 +170,7 @@ function handlePublishClick() {
 function handlePublishSuccess() {
   // 发布成功后刷新动态列表
   reset()
-  fetchData()
-  
+
   // 如果有统计信息，也刷新统计
   if (stats.value) {
     fetchStats()
