@@ -1,5 +1,6 @@
 package com.itcodai.campus_swap.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.itcodai.campus_swap.common.result.Result;
 import com.itcodai.campus_swap.common.result.ResultCode;
 import com.itcodai.campus_swap.entity.Item;
@@ -236,17 +237,22 @@ public class PostController {
             if (userId == null) {
                 return Result.fail(ResultCode.UNAUTHORIZED, "请先登录");
             }
-            
+
             // 验证动态类型
             if (post.getType() == null || post.getType() < 1 || post.getType() > 4) {
                 return Result.fail(ResultCode.BAD_REQUEST, "动态类型无效");
             }
-            
+
             // 验证内容
             if (post.getContent() == null || post.getContent().trim().isEmpty()) {
                 return Result.fail(ResultCode.BAD_REQUEST, "动态内容不能为空");
             }
-            
+
+            // 将前端传来的 imageList 序列化为 JSON 字符串存入 images 字段
+            if (post.getImageList() != null && !post.getImageList().isEmpty()) {
+                post.setImages(new ObjectMapper().writeValueAsString(post.getImageList()));
+            }
+
             Long postId = postService.createPost(post, userId);
             return Result.success(postId);
         } catch (Exception e) {

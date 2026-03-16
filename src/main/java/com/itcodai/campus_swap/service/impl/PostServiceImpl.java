@@ -4,6 +4,8 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.itcodai.campus_swap.entity.Item;
 import com.itcodai.campus_swap.entity.Post;
 import com.itcodai.campus_swap.entity.PostFavorite;
@@ -23,6 +25,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -41,6 +44,16 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements Po
     private final PostFavoriteMapper postFavoriteMapper;
     private final ItemMapper itemMapper;
     private final TradeMapper tradeMapper;
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
+    private List<String> parseImages(String images) {
+        if (images == null || images.isBlank()) return Collections.emptyList();
+        try {
+            return objectMapper.readValue(images, new TypeReference<List<String>>() {});
+        } catch (Exception e) {
+            return Collections.emptyList();
+        }
+    }
 
     public PostServiceImpl(UserMapper userMapper,
                            PostLikeMapper postLikeMapper,
@@ -114,6 +127,7 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements Po
             map.put("createdAt", post.getCreatedAt());
             map.put("isLiked", finalLikedPostIds.contains(post.getId()));
             map.put("isFavorited", finalFavoritedPostIds.contains(post.getId()));
+            map.put("images", parseImages(post.getImages()));
 
             User user = userMapper.selectById(post.getUserId());
             if (user != null) {
@@ -186,6 +200,7 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements Po
         map.put("createdAt", post.getCreatedAt());
         map.put("isLiked", isLiked);
         map.put("isFavorited", isFavorited);
+        map.put("images", parseImages(post.getImages()));
 
         User user = userMapper.selectById(post.getUserId());
         if (user != null) {

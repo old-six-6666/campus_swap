@@ -33,6 +33,23 @@
         <!-- 帖子内容 -->
         <div class="post-content">{{ post.content }}</div>
 
+        <!-- 帖子图片 -->
+        <div v-if="post.images?.length" class="post-images" :class="`count-${Math.min(post.images.length, 9)}`">
+          <el-image
+            v-for="(img, idx) in post.images"
+            :key="idx"
+            :src="img"
+            fit="cover"
+            class="post-image"
+            :preview-src-list="post.images"
+            :initial-index="idx"
+          >
+            <template #error>
+              <div class="post-image-error"><el-icon><Picture /></el-icon></div>
+            </template>
+          </el-image>
+        </div>
+
         <!-- 关联物品卡片 -->
         <div v-if="post.item" class="item-card" @click="router.push(`/item/${post.item.id}`)">
           <el-image
@@ -479,6 +496,42 @@ onUnmounted(() => {
       color: #303133;
       white-space: pre-wrap;
       margin-bottom: 12px;
+    }
+
+    .post-images {
+      display: grid;
+      gap: 4px;
+      margin-bottom: 16px;
+
+      &.count-1 {
+        grid-template-columns: 1fr;
+        .post-image { height: 300px; border-radius: 8px; }
+      }
+      &.count-2, &.count-4 {
+        grid-template-columns: repeat(2, 1fr);
+        .post-image { height: 180px; border-radius: 6px; }
+      }
+      &.count-3, &.count-5, &.count-6,
+      &.count-7, &.count-8, &.count-9 {
+        grid-template-columns: repeat(3, 1fr);
+        .post-image { height: 150px; border-radius: 6px; }
+      }
+
+      .post-image {
+        width: 100%;
+        object-fit: cover;
+        cursor: pointer;
+      }
+
+      .post-image-error {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #f5f7fa;
+        color: #c0c4cc;
+      }
     }
 
     .post-tags {

@@ -5,6 +5,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * 广场动态实体类
@@ -40,6 +41,17 @@ public class Post {
      * 动态内容
      */
     private String content;
+
+    /**
+     * 图片URL列表，JSON数组存储，最多9张
+     */
+    private String images;
+
+    /**
+     * 前端传入的图片URL列表（不映射数据库列），由 controller 序列化后写入 images
+     */
+    @TableField(exist = false)
+    private List<String> imageList;
     
     /**
      * 点赞数
