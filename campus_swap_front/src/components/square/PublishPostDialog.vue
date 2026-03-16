@@ -114,36 +114,14 @@ async function loadMyItems() {
 
 async function loadMySwapRecords() {
   try {
-    // 暂时使用模拟数据，避免API调用错误
-    mySwapRecords.value = [
-      {
-        id: 1,
-        itemATitle: '机械键盘',
-        itemBTitle: '算法导论',
-        partnerName: '李四',
-        completedAt: '2024-01-15'
-      },
-      {
-        id: 2,
-        itemATitle: '篮球鞋',
-        itemBTitle: '蓝牙耳机',
-        partnerName: '王五',
-        completedAt: '2024-01-10'
-      },
-      {
-        id: 3,
-        itemATitle: '编程书籍',
-        itemBTitle: '运动水杯',
-        partnerName: '张三',
-        completedAt: '2024-01-05'
-      }
-    ]
-    
-    // 实际API调用（暂时注释，等后端实现）
-    // const response = await squareApi.getMySwapRecords()
-    // mySwapRecords.value = response.data || []
+    const res = await squareApi.getMySwapRecords()
+    mySwapRecords.value = res || []
+    if (mySwapRecords.value.length === 0) {
+      ElMessage.info('暂无已完成的换物记录')
+    }
   } catch (error) {
     console.error('加载换物记录失败:', error)
+    mySwapRecords.value = []
   }
 }
 
@@ -363,7 +341,7 @@ watch(() => props.visible, (newVal) => {
                   <span class="item-b">{{ record.itemBTitle }}</span>
                 </div>
                 <div class="swap-meta">
-                  与 {{ record.partnerName }} 于 {{ record.completedAt }} 完成换物
+                  与 {{ record.partnerName }} 于 {{ record.completedAt ? new Date(record.completedAt).toLocaleDateString() : '' }} 完成换物
                 </div>
               </div>
             </div>

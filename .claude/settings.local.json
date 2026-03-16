@@ -3,7 +3,9 @@
     "allow": [
       "Bash(find \"D:/Idea project/campus_swap/src\" -name \"*.java\" 2>/dev/null | head -50)",
       "Bash(ls:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(xargs grep:*)",
+      "Bash(find /d/code/workspaces/project/campus_swap -type f \\\\\\(-name *.sql -o -name schema* -o -name *init* \\\\\\))"
     ]
   }
 }
