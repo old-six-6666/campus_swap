@@ -57,6 +57,11 @@ const routes = [
         component: () => import('@/views/square/SquareView.vue'),
       },
       {
+        path: 'square/post/:id',
+        name: 'PostDetail',
+        component: () => import('@/views/square/PostDetailView.vue'),
+      },
+      {
         path: 'chat',
         name: 'Chat',
         component: () => import('@/views/chat/ChatView.vue'),

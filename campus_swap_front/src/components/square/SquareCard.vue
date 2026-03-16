@@ -1,16 +1,18 @@
 <script setup>
 import { ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import {
   Star,
   ChatDotRound,
   More,
   User,
   Picture,
-  Check,
   Share,
   CircleCheck,
   Delete
 } from '@element-plus/icons-vue'
+import EmojiPicker from 'vue3-emoji-picker'
+import 'vue3-emoji-picker/css'
 import { squareApi } from '@/api/modules/square'
 import { useUserStore } from '@/stores/useUserStore'
 
@@ -24,6 +26,7 @@ const props = defineProps({
 const emit = defineEmits(['like-changed', 'favorite-changed', 'comment-added'])
 
 const userStore = useUserStore()
+const router = useRouter()
 const isLiked = ref(props.post.isLiked || false)
 const isFavorited = ref(props.post.isFavorited || false)
 const likeCount = ref(props.post.likeCount || 0)
@@ -32,6 +35,12 @@ const commentCount = ref(props.post.commentCount || 0)
 const showCommentInput = ref(false)
 const commentContent = ref('')
 const postingComment = ref(false)
+const showCommentEmoji = ref(false)
+
+function onSelectEmoji(emoji) {
+  commentContent.value += emoji.i
+  showCommentEmoji.value = false
+}
 
 // 动态类型映射
 const postTypeMap = {
@@ -71,19 +80,24 @@ async function handleLike() {
     ElMessage.warning('请先登录')
     return
   }
-  
+
+  // 乐观更新：先切换 UI
+  const prevLiked = isLiked.value
+  const prevCount = likeCount.value
+  isLiked.value = !isLiked.value
+  likeCount.value += isLiked.value ? 1 : -1
+
   try {
     if (isLiked.value) {
-      await squareApi.unlikePost(props.post.id)
-      likeCount.value--
+      await squareApi.likePost(props.post.id, { silent: true })
     } else {
-      await squareApi.likePost(props.post.id)
-      likeCount.value++
+      await squareApi.unlikePost(props.post.id, { silent: true })
     }
-    isLiked.value = !isLiked.value
     emit('like-changed', { postId: props.post.id, liked: isLiked.value, count: likeCount.value })
-  } catch (error) {
-    console.error('操作失败:', error)
+  } catch {
+    // 请求失败则回滚
+    isLiked.value = prevLiked
+    likeCount.value = prevCount
   }
 }
 
@@ -93,19 +107,24 @@ async function handleFavorite() {
     ElMessage.warning('请先登录')
     return
   }
-  
+
+  // 乐观更新：先切换 UI
+  const prevFavorited = isFavorited.value
+  const prevCount = favoriteCount.value
+  isFavorited.value = !isFavorited.value
+  favoriteCount.value += isFavorited.value ? 1 : -1
+
   try {
     if (isFavorited.value) {
-      await squareApi.unfavoritePost(props.post.id)
-      favoriteCount.value--
+      await squareApi.favoritePost(props.post.id, { silent: true })
     } else {
-      await squareApi.favoritePost(props.post.id)
-      favoriteCount.value++
+      await squareApi.unfavoritePost(props.post.id, { silent: true })
     }
-    isFavorited.value = !isFavorited.value
     emit('favorite-changed', { postId: props.post.id, favorited: isFavorited.value, count: favoriteCount.value })
-  } catch (error) {
-    console.error('操作失败:', error)
+  } catch {
+    // 请求失败则回滚
+    isFavorited.value = prevFavorited
+    favoriteCount.value = prevCount
   }
 }
 
@@ -151,6 +170,8 @@ function handleShare() {
     .catch(() => {
       ElMessage.info(`分享链接: ${shareUrl}`)
     })
+  // 分享数 +1（静默，不影响 UI）
+  squareApi.sharePost(props.post.id).catch(() => {})
 }
 
 // 处理下拉菜单操作
@@ -216,7 +237,7 @@ const isCurrentUserPost = computed(() => {
       </div>
       <div class="post-actions">
         <el-dropdown v-if="isCurrentUserPost" trigger="click" @command="handleAction">
-          <el-button type="text" :icon="More" />
+          <el-button type="info" link :icon="More" />
           <template #dropdown>
             <el-dropdown-menu>
               <el-dropdown-item command="delete" style="color: #f56c6c;">
@@ -230,7 +251,7 @@ const isCurrentUserPost = computed(() => {
     </div>
 
     <!-- 动态内容 -->
-    <div class="post-content">
+    <div class="post-content" @click="router.push({ name: 'PostDetail', params: { id: post.id } })" style="cursor: pointer;">
       <p v-if="post.content" class="content-text">{{ post.content }}</p>
       
       <!-- 物品信息（如果是发布物品类型） -->
@@ -311,35 +332,41 @@ const isCurrentUserPost = computed(() => {
       
       <div class="interaction-buttons">
         <el-button
-          :type="isLiked ? 'primary' : 'text'"
+          type="primary"
+          link
+          :class="{ 'is-active': isLiked }"
           :icon="CircleCheck"
           @click="handleLike"
           class="interaction-btn"
         >
           {{ isLiked ? '已赞' : '点赞' }}
         </el-button>
-        
-        <el-button 
-          :type="isFavorited ? 'warning' : 'text'" 
-          :icon="Star" 
+
+        <el-button
+          type="warning"
+          link
+          :class="{ 'is-active': isFavorited }"
+          :icon="Star"
           @click="handleFavorite"
           class="interaction-btn"
         >
           {{ isFavorited ? '已收藏' : '收藏' }}
         </el-button>
-        
-        <el-button 
-          type="text"
-          :icon="ChatDotRound" 
+
+        <el-button
+          type="info"
+          link
+          :icon="ChatDotRound"
           @click="showCommentInput = !showCommentInput"
           class="interaction-btn"
         >
           评论
         </el-button>
-        
-        <el-button 
-          type="text"
-          :icon="Share" 
+
+        <el-button
+          type="info"
+          link
+          :icon="Share"
           @click="handleShare"
           class="interaction-btn"
         >
@@ -360,10 +387,20 @@ const isCurrentUserPost = computed(() => {
         class="comment-input"
       />
       <div class="comment-actions">
-        <el-button size="small" @click="showCommentInput = false">取消</el-button>
-        <el-button 
-          type="primary" 
-          size="small" 
+        <div class="emoji-wrap">
+          <el-button type="info" link size="small" @click="showCommentEmoji = !showCommentEmoji">😊 表情</el-button>
+          <EmojiPicker
+            v-if="showCommentEmoji"
+            class="emoji-picker-popup"
+            :native="true"
+            :disable-skin-tones="true"
+            @select="onSelectEmoji"
+          />
+        </div>
+        <el-button size="small" @click="showCommentInput = false; showCommentEmoji = false">取消</el-button>
+        <el-button
+          type="primary"
+          size="small"
           :loading="postingComment"
           @click="handleComment"
         >
@@ -600,10 +637,25 @@ const isCurrentUserPost = computed(() => {
   .interaction-buttons {
     display: flex;
     justify-content: space-around;
-    
+
     .interaction-btn {
       flex: 1;
       padding: 8px 0;
+      color: #909399;
+
+      &.is-active {
+        font-weight: 600;
+      }
+
+      // 点赞激活：蓝色
+      &.el-button--primary.is-active {
+        color: #409eff;
+      }
+
+      // 收藏激活：橙色
+      &.el-button--warning.is-active {
+        color: #e6a23c;
+      }
     }
   }
 }
@@ -612,15 +664,30 @@ const isCurrentUserPost = computed(() => {
   margin-top: 16px;
   padding-top: 16px;
   border-top: 1px solid #f0f2f5;
-  
+
   .comment-input {
     margin-bottom: 12px;
   }
-  
+
   .comment-actions {
     display: flex;
     justify-content: flex-end;
-    gap: 12px;
+    align-items: center;
+    gap: 8px;
+
+    .emoji-wrap {
+      position: relative;
+
+      .emoji-picker-popup {
+        position: absolute;
+        bottom: 32px;
+        right: 0;
+        z-index: 9999;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        border-radius: 10px;
+        overflow: hidden;
+      }
+    }
   }
 }
 

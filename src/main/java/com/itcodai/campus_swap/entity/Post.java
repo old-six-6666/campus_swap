@@ -55,7 +55,22 @@ public class Post {
      * 收藏数
      */
     private Integer favoriteCount;
-    
+
+    /**
+     * 浏览数
+     */
+    private Integer viewCount;
+
+    /**
+     * 分享数
+     */
+    private Integer shareCount;
+
+    /**
+     * 热度分（综合计算）
+     */
+    private Double hotScore;
+
     /**
      * 发布时间
      */

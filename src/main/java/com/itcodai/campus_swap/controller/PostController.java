@@ -2,13 +2,22 @@ package com.itcodai.campus_swap.controller;
 
 import com.itcodai.campus_swap.common.result.Result;
 import com.itcodai.campus_swap.common.result.ResultCode;
+import com.itcodai.campus_swap.entity.Item;
 import com.itcodai.campus_swap.entity.Post;
+import com.itcodai.campus_swap.entity.Trade;
+import com.itcodai.campus_swap.entity.User;
+import com.itcodai.campus_swap.mapper.ItemMapper;
+import com.itcodai.campus_swap.mapper.TradeMapper;
+import com.itcodai.campus_swap.mapper.UserMapper;
 import com.itcodai.campus_swap.service.PostService;
 import com.itcodai.campus_swap.vo.PageVO;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -19,13 +28,97 @@ import java.util.Map;
 @RestController
 @RequestMapping({"/api/post", "/post"})
 public class PostController {
-    
+
     private final PostService postService;
-    
-    public PostController(PostService postService) {
+    private final TradeMapper tradeMapper;
+    private final ItemMapper itemMapper;
+    private final UserMapper userMapper;
+
+    public PostController(PostService postService,
+                          TradeMapper tradeMapper,
+                          ItemMapper itemMapper,
+                          UserMapper userMapper) {
         this.postService = postService;
+        this.tradeMapper = tradeMapper;
+        this.itemMapper = itemMapper;
+        this.userMapper = userMapper;
     }
-    
+
+    /**
+     * 获取我的已完成换物记录（用于发布"换物成功"动态时选择）
+     * GET /post/my-swaps
+     */
+    @GetMapping("/my-swaps")
+    public Result<List<Map<String, Object>>> getMySwapRecords(HttpServletRequest request) {
+        Long userId = getUserIdFromRequest(request);
+        if (userId == null) {
+            return Result.fail(ResultCode.UNAUTHORIZED, "请先登录");
+        }
+        try {
+            List<Trade> trades = tradeMapper.selectList(
+                    new LambdaQueryWrapper<Trade>()
+                            .eq(Trade::getStatus, "COMPLETED")
+                            .and(w -> w.eq(Trade::getInitiatorId, userId)
+                                      .or().eq(Trade::getReceiverId, userId))
+                            .orderByDesc(Trade::getCompletedAt)
+            );
+            List<Map<String, Object>> result = new ArrayList<>();
+            for (Trade trade : trades) {
+                boolean isInitiator = userId.equals(trade.getInitiatorId());
+                Long myItemId = isInitiator ? trade.getInitiatorItemId() : trade.getReceiverItemId();
+                Long partnerItemId = isInitiator ? trade.getReceiverItemId() : trade.getInitiatorItemId();
+                Long partnerId = isInitiator ? trade.getReceiverId() : trade.getInitiatorId();
+
+                Item myItem = myItemId != null ? itemMapper.selectById(myItemId) : null;
+                Item partnerItem = partnerItemId != null ? itemMapper.selectById(partnerItemId) : null;
+                User partner = partnerId != null ? userMapper.selectById(partnerId) : null;
+
+                Map<String, Object> map = new java.util.HashMap<>();
+                map.put("id", trade.getId());
+                map.put("itemATitle", myItem != null ? myItem.getTitle() : "未知物品");
+                map.put("itemBTitle", partnerItem != null ? partnerItem.getTitle() : "未知物品");
+                map.put("partnerName", partner != null ? partner.getNickname() : "未知用户");
+                map.put("completedAt", trade.getCompletedAt());
+                result.add(map);
+            }
+            return Result.success(result);
+        } catch (Exception e) {
+            log.error("获取换物记录失败", e);
+            return Result.fail(ResultCode.INTERNAL_ERROR, "获取换物记录失败");
+        }
+    }
+
+    /**
+     * 获取单个动态详情，同时异步记录浏览量
+     * GET /post/{postId}
+     */
+    @GetMapping("/{postId:\\d+}")
+    public Result<Map<String, Object>> getPostDetail(@PathVariable Long postId, HttpServletRequest request) {
+        try {
+            Long currentUserId = getUserIdFromRequest(request);
+            Map<String, Object> detail = postService.getPostDetail(postId, currentUserId);
+            if (detail == null) {
+                return Result.fail(ResultCode.NOT_FOUND, "动态不存在");
+            }
+            // 异步 +1 浏览量，不阻塞响应
+            new Thread(() -> postService.incrementView(postId)).start();
+            return Result.success(detail);
+        } catch (Exception e) {
+            log.error("获取动态详情失败", e);
+            return Result.fail(ResultCode.INTERNAL_ERROR, "获取动态详情失败");
+        }
+    }
+
+    /**
+     * 分享动态，share_count +1
+     * POST /post/{postId}/share
+     */
+    @PostMapping("/{postId:\\d+}/share")
+    public Result<Void> sharePost(@PathVariable Long postId) {
+        postService.sharePost(postId);
+        return Result.success();
+    }
+
     /**
      * 获取动态列表
      * GET /api/post/list
@@ -36,10 +129,13 @@ public class PostController {
             @RequestParam(defaultValue = "10") Integer size,
             @RequestParam(defaultValue = "recommend") String sort,
             @RequestParam(required = false) String keyword,
-            @RequestParam(required = false) String tag) {
-        
+            @RequestParam(required = false) String tag,
+            HttpServletRequest request) {
+
         try {
-            PageVO<Map<String, Object>> pageVO = postService.getPosts(page, size, sort, keyword, tag);
+            // 未登录用户也可浏览，isLiked/isFavorited 均返回 false
+            Long currentUserId = getUserIdFromRequest(request);
+            PageVO<Map<String, Object>> pageVO = postService.getPosts(page, size, sort, keyword, tag, currentUserId);
             Map<String, Object> result = Map.of(
                 "records", pageVO.getRecords(),
                 "total", pageVO.getTotal(),
@@ -57,36 +153,34 @@ public class PostController {
      * 点赞动态
      * POST /api/post/{postId}/like
      */
-    @PostMapping("/{postId}/like")
+    @PostMapping("/{postId:\\d+}/like")
     public Result<Void> likePost(@PathVariable Long postId, HttpServletRequest request) {
         try {
             Long userId = getUserIdFromRequest(request);
             if (userId == null) {
                 return Result.fail(ResultCode.UNAUTHORIZED, "请先登录");
             }
-            
-            boolean success = postService.likePost(postId, userId);
-            return success ? Result.success() : Result.fail(ResultCode.BAD_REQUEST, "点赞失败");
+            postService.likePost(postId, userId);
+            return Result.success();
         } catch (Exception e) {
             log.error("点赞动态失败", e);
             return Result.fail(ResultCode.INTERNAL_ERROR, "点赞失败");
         }
     }
-    
+
     /**
      * 取消点赞
      * DELETE /api/post/{postId}/like
      */
-    @DeleteMapping("/{postId}/like")
+    @DeleteMapping("/{postId:\\d+}/like")
     public Result<Void> unlikePost(@PathVariable Long postId, HttpServletRequest request) {
         try {
             Long userId = getUserIdFromRequest(request);
             if (userId == null) {
                 return Result.fail(ResultCode.UNAUTHORIZED, "请先登录");
             }
-            
-            boolean success = postService.unlikePost(postId, userId);
-            return success ? Result.success() : Result.fail(ResultCode.BAD_REQUEST, "取消点赞失败");
+            postService.unlikePost(postId, userId);
+            return Result.success();
         } catch (Exception e) {
             log.error("取消点赞失败", e);
             return Result.fail(ResultCode.INTERNAL_ERROR, "取消点赞失败");
@@ -97,36 +191,34 @@ public class PostController {
      * 收藏动态
      * POST /api/post/{postId}/favorite
      */
-    @PostMapping("/{postId}/favorite")
+    @PostMapping("/{postId:\\d+}/favorite")
     public Result<Void> favoritePost(@PathVariable Long postId, HttpServletRequest request) {
         try {
             Long userId = getUserIdFromRequest(request);
             if (userId == null) {
                 return Result.fail(ResultCode.UNAUTHORIZED, "请先登录");
             }
-            
-            boolean success = postService.favoritePost(postId, userId);
-            return success ? Result.success() : Result.fail(ResultCode.BAD_REQUEST, "收藏失败");
+            postService.favoritePost(postId, userId);
+            return Result.success();
         } catch (Exception e) {
             log.error("收藏动态失败", e);
             return Result.fail(ResultCode.INTERNAL_ERROR, "收藏失败");
         }
     }
-    
+
     /**
      * 取消收藏
      * DELETE /api/post/{postId}/favorite
      */
-    @DeleteMapping("/{postId}/favorite")
+    @DeleteMapping("/{postId:\\d+}/favorite")
     public Result<Void> unfavoritePost(@PathVariable Long postId, HttpServletRequest request) {
         try {
             Long userId = getUserIdFromRequest(request);
             if (userId == null) {
                 return Result.fail(ResultCode.UNAUTHORIZED, "请先登录");
             }
-            
-            boolean success = postService.unfavoritePost(postId, userId);
-            return success ? Result.success() : Result.fail(ResultCode.BAD_REQUEST, "取消收藏失败");
+            postService.unfavoritePost(postId, userId);
+            return Result.success();
         } catch (Exception e) {
             log.error("取消收藏失败", e);
             return Result.fail(ResultCode.INTERNAL_ERROR, "取消收藏失败");
@@ -182,7 +274,7 @@ public class PostController {
      * 删除动态（只能删除自己的动态）
      * DELETE /api/post/{postId}
      */
-    @DeleteMapping("/{postId}")
+    @DeleteMapping("/{postId:\\d+}")
     public Result<Void> deletePost(@PathVariable Long postId, HttpServletRequest request) {
         try {
             Long userId = getUserIdFromRequest(request);

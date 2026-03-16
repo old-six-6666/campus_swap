@@ -15,7 +15,12 @@ export function usePagination(fetchFn, defaultParams = {}) {
     loading.value = true
     try {
       const data = await fetchFn({ ...params, page: pagination.page, size: pagination.size })
-      list.value = data.records || []
+      const records = data.records || []
+      if (pagination.page === 1) {
+        list.value = records
+      } else {
+        list.value = [...list.value, ...records]
+      }
       pagination.total = data.total || 0
     } finally {
       loading.value = false

@@ -21,9 +21,23 @@ public class JwtInterceptor implements HandlerInterceptor {
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
-        // 商品详情是公开的只读接口：GET /api/item/{纯数字 id}，无需登录
-        if ("GET".equalsIgnoreCase(request.getMethod())
-                && request.getRequestURI().matches("/api/item/\\d+")) {
+        String uri = request.getRequestURI();
+
+        // 可选认证接口：有 token 就解析 userId，没有也放行（未登录用户可浏览）
+        boolean optionalAuth = "GET".equalsIgnoreCase(request.getMethod())
+                && (uri.matches("/api/item/\\d+")
+                    || uri.equals("/post/list")
+                    || uri.equals("/api/post/list")
+                    || uri.matches("/post/\\d+")
+                    || uri.matches("/api/post/\\d+"));
+        if (optionalAuth) {
+            String token = request.getHeader("Authorization");
+            if (StringUtils.hasText(token) && token.startsWith("Bearer ")) {
+                String jwt = token.substring(7);
+                if (jwtUtils.validateToken(jwt)) {
+                    request.setAttribute("userId", jwtUtils.getUserId(jwt));
+                }
+            }
             return true;
         }
 
