@@ -29,7 +29,12 @@ public class JwtInterceptor implements HandlerInterceptor {
                     || uri.equals("/post/list")
                     || uri.equals("/api/post/list")
                     || uri.matches("/post/\\d+")
-                    || uri.matches("/api/post/\\d+"));
+                    || uri.matches("/api/post/\\d+")
+                    || uri.matches("/api/user/\\d+/profile")
+                    || uri.matches("/api/item/user/\\d+")
+                    || uri.matches("/post/user/\\d+")
+                    || uri.matches("/api/post/user/\\d+")
+                    || uri.equals("/api/user/search"));
         if (optionalAuth) {
             String token = request.getHeader("Authorization");
             if (StringUtils.hasText(token) && token.startsWith("Bearer ")) {

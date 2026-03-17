@@ -41,6 +41,11 @@ const routes = [
         meta: { requiresAuth: true },
       },
       {
+        path: 'user/:id',
+        name: 'UserHome',
+        component: () => import('@/views/user/UserHomeView.vue'),
+      },
+      {
         path: 'change-password',
         name: 'ChangePassword',
         component: () => import('@/views/user/ChangePasswordView.vue'),

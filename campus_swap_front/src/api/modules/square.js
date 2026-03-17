@@ -211,5 +211,19 @@ export const squareApi = {
       url: '/post/my-swaps',
       method: 'get'
     })
+  },
+
+  /**
+   * 获取指定用户发布的动态列表（公开）
+   * @param {number} userId 目标用户ID
+   * @param {Object} params 分页参数 { page, size }
+   * @returns {Promise}
+   */
+  getUserPosts(userId, params) {
+    return request({
+      url: `/post/user/${userId}`,
+      method: 'get',
+      params
+    })
   }
 }

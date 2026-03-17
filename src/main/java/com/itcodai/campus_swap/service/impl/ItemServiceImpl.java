@@ -118,6 +118,20 @@ public class ItemServiceImpl implements ItemService {
         return PageVO.of(records, pageResult.getTotal(), page, size);
     }
 
+    @Override
+    public PageVO<ItemVO> getUserItems(Long sellerId, int page, int size) {
+        LambdaQueryWrapper<Item> wrapper = new LambdaQueryWrapper<Item>()
+                .eq(Item::getSellerId, sellerId)
+                .eq(Item::getAuditStatus, 1)   // 只展示已审核通过
+                .eq(Item::getStatus, 0)        // 只展示在售
+                .orderByDesc(Item::getCreatedAt);
+        Page<Item> pageResult = itemMapper.selectPage(new Page<>(page, size), wrapper);
+        List<ItemVO> records = pageResult.getRecords().stream()
+                .map(this::toVO)
+                .collect(Collectors.toList());
+        return PageVO.of(records, pageResult.getTotal(), page, size);
+    }
+
     // ---- 私有辅助方法 ----
 
     private void checkOwnership(Item item, Long sellerId, Long itemId) {

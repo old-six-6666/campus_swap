@@ -148,13 +148,14 @@ public class UserServiceImpl implements UserService {
         if (keyword == null || keyword.isBlank()) {
             return Collections.emptyList();
         }
-        List<User> users = userMapper.selectList(
-                new LambdaQueryWrapper<User>()
-                        .ne(User::getId, currentUserId)
-                        .eq(User::getStatus, 0)
-                        .like(User::getNickname, keyword)
-                        .last("LIMIT 10")
-        );
+        LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<User>()
+                .eq(User::getStatus, 0)
+                .like(User::getNickname, keyword)
+                .last("LIMIT 10");
+        if (currentUserId != null) {
+            wrapper.ne(User::getId, currentUserId);
+        }
+        List<User> users = userMapper.selectList(wrapper);
         return users.stream().map(u -> {
             UserVO vo = new UserVO();
             vo.setId(u.getId());
@@ -163,5 +164,20 @@ public class UserServiceImpl implements UserService {
             vo.setSchool(u.getSchool());
             return vo;
         }).collect(Collectors.toList());
+    }
+
+    @Override
+    public UserVO getPublicProfile(Long userId) {
+        User user = userMapper.selectById(userId);
+        if (user == null) {
+            throw new BusinessException(ResultCode.NOT_FOUND, "用户不存在");
+        }
+        UserVO vo = new UserVO();
+        vo.setId(user.getId());
+        vo.setNickname(user.getNickname());
+        vo.setSchool(user.getSchool());
+        vo.setAvatar(user.getAvatar());
+        vo.setIsVerified(user.getIsVerified());
+        return vo;
     }
 }

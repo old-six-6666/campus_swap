@@ -26,4 +26,7 @@ public interface ItemService {
 
     /** 查询当前用户发布的商品列表 */
     PageVO<ItemVO> getMyItems(Long sellerId, int page, int size);
+
+    /** 查询指定用户已审核通过且在售的商品列表（公开展示） */
+    PageVO<ItemVO> getUserItems(Long sellerId, int page, int size);
 }
