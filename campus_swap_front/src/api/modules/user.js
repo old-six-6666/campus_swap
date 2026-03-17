@@ -36,4 +36,7 @@ export const userApi = {
 
   /** 按昵称搜索用户（用于添加好友） */
   searchUsers: (keyword) => request.get('/user/search', { params: { keyword } }),
+
+  /** 获取指定用户的公开主页信息（silent 防止找不到时弹 toast） */
+  getUserProfile: (id) => request.get(`/user/${id}/profile`, { silent: true }),
 }

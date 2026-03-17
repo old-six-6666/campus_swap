@@ -32,4 +32,7 @@ public interface UserService {
 
     /** 按昵称搜索用户（排除自己，仅正常状态），用于添加好友 */
     java.util.List<UserVO> searchUsers(Long currentUserId, String keyword);
+
+    /** 获取指定用户的公开信息（不含敏感字段） */
+    UserVO getPublicProfile(Long userId);
 }

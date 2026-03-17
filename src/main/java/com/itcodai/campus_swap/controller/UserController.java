@@ -117,4 +117,10 @@ public class UserController {
         Long userId = (Long) request.getAttribute("userId");
         return Result.success(studentService.getMyVerification(userId));
     }
+
+    /** GET /api/user/{id}/profile — 获取指定用户的公开信息（无需登录） */
+    @GetMapping("/{id:\\d+}/profile")
+    public Result<UserVO> getUserProfile(@PathVariable Long id) {
+        return Result.success(userService.getPublicProfile(id));
+    }
 }

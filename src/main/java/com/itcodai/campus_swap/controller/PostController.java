@@ -287,7 +287,7 @@ public class PostController {
             if (userId == null) {
                 return Result.fail(ResultCode.UNAUTHORIZED, "请先登录");
             }
-            
+
             boolean success = postService.deletePost(postId, userId);
             return success ? Result.success() : Result.fail(ResultCode.BAD_REQUEST, "删除动态失败");
         } catch (Exception e) {
@@ -295,7 +295,33 @@ public class PostController {
             return Result.fail(ResultCode.INTERNAL_ERROR, "删除动态失败");
         }
     }
-    
+
+    /**
+     * 获取指定用户发布的动态列表（公开）
+     * GET /api/post/user/{userId}
+     */
+    @GetMapping("/user/{userId:\\d+}")
+    public Result<Map<String, Object>> getUserPosts(
+            @PathVariable Long userId,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size,
+            HttpServletRequest request) {
+        try {
+            Long currentUserId = getUserIdFromRequest(request);
+            PageVO<Map<String, Object>> pageVO = postService.getUserPosts(userId, page, size, currentUserId);
+            Map<String, Object> result = Map.of(
+                "records", pageVO.getRecords(),
+                "total", pageVO.getTotal(),
+                "page", pageVO.getPage(),
+                "size", pageVO.getSize()
+            );
+            return Result.success(result);
+        } catch (Exception e) {
+            log.error("获取用户动态列表失败", e);
+            return Result.fail(ResultCode.INTERNAL_ERROR, "获取动态列表失败");
+        }
+    }
+
     /**
      * 从请求中获取用户ID
      */

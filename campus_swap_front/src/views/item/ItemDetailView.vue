@@ -140,7 +140,8 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div v-loading="loading" class="item-detail">
+  <div>
+    <div v-loading="loading" class="item-detail">
     <el-empty v-if="!loading && !item" description="商品不存在" />
     <template v-if="item">
       <el-row :gutter="24">
@@ -190,7 +191,7 @@ onMounted(async () => {
           <p class="item-desc">{{ item.description }}</p>
           <el-divider />
           <!-- 卖家信息 -->
-          <div class="seller-info">
+          <div class="seller-info" @click="router.push({ name: 'UserHome', params: { id: item.sellerId } })">
             <el-avatar :size="36" :src="item.sellerAvatar" />
             <span class="seller-name">{{ item.sellerNickname }}</span>
           </div>
@@ -306,6 +307,7 @@ onMounted(async () => {
       </el-button>
     </template>
   </el-dialog>
+  </div>
 </template>
 
 <style scoped lang="scss">
@@ -375,6 +377,8 @@ onMounted(async () => {
   align-items: center;
   gap: 8px;
   margin-bottom: 16px;
+  cursor: pointer;
+  &:hover .seller-name { color: #409eff; text-decoration: underline; }
   .seller-name {
     font-size: 14px;
     color: #303133;
