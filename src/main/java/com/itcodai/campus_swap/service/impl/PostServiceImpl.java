@@ -406,4 +406,79 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements Po
         }
         return success;
     }
+
+    @Override
+    public PageVO<Map<String, Object>> getUserPosts(Long userId, int page, int size, Long currentUserId) {
+        Page<Post> postPage = new Page<>(page, size);
+        LambdaQueryWrapper<Post> queryWrapper = new LambdaQueryWrapper<Post>()
+                .eq(Post::getUserId, userId)
+                .orderByDesc(Post::getCreatedAt);
+        Page<Post> result = this.page(postPage, queryWrapper);
+        List<Post> posts = result.getRecords();
+
+        Set<Long> likedPostIds = java.util.Collections.emptySet();
+        Set<Long> favoritedPostIds = java.util.Collections.emptySet();
+        if (currentUserId != null && !posts.isEmpty()) {
+            List<Long> postIds = posts.stream().map(Post::getId).collect(Collectors.toList());
+            likedPostIds = postLikeMapper.selectList(
+                    new LambdaQueryWrapper<PostLike>()
+                            .eq(PostLike::getUserId, currentUserId)
+                            .in(PostLike::getPostId, postIds)
+            ).stream().map(PostLike::getPostId).collect(Collectors.toSet());
+            favoritedPostIds = postFavoriteMapper.selectList(
+                    new LambdaQueryWrapper<PostFavorite>()
+                            .eq(PostFavorite::getUserId, currentUserId)
+                            .in(PostFavorite::getPostId, postIds)
+            ).stream().map(PostFavorite::getPostId).collect(Collectors.toSet());
+        }
+
+        final Set<Long> finalLikedPostIds = likedPostIds;
+        final Set<Long> finalFavoritedPostIds = favoritedPostIds;
+
+        User author = userMapper.selectById(userId);
+        Map<String, Object> userInfo = new HashMap<>();
+        if (author != null) {
+            userInfo.put("id", author.getId());
+            userInfo.put("username", author.getNickname());
+            userInfo.put("avatar", author.getAvatar());
+        }
+
+        List<Map<String, Object>> records = posts.stream().map(post -> {
+            Map<String, Object> map = new HashMap<>();
+            map.put("id", post.getId());
+            map.put("userId", post.getUserId());
+            map.put("type", post.getType());
+            map.put("content", post.getContent());
+            map.put("likeCount", post.getLikeCount());
+            map.put("commentCount", post.getCommentCount());
+            map.put("favoriteCount", post.getFavoriteCount());
+            map.put("createdAt", post.getCreatedAt());
+            map.put("isLiked", finalLikedPostIds.contains(post.getId()));
+            map.put("isFavorited", finalFavoritedPostIds.contains(post.getId()));
+            map.put("images", parseImages(post.getImages()));
+            map.put("user", userInfo);
+            if (post.getItemId() != null) {
+                Item item = itemMapper.selectById(post.getItemId());
+                if (item != null) {
+                    Map<String, Object> itemInfo = new HashMap<>();
+                    itemInfo.put("id", item.getId());
+                    itemInfo.put("title", item.getTitle());
+                    itemInfo.put("price", item.getPrice());
+                    itemInfo.put("coverImage", item.getCoverImage());
+                    itemInfo.put("description", item.getDescription());
+                    itemInfo.put("category", item.getCategory());
+                    map.put("item", itemInfo);
+                }
+            }
+            map.put("tags", List.of("校园", "闲置"));
+            return map;
+        }).collect(Collectors.toList());
+
+        PageVO<Map<String, Object>> pageVO = new PageVO<>();
+        pageVO.setRecords(records);
+        pageVO.setTotal(result.getTotal());
+        pageVO.setPage(page);
+        pageVO.setSize(size);
+        return pageVO;
+    }
 }

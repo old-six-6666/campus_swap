@@ -220,13 +220,13 @@ const isCurrentUserPost = computed(() => {
   <div class="square-card">
     <!-- 用户信息栏 -->
     <div class="user-info">
-      <div class="user-avatar">
+      <div class="user-avatar clickable-user" @click.stop="router.push({ name: 'UserHome', params: { id: post.userId } })">
         <el-avatar :size="40" :src="post.user?.avatar">
           <el-icon><User /></el-icon>
         </el-avatar>
       </div>
       <div class="user-details">
-        <div class="username">{{ post.user?.username || '匿名用户' }}</div>
+        <div class="username clickable-user" @click.stop="router.push({ name: 'UserHome', params: { id: post.userId } })">{{ post.user?.username || '匿名用户' }}</div>
         <div class="post-meta">
           <span class="post-type">
             <span class="type-icon">{{ postTypeInfo.icon }}</span>
@@ -452,15 +452,26 @@ const isCurrentUserPost = computed(() => {
   .user-avatar {
     margin-right: 12px;
   }
-  
+
+  .clickable-user {
+    cursor: pointer;
+    &:hover {
+      opacity: 0.8;
+    }
+  }
+
   .user-details {
     flex: 1;
-    
+
     .username {
       font-weight: 600;
       font-size: 16px;
       color: #303133;
       margin-bottom: 4px;
+      display: inline-block;
+      &:hover {
+        color: #409eff;
+      }
     }
     
     .post-meta {

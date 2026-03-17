@@ -71,4 +71,13 @@ public class ItemController {
         itemService.deleteItem(userId, id);
         return Result.success();
     }
+
+    /** GET /api/item/user/{userId} — 查询指定用户已审核通过且在售的商品列表（公开） */
+    @GetMapping("/user/{userId:\\d+}")
+    public Result<PageVO<ItemVO>> userItems(
+            @PathVariable Long userId,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "12") int size) {
+        return Result.success(itemService.getUserItems(userId, page, size));
+    }
 }

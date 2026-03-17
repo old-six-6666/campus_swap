@@ -641,6 +641,11 @@ onUnmounted(() => {
 
   .comment-card {
     border-radius: 12px;
+    overflow: visible;
+
+    :deep(.el-card__body) {
+      overflow: visible;
+    }
 
     .comment-title {
       display: flex;

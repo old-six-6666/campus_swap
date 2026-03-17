@@ -22,6 +22,9 @@ export const itemApi = {
   /** 查询当前用户发布的商品列表 */
   getMyItems: (params) => request.get('/item/my', { params }),
 
+  /** 查询指定用户已审核通过且在售的商品列表（用于用户主页） */
+  getUserItems: (userId, params) => request.get(`/item/user/${userId}`, { params }),
+
   /** 上传图片，返回可访问的 URL */
   uploadImage: (file) => {
     const form = new FormData()

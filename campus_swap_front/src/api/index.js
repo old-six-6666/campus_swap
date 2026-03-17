@@ -33,11 +33,11 @@ request.interceptors.response.use(
     return Promise.reject(new Error(message))
   },
   (error) => {
-    if (error.response?.status === 401) {
+    if (error.response?.status === 401 && !error.config?.silent) {
       const userStore = useUserStore()
       userStore.logout()
       window.location.href = '/login'
-    } else if (!error.config?.silent) {
+    } else if (error.response?.status !== 401 && !error.config?.silent) {
       showError(error.response?.data?.message || '网络错误，请稍后重试')
     }
     return Promise.reject(error)

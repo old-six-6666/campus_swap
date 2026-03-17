@@ -3,6 +3,8 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import { RouterView, useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/useUserStore'
 import { chatApi } from '@/api/modules/chat'
+import { userApi } from '@/api/modules/user'
+import { Search } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -10,6 +12,30 @@ const userStore = useUserStore()
 
 const unreadCount = ref(0)
 let unreadTimer = null
+
+// 用户搜索
+const userSearchKeyword = ref('')
+const userSearchResults = ref([])
+const userSearchLoading = ref(false)
+const searchPopoverVisible = ref(false)
+
+async function handleUserSearch() {
+  const kw = userSearchKeyword.value.trim()
+  if (!kw) { userSearchResults.value = []; return }
+  userSearchLoading.value = true
+  try {
+    userSearchResults.value = await userApi.searchUsers(kw)
+  } finally {
+    userSearchLoading.value = false
+  }
+}
+
+function goUserHome(userId) {
+  searchPopoverVisible.value = false
+  userSearchKeyword.value = ''
+  userSearchResults.value = []
+  router.push({ name: 'UserHome', params: { id: userId } })
+}
 
 async function fetchUnread() {
   if (!userStore.isLoggedIn) return
@@ -75,6 +101,46 @@ function handleCommand(command) {
       </div>
       
       <div class="header-right">
+        <!-- 搜索用户 -->
+        <el-popover
+          :visible="searchPopoverVisible"
+          placement="bottom-end"
+          :width="280"
+          trigger="click"
+          @update:visible="searchPopoverVisible = $event"
+        >
+          <template #reference>
+            <el-button :icon="Search" circle size="small" class="search-user-btn" title="搜索用户" />
+          </template>
+          <div class="user-search-panel">
+            <el-input
+              v-model="userSearchKeyword"
+              placeholder="搜索用户昵称..."
+              size="small"
+              clearable
+              :prefix-icon="Search"
+              @keyup.enter="handleUserSearch"
+              @clear="userSearchResults = []"
+            />
+            <div v-if="userSearchLoading" class="search-loading">搜索中...</div>
+            <div v-else-if="userSearchResults.length === 0 && userSearchKeyword" class="search-empty">未找到用户</div>
+            <div v-else class="search-results">
+              <div
+                v-for="u in userSearchResults"
+                :key="u.id"
+                class="search-result-item"
+                @click="goUserHome(u.id)"
+              >
+                <el-avatar :size="32" :src="u.avatar" />
+                <div class="result-info">
+                  <span class="result-name">{{ u.nickname }}</span>
+                  <span v-if="u.school" class="result-school">{{ u.school }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </el-popover>
+
         <template v-if="userStore.isLoggedIn">
           <el-dropdown @command="handleCommand">
             <span class="user-avatar">
@@ -218,6 +284,13 @@ function handleCommand(command) {
     gap: 16px;
   }
 
+  .search-user-btn {
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: #fff;
+    &:hover { background: rgba(255, 255, 255, 0.25); }
+  }
+
   .user-avatar {
     display: flex;
     align-items: center;
@@ -344,6 +417,55 @@ function handleCommand(command) {
 
   .main-content {
     padding: 16px;
+  }
+}
+</style>
+
+<style lang="scss">
+.user-search-panel {
+  padding: 4px 0;
+
+  .el-input { margin-bottom: 8px; }
+
+  .search-loading,
+  .search-empty {
+    text-align: center;
+    font-size: 13px;
+    color: #909399;
+    padding: 12px 0;
+  }
+
+  .search-results {
+    max-height: 240px;
+    overflow-y: auto;
+  }
+
+  .search-result-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 4px;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: background 0.15s;
+
+    &:hover { background: #f5f7fa; }
+
+    .result-info {
+      display: flex;
+      flex-direction: column;
+
+      .result-name {
+        font-size: 14px;
+        color: #303133;
+        font-weight: 500;
+      }
+
+      .result-school {
+        font-size: 12px;
+        color: #909399;
+      }
+    }
   }
 }
 </style>

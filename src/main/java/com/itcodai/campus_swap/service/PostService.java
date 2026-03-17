@@ -34,4 +34,7 @@ public interface PostService extends IService<Post> {
     Long createPost(Post post, Long userId);
     Map<String, Object> getStats();
     boolean deletePost(Long postId, Long userId);
+
+    /** 查询指定用户发布的动态列表（公开） */
+    PageVO<Map<String, Object>> getUserPosts(Long userId, int page, int size, Long currentUserId);
 }
