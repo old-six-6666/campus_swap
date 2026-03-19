@@ -2,12 +2,14 @@
 import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { itemApi } from '@/api/modules/item'
+import { squareApi } from '@/api/modules/square'
 import { showSuccess, showError, showWarning } from '@/utils/notify'
 import { Plus } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const formRef = ref(null)
 const loading = ref(false)
+const syncToSquare = ref(false)
 
 const form = reactive({
   title: '',
@@ -55,8 +57,23 @@ async function handlePublish() {
   await formRef.value.validate()
   loading.value = true
   try {
-    await itemApi.publish(form)
-    await showSuccess('发布成功')
+    const itemId = await itemApi.publish(form)
+    if (syncToSquare.value && itemId) {
+      try {
+        await squareApi.createPost({
+          type: 1,
+          content: `我发布了新闲置：${form.title}，快来看看吧～`,
+          itemId,
+          imageList: [],
+          tagIds: [],
+        })
+        await showSuccess('发布成功，已同步到广场')
+      } catch {
+        await showSuccess('发布成功，但同步广场失败')
+      }
+    } else {
+      await showSuccess('发布成功')
+    }
     router.push('/')
   } finally {
     loading.value = false
@@ -107,6 +124,10 @@ async function handlePublish() {
           >
             <el-icon><Plus /></el-icon>
           </el-upload>
+        </el-form-item>
+
+        <el-form-item>
+          <el-checkbox v-model="syncToSquare">同步发布到广场动态</el-checkbox>
         </el-form-item>
 
         <el-form-item>
