@@ -264,16 +264,18 @@ function handlePublishSuccess() {
     <div class="posts-section">
       <div v-loading="paginationLoading && page === 1" class="posts-container">
         <template v-if="posts.length > 0">
-          <SquareCard
-            v-for="post in posts"
-            :key="post.id"
-            :post="post"
-            @like-changed="handleLikeChanged"
-            @favorite-changed="handleFavoriteChanged"
-            @comment-added="handleCommentAdded"
-            @post-deleted="handlePostDeleted"
-            @post-updated="handlePostUpdated"
-          />
+          <div class="masonry-grid">
+            <SquareCard
+              v-for="post in posts"
+              :key="post.id"
+              :post="post"
+              @like-changed="handleLikeChanged"
+              @favorite-changed="handleFavoriteChanged"
+              @comment-added="handleCommentAdded"
+              @post-deleted="handlePostDeleted"
+              @post-updated="handlePostUpdated"
+            />
+          </div>
         </template>
         
         <div v-else-if="!paginationLoading" class="empty-state">
@@ -436,9 +438,14 @@ function handlePublishSuccess() {
 
 .posts-section {
   padding: 0 20px;
-  
+
   .posts-container {
     min-height: 300px;
+  }
+
+  .masonry-grid {
+    columns: 2;
+    column-gap: 12px;
   }
   
   .empty-state {
@@ -494,6 +501,12 @@ function handlePublishSuccess() {
 @media (max-width: 768px) {
   .square-view {
     padding: 16px 0 32px;
+  }
+
+  .posts-section {
+    .masonry-grid {
+      columns: 1;
+    }
   }
   
   .page-header {
