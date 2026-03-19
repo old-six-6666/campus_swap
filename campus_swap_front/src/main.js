@@ -4,7 +4,7 @@ import * as ElementPlusIconsVue from '@element-plus/icons-vue'
 
 import App from './App.vue'
 import router from './router/index'
-import './assets/styles/variables.scss'
+import './assets/styles/global.scss'
 import './assets/styles/notify.scss'
 
 const app = createApp(App)

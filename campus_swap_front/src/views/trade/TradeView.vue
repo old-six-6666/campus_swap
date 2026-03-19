@@ -141,6 +141,8 @@ onMounted(loadTrades)
 </template>
 
 <style scoped lang="scss">
+@import '@/assets/styles/variables.scss';
+
 .trade-list {
   max-width: 900px;
   margin: 0 auto;
@@ -149,15 +151,14 @@ onMounted(loadTrades)
 .page-header {
   margin-bottom: 8px;
   h2 {
-    font-size: 20px;
-    font-weight: 600;
-    color: #303133;
+    font-size: 22px;
+    font-weight: 700;
+    color: $text-primary;
+    letter-spacing: $letter-spacing-base;
   }
 }
 
-.trade-tabs {
-  margin-bottom: 16px;
-}
+.trade-tabs { margin-bottom: 16px; }
 
 .trade-cards {
   display: flex;
@@ -166,15 +167,18 @@ onMounted(loadTrades)
 }
 
 .trade-card {
-  background: #fff;
-  border-radius: 10px;
+  background: $bg-card;
+  border-radius: $border-radius;
   padding: 16px 20px;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-  transition: box-shadow 0.2s, transform 0.2s;
+  box-shadow: $shadow-card;
+  border: 1px solid $border-color;
+  transition: $transition-base;
+
   &:hover {
-    box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+    box-shadow: $shadow-md;
     transform: translateY(-2px);
+    border-color: $primary-light;
   }
 }
 
@@ -183,9 +187,10 @@ onMounted(loadTrades)
   justify-content: space-between;
   align-items: center;
   margin-bottom: 12px;
+
   .trade-no {
     font-size: 12px;
-    color: #909399;
+    color: $text-secondary;
     font-family: monospace;
   }
 }
@@ -206,19 +211,20 @@ onMounted(loadTrades)
 .item-thumb {
   width: 56px;
   height: 56px;
-  border-radius: 6px;
+  border-radius: $border-radius-sm;
   flex-shrink: 0;
-  border: 1px solid #ebeef5;
+  border: 1px solid $border-color;
+
   .thumb-placeholder {
     width: 56px;
     height: 56px;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: #f5f7fa;
-    color: #c0c4cc;
+    background: $bg-subtle;
+    color: $text-secondary;
     font-size: 12px;
-    border-radius: 6px;
+    border-radius: $border-radius-sm;
   }
 }
 
@@ -226,22 +232,24 @@ onMounted(loadTrades)
   .item-title {
     font-size: 14px;
     font-weight: 500;
-    color: #303133;
+    color: $text-primary;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
     max-width: 160px;
+    letter-spacing: $letter-spacing-base;
   }
+
   .item-owner {
     font-size: 12px;
-    color: #909399;
+    color: $text-secondary;
     margin-top: 2px;
   }
 }
 
 .exchange-arrow {
   font-size: 22px;
-  color: #409eff;
+  color: $primary;
   flex-shrink: 0;
 }
 
@@ -251,19 +259,20 @@ onMounted(loadTrades)
   align-items: center;
   margin-top: 12px;
   padding-top: 10px;
-  border-top: 1px solid #f0f0f0;
+  border-top: 1px solid $border-color;
 }
 
 .role-badge {
   font-size: 12px;
-  padding: 2px 8px;
-  border-radius: 10px;
-  &.initiator { background: #ecf5ff; color: #409eff; }
-  &.receiver  { background: #f0f9eb; color: #67c23a; }
+  padding: 3px 10px;
+  border-radius: 50px;
+
+  &.initiator { background: rgba(27, 153, 170, 0.1); color: $primary; }
+  &.receiver  { background: rgba(46, 204, 113, 0.1); color: $success; }
 }
 
 .created-time {
   font-size: 12px;
-  color: #c0c4cc;
+  color: $text-secondary;
 }
 </style>

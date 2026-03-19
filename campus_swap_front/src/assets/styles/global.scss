@@ -1,0 +1,277 @@
+/**
+ * 换了吗 · 全局设计系统 CSS
+ * 主色 #1B99AA · 次色 #9ED0CC · 警告 #F1C65E · 背景 #FAFAFA
+ */
+
+@import './variables.scss';
+
+/* ─── 字体 / Reset ─────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Hiragino Sans GB',
+               'Microsoft YaHei', 'Helvetica Neue', Arial, sans-serif;
+  letter-spacing: $letter-spacing-base;
+  background: $bg-page;
+  color: $text-primary;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { text-decoration: none; color: inherit; }
+p  { margin: 0; }
+h1, h2, h3, h4, h5, h6 { margin: 0; font-weight: 600; }
+img { display: block; max-width: 100%; }
+
+/* ─── Element Plus 全局覆写 ────────────────────────── */
+
+/* 主按钮 */
+.el-button--primary {
+  --el-button-bg-color:          #{$primary} !important;
+  --el-button-border-color:      #{$primary} !important;
+  --el-button-hover-bg-color:    #{$primary-hover} !important;
+  --el-button-hover-border-color:#{$primary-hover} !important;
+  --el-button-active-bg-color:   #{$primary-dark} !important;
+  border-radius: 50px !important;
+  font-weight: 500 !important;
+  letter-spacing: $letter-spacing-base !important;
+  transition: $transition-base !important;
+  &:hover { transform: translateY(-1px); box-shadow: $shadow-md; }
+}
+
+/* 默认按钮 */
+.el-button--default {
+  border-radius: 50px !important;
+  border-color: $border-color !important;
+  color: $text-regular !important;
+  font-weight: 500 !important;
+  transition: $transition-base !important;
+  &:hover {
+    border-color: $primary !important;
+    color: $primary !important;
+    background: rgba(27, 153, 170, 0.06) !important;
+  }
+}
+
+/* 警告按钮 */
+.el-button--warning {
+  --el-button-bg-color:          #{$warning} !important;
+  --el-button-border-color:      #{$warning} !important;
+  --el-button-text-color:        #1a2e35 !important;
+  border-radius: 50px !important;
+  font-weight: 500 !important;
+}
+
+/* Card */
+.el-card {
+  border-radius: $border-radius !important;
+  border: 1px solid $border-color !important;
+  box-shadow: $shadow-card !important;
+  transition: $transition-base !important;
+  background: $bg-card !important;
+  &:hover { box-shadow: $shadow-md !important; }
+}
+.el-card__header {
+  border-bottom: 1px solid $border-color !important;
+  padding: 16px 20px !important;
+  font-weight: 600 !important;
+  color: $text-primary !important;
+}
+
+/* Input */
+.el-input__wrapper,
+.el-textarea__inner {
+  border-radius: $border-radius-sm !important;
+  border: 1.5px solid $border-color !important;
+  background: $bg-input !important;
+  transition: $transition-fast !important;
+  box-shadow: none !important;
+  &:hover { border-color: $primary-light !important; }
+}
+.el-input__wrapper.is-focus,
+.el-textarea__inner:focus {
+  border-color: $primary !important;
+  box-shadow: 0 0 0 3px rgba(27, 153, 170, 0.12) !important;
+}
+
+/* Select */
+.el-select .el-input__wrapper {
+  border-radius: $border-radius-sm !important;
+}
+
+/* Form label */
+.el-form-item__label {
+  font-weight: 500 !important;
+  color: $text-regular !important;
+  letter-spacing: $letter-spacing-base !important;
+}
+
+/* Tag */
+.el-tag {
+  border-radius: 50px !important;
+  font-weight: 500 !important;
+  letter-spacing: $letter-spacing-base !important;
+  border: none !important;
+}
+.el-tag--primary, .el-tag.el-tag--light {
+  background: rgba(27, 153, 170, 0.1) !important;
+  color: $primary !important;
+}
+.el-tag--success { background: rgba(46, 204, 113, 0.12) !important; color: $success !important; }
+.el-tag--warning { background: rgba(241, 198, 94, 0.18) !important; color: #b8860b !important; }
+.el-tag--danger  {
+  background:   #FEF0F0 !important;
+  color:        #F56C6C !important;
+  border-color: #FBC4C4 !important;
+  font-weight:  600 !important;
+}
+.el-tag--info    { background: rgba(158, 208, 204, 0.2) !important; color: $text-regular !important; }
+
+/* Dialog */
+.el-dialog {
+  border-radius: $border-radius-lg !important;
+  overflow: hidden !important;
+  box-shadow: $shadow-lg !important;
+  border: none !important;
+}
+.el-dialog__header {
+  background: $primary !important;
+  padding: 18px 24px !important;
+  margin: 0 !important;
+  .el-dialog__title {
+    color: #fff !important;
+    font-size: 16px !important;
+    font-weight: 600 !important;
+    letter-spacing: $letter-spacing-wide !important;
+  }
+  .el-dialog__headerbtn .el-dialog__close { color: rgba(255,255,255,0.8) !important; }
+}
+.el-dialog__body  { padding: 24px !important; }
+.el-dialog__footer {
+  padding: 12px 24px 20px !important;
+  // 弹窗底部按钮容器与外框圆角一致，消除形状冲突
+  border-radius: 0 0 $border-radius-lg $border-radius-lg !important;
+  background: #fff !important;
+}
+// 弹窗内部输入框圆角与弹窗风格协调（偏小但不尖锐）
+.el-dialog .el-input__wrapper,
+.el-dialog .el-textarea__inner {
+  border-radius: $border-radius-sm !important;
+}
+
+/* Tabs */
+.el-tabs__item {
+  font-weight: 500 !important;
+  color: $text-secondary !important;
+  letter-spacing: $letter-spacing-base !important;
+  &.is-active { color: $primary !important; font-weight: 600 !important; }
+}
+.el-tabs__active-bar { background-color: $primary !important; height: 2.5px !important; border-radius: 2px !important; }
+.el-tabs__nav-wrap::after { height: 1px !important; background: $border-color !important; }
+
+/* Avatar */
+.el-avatar {
+  background: linear-gradient(135deg, $primary-light 0%, $primary 100%) !important;
+}
+
+/* Pagination */
+.el-pagination {
+  .el-pager li.is-active { color: $primary !important; border-color: $primary !important; }
+  button:hover, .el-pager li:hover { color: $primary !important; }
+}
+
+/* Descriptions */
+.el-descriptions__label { background: $bg-subtle !important; font-weight: 500 !important; color: $text-regular !important; }
+
+/* Alert */
+.el-alert--info    { background: rgba(27, 153, 170, 0.08) !important; border-left: 3px solid $primary !important; }
+.el-alert--success { background: rgba(46, 204, 113, 0.08) !important; }
+.el-alert--warning { background: rgba(241, 198, 94, 0.12) !important; }
+
+/* Upload */
+.el-upload--picture-card {
+  border-radius: $border-radius-sm !important;
+  border: 1.5px dashed $primary-light !important;
+  background: $bg-subtle !important;
+  &:hover { border-color: $primary !important; background: rgba(27, 153, 170, 0.04) !important; }
+}
+
+/* Dropdown */
+.el-dropdown-menu {
+  border-radius: $border-radius-sm !important;
+  border: 1px solid $border-color !important;
+  box-shadow: $shadow-md !important;
+  padding: 6px !important;
+}
+.el-dropdown-menu__item {
+  border-radius: 10px !important;
+  margin: 2px 0 !important;
+  font-size: 14px !important;
+  &:hover { background: rgba(27, 153, 170, 0.08) !important; color: $primary !important; }
+}
+
+/* Popover */
+.el-popover {
+  border-radius: $border-radius !important;
+  border: 1px solid $border-color !important;
+  box-shadow: $shadow-lg !important;
+}
+
+/* Empty */
+.el-empty__description p { color: $text-secondary !important; font-size: 14px !important; }
+
+/* Divider */
+.el-divider { border-color: $border-color !important; }
+
+/* Loading */
+.el-loading-spinner .circular { stroke: $primary !important; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: $primary-light; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: $primary; }
+
+/* Message / Notification ─────────────────────────── */
+/* 消除"外圆内方"缺陷：外层容器 + 图标区 + 内容区统一圆角 */
+.el-message {
+  border-radius: $border-radius-sm !important;
+  overflow: hidden !important;
+  padding: 12px 20px !important;
+
+  .el-message__content {
+    border-radius: $border-radius-sm !important;
+  }
+  // Element Plus v2 图标区
+  .el-message__icon {
+    border-radius: $border-radius-sm !important;
+  }
+}
+
+.el-notification {
+  border-radius: $border-radius-sm !important;
+  overflow: hidden !important;
+
+  .el-notification__group {
+    border-radius: $border-radius-sm !important;
+  }
+  .el-notification__title,
+  .el-notification__content {
+    border-radius: $border-radius-sm !important;
+  }
+}
+
+/* ─── 全局工具类 ─────────────────────────────────── */
+.text-primary   { color: $primary; }
+.text-warning   { color: $warning; }
+.text-muted     { color: $text-secondary; }
+.bg-primary     { background: rgba(27, 153, 170, 0.1); }
+.bg-page        { background: $bg-page; }
+.rounded-xl     { border-radius: $border-radius-xl; }
+.shadow-card    { box-shadow: $shadow-card; }
+.letter-wide    { letter-spacing: $letter-spacing-wide; }

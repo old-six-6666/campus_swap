@@ -119,7 +119,7 @@ async function fetchMessages() {
 
 function scrollToBottom() {
   if (messagesEl.value) {
-    messagesEl.value.scrollTop = messagesEl.value.scrollHeight
+    messagesEl.value.scrollTo({ top: messagesEl.value.scrollHeight, behavior: 'smooth' })
   }
 }
 
@@ -259,6 +259,11 @@ function onCloseDialog() {
   searchResults.value = []
 }
 
+watch(messages, async () => {
+  await nextTick()
+  scrollToBottom()
+})
+
 onMounted(async () => {
   await fetchConversations()
   await handleQueryNav()
@@ -302,7 +307,7 @@ watch(() => route.query, async () => {
           :class="{ active: currentConv?.conversationId === conv.conversationId }"
           @click="selectConv(conv)"
         >
-          <el-avatar :size="42" :src="conv.otherAvatar" />
+          <el-avatar :size="42" :src="userStore.getAvatar(conv.otherAvatar)" style="object-fit:cover;flex-shrink:0" />
           <div class="conv-meta">
             <div class="conv-top">
               <span class="conv-name">{{ conv.otherNickname }}</span>
@@ -327,7 +332,7 @@ watch(() => route.query, async () => {
         </div>
         <div v-for="n in notifications" :key="n.id" class="notif-item" :class="{ unread: !n.isRead }"
           @click="$router.push({ name: 'PostDetail', params: { id: n.postId } })">
-          <el-avatar :size="36" :src="n.sender?.avatar" />
+          <el-avatar :size="36" :src="userStore.getAvatar(n.sender?.avatar)" style="object-fit:cover;flex-shrink:0" />
           <div class="notif-body">
             <span class="notif-name">{{ n.sender?.nickname }}</span>
             <span class="notif-action">{{ notifTypeLabel(n.type) }}</span>
@@ -344,7 +349,7 @@ watch(() => route.query, async () => {
       <template v-if="currentConv">
         <!-- 聊天头部 -->
         <div class="chat-header">
-          <el-avatar :size="38" :src="currentConv.otherAvatar" />
+          <el-avatar :size="38" :src="userStore.getAvatar(currentConv.otherAvatar)" style="object-fit:cover;flex-shrink:0" />
           <div class="chat-header-info">
             <span class="other-name">{{ currentConv.otherNickname }}</span>
             <span v-if="currentConv.itemTitle" class="item-context">
@@ -365,7 +370,7 @@ watch(() => route.query, async () => {
             class="msg-row"
             :class="{ 'msg-me': msg.senderId === myId }"
           >
-            <el-avatar :size="32" :src="msg.senderAvatar" class="msg-avatar" />
+            <el-avatar :size="32" :src="userStore.getAvatar(msg.senderAvatar)" class="msg-avatar" style="object-fit:cover" />
             <div class="msg-bubble">
               <div class="bubble-content">
                 <template v-for="(part, i) in parseMsgParts(msg.content)">
@@ -428,7 +433,7 @@ watch(() => route.query, async () => {
           未找到用户，请换个关键词试试
         </div>
         <div v-for="user in searchResults" :key="user.id" class="result-item">
-          <el-avatar :size="40" :src="user.avatar" />
+          <el-avatar :size="40" :src="userStore.getAvatar(user.avatar)" style="object-fit:cover;flex-shrink:0" />
           <div class="result-info">
             <span class="result-name">{{ user.nickname }}</span>
             <span v-if="user.school" class="result-school">{{ user.school }}</span>
@@ -441,6 +446,8 @@ watch(() => route.query, async () => {
 </template>
 
 <style scoped lang="scss">
+@import '@/assets/styles/variables.scss';
+
 .chat-page {
   display: flex;
   height: calc(100vh - 200px);
@@ -497,8 +504,8 @@ watch(() => route.query, async () => {
   border-bottom: 1px solid #f0f0f0;
   transition: background 0.15s;
 
-  &:hover { background: #f2f6fc; }
-  &.active { background: #ecf5ff; }
+  &:hover { background: rgba(27, 153, 170, 0.06); }
+  &.active { background: rgba(27, 153, 170, 0.12); }
 }
 
 .conv-meta {
@@ -605,7 +612,7 @@ watch(() => route.query, async () => {
   padding: 20px 16px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 16px;
   background: #f7f8fa;
 }
 
@@ -618,16 +625,26 @@ watch(() => route.query, async () => {
 
 .msg-row {
   display: flex;
-  align-items: flex-end;
-  gap: 8px;
+  flex-direction: row;
+  align-items: flex-start;
+  align-self: flex-start;
+  gap: 12px;
 
   &.msg-me {
+    align-self: flex-end;
     flex-direction: row-reverse;
 
     .bubble-content {
-      background: #409eff;
+      background: $primary;
       color: #fff;
-      border-radius: 16px 4px 16px 16px;
+      border-radius: 12px 2px 12px 12px;
+
+      .trade-link {
+        background: rgba(255,255,255,0.18);
+        color: #fff;
+        border-color: rgba(255,255,255,0.3);
+        &:hover { background: rgba(255,255,255,0.28); }
+      }
     }
 
     .bubble-time {
@@ -638,35 +655,35 @@ watch(() => route.query, async () => {
 
 .msg-avatar {
   flex-shrink: 0;
+  align-self: flex-start;
 }
 
 .msg-bubble {
   display: flex;
   flex-direction: column;
-  max-width: 60%;
+  max-width: 70%;
   gap: 3px;
 
   .bubble-content {
-    background: #fff;
+    background: #F4F4F5;
     color: #303133;
     padding: 10px 14px;
-    border-radius: 4px 16px 16px 16px;
+    border-radius: 2px 12px 12px 12px;
     font-size: 14px;
     line-height: 1.6;
     word-break: break-word;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
 
     .trade-link {
       display: inline-block;
       margin-top: 4px;
       padding: 4px 10px;
-      background: #ecf5ff;
-      color: #409eff;
+      background: rgba(27, 153, 170, 0.08);
+      color: $primary;
       border-radius: 6px;
       text-decoration: none;
       font-size: 13px;
-      border: 1px solid #d9ecff;
-      &:hover { background: #d9ecff; }
+      border: 1px solid rgba(27, 153, 170, 0.2);
+      &:hover { background: rgba(27, 153, 170, 0.15); }
     }
   }
 
@@ -772,8 +789,8 @@ watch(() => route.query, async () => {
     border-radius: 6px;
     transition: all 0.15s;
 
-    &:hover { background: #f0f2f5; }
-    &.active { background: #ecf5ff; color: #409eff; }
+    &:hover { background: rgba(27, 153, 170, 0.08); }
+    &.active { background: rgba(27, 153, 170, 0.12); color: $primary; }
 
     .tab-badge {
       position: absolute;
@@ -798,8 +815,8 @@ watch(() => route.query, async () => {
   transition: background 0.15s;
   position: relative;
 
-  &:hover { background: #f2f6fc; }
-  &.unread { background: #fef9f0; }
+  &:hover { background: rgba(27, 153, 170, 0.06); }
+  &.unread { background: rgba(27, 153, 170, 0.04); }
 }
 
 .notif-body {
