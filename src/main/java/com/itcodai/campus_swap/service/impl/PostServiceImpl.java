@@ -18,6 +18,7 @@ import com.itcodai.campus_swap.mapper.PostLikeMapper;
 import com.itcodai.campus_swap.mapper.PostMapper;
 import com.itcodai.campus_swap.mapper.TradeMapper;
 import com.itcodai.campus_swap.mapper.UserMapper;
+import com.itcodai.campus_swap.service.NotificationService;
 import com.itcodai.campus_swap.service.PostService;
 import com.itcodai.campus_swap.vo.PageVO;
 import lombok.extern.slf4j.Slf4j;
@@ -44,6 +45,7 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements Po
     private final PostFavoriteMapper postFavoriteMapper;
     private final ItemMapper itemMapper;
     private final TradeMapper tradeMapper;
+    private final NotificationService notificationService;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     private List<String> parseImages(String images) {
@@ -59,12 +61,14 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements Po
                            PostLikeMapper postLikeMapper,
                            PostFavoriteMapper postFavoriteMapper,
                            ItemMapper itemMapper,
-                           TradeMapper tradeMapper) {
+                           TradeMapper tradeMapper,
+                           NotificationService notificationService) {
         this.userMapper = userMapper;
         this.postLikeMapper = postLikeMapper;
         this.postFavoriteMapper = postFavoriteMapper;
         this.itemMapper = itemMapper;
         this.tradeMapper = tradeMapper;
+        this.notificationService = notificationService;
     }
 
     @Override
@@ -253,6 +257,16 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements Po
                 .setSql("like_count = like_count + 1")
                 .setSql("hot_score = like_count * 3 + comment_count * 2 + favorite_count * 4 + share_count * 1 + view_count * 0.1"));
 
+        // 通知帖主
+        try {
+            Post post = this.getById(postId);
+            if (post != null) {
+                notificationService.send(post.getUserId(), userId, "LIKE", postId, null);
+            }
+        } catch (Exception e) {
+            log.error("发送点赞通知失败 postId={} userId={}", postId, userId, e);
+        }
+
         log.info("用户 {} 点赞了动态 {}", userId, postId);
         return true;
     }
@@ -301,6 +315,16 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements Po
                 .eq(Post::getId, postId)
                 .setSql("favorite_count = favorite_count + 1")
                 .setSql("hot_score = like_count * 3 + comment_count * 2 + favorite_count * 4 + share_count * 1 + view_count * 0.1"));
+
+        // 通知帖主
+        try {
+            Post post = this.getById(postId);
+            if (post != null) {
+                notificationService.send(post.getUserId(), userId, "FAVORITE", postId, null);
+            }
+        } catch (Exception e) {
+            log.error("发送收藏通知失败 postId={} userId={}", postId, userId, e);
+        }
 
         log.info("用户 {} 收藏了动态 {}", userId, postId);
         return true;

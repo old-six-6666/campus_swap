@@ -3,6 +3,7 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import { RouterView, useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/useUserStore'
 import { chatApi } from '@/api/modules/chat'
+import { notificationApi } from '@/api/modules/notification'
 import { userApi } from '@/api/modules/user'
 import { Search } from '@element-plus/icons-vue'
 
@@ -40,8 +41,11 @@ function goUserHome(userId) {
 async function fetchUnread() {
   if (!userStore.isLoggedIn) return
   try {
-    const data = await chatApi.getUnreadCount()
-    unreadCount.value = data?.totalUnread || 0
+    const [chatData, notifData] = await Promise.all([
+      chatApi.getUnreadCount(),
+      notificationApi.getUnreadCount(),
+    ])
+    unreadCount.value = (chatData?.totalUnread || 0) + (notifData?.count || 0)
   } catch {
     // ignore
   }
