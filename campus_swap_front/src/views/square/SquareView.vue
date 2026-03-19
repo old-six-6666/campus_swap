@@ -135,6 +135,15 @@ function handleCommentAdded({ postId }) {
   }
 }
 
+// 处理动态编辑
+function handlePostUpdated({ postId, content, images }) {
+  const post = posts.value.find(p => p.id === postId)
+  if (post) {
+    post.content = content
+    post.images = images
+  }
+}
+
 // 处理动态删除
 function handlePostDeleted(postId) {
   // 从列表中移除被删除的动态
@@ -263,6 +272,7 @@ function handlePublishSuccess() {
             @favorite-changed="handleFavoriteChanged"
             @comment-added="handleCommentAdded"
             @post-deleted="handlePostDeleted"
+            @post-updated="handlePostUpdated"
           />
         </template>
         

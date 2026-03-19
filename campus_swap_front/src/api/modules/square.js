@@ -191,6 +191,35 @@ export const squareApi = {
   },
 
   /**
+   * 获取我的收藏动态列表
+   * @param {Object} params { page, size }
+   * @returns {Promise}
+   */
+  getMyFavorites(params) {
+    return request({
+      url: '/post/favorites',
+      method: 'get',
+      params
+    })
+  },
+
+  /**
+   * 编辑动态（只能编辑自己的动态）
+   * @param {number} postId 动态ID
+   * @param {Object} data 要更新的内容
+   * @param {string} data.content 动态内容
+   * @param {Array} data.imageList 图片列表
+   * @returns {Promise}
+   */
+  updatePost(postId, data) {
+    return request({
+      url: `/post/${postId}`,
+      method: 'put',
+      data
+    })
+  },
+
+  /**
    * 删除动态
    * @param {number} postId 动态ID
    * @returns {Promise}

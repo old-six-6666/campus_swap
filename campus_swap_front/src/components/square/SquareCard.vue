@@ -9,7 +9,8 @@ import {
   Picture,
   Share,
   CircleCheck,
-  Delete
+  Delete,
+  Edit
 } from '@element-plus/icons-vue'
 import EmojiPicker from 'vue3-emoji-picker'
 import 'vue3-emoji-picker/css'
@@ -23,7 +24,7 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['like-changed', 'favorite-changed', 'comment-added'])
+const emit = defineEmits(['like-changed', 'favorite-changed', 'comment-added', 'post-deleted', 'post-updated'])
 
 const userStore = useUserStore()
 const router = useRouter()
@@ -176,7 +177,9 @@ function handleShare() {
 
 // 处理下拉菜单操作
 function handleAction(command) {
-  if (command === 'delete') {
+  if (command === 'edit') {
+    router.push({ name: 'EditPost', params: { id: props.post.id } })
+  } else if (command === 'delete') {
     handleDelete()
   }
 }
@@ -240,6 +243,10 @@ const isCurrentUserPost = computed(() => {
           <el-button type="info" link :icon="More" />
           <template #dropdown>
             <el-dropdown-menu>
+              <el-dropdown-item command="edit">
+                <el-icon><Edit /></el-icon>
+                编辑动态
+              </el-dropdown-item>
               <el-dropdown-item command="delete" style="color: #f56c6c;">
                 <el-icon><Delete /></el-icon>
                 删除动态

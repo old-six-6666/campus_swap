@@ -277,6 +277,40 @@ public class PostController {
     }
     
     /**
+     * 编辑动态（只能编辑自己的动态，content 和 images 均可更新）
+     * PUT /api/post/{postId}
+     */
+    @PutMapping("/{postId:\\d+}")
+    public Result<Void> updatePost(@PathVariable Long postId,
+                                   @RequestBody Post post,
+                                   HttpServletRequest request) {
+        try {
+            Long userId = getUserIdFromRequest(request);
+            if (userId == null) {
+                return Result.fail(ResultCode.UNAUTHORIZED, "请先登录");
+            }
+
+            if (post.getContent() != null && post.getContent().trim().isEmpty()) {
+                return Result.fail(ResultCode.BAD_REQUEST, "动态内容不能为空");
+            }
+
+            // 将前端传来的 imageList 序列化为 JSON 字符串
+            if (post.getImageList() != null) {
+                post.setImages(new ObjectMapper().writeValueAsString(post.getImageList()));
+            }
+
+            boolean success = postService.updatePost(postId, post, userId);
+            if (!success) {
+                return Result.fail(ResultCode.BAD_REQUEST, "编辑失败，动态不存在或无权限");
+            }
+            return Result.success();
+        } catch (Exception e) {
+            log.error("编辑动态失败", e);
+            return Result.fail(ResultCode.INTERNAL_ERROR, "编辑动态失败");
+        }
+    }
+
+    /**
      * 删除动态（只能删除自己的动态）
      * DELETE /api/post/{postId}
      */
@@ -293,6 +327,34 @@ public class PostController {
         } catch (Exception e) {
             log.error("删除动态失败", e);
             return Result.fail(ResultCode.INTERNAL_ERROR, "删除动态失败");
+        }
+    }
+
+    /**
+     * 获取当前用户收藏的动态列表
+     * GET /api/post/favorites
+     */
+    @GetMapping("/favorites")
+    public Result<Map<String, Object>> getMyFavorites(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size,
+            HttpServletRequest request) {
+        try {
+            Long userId = getUserIdFromRequest(request);
+            if (userId == null) {
+                return Result.fail(ResultCode.UNAUTHORIZED, "请先登录");
+            }
+            PageVO<Map<String, Object>> pageVO = postService.getFavoritePosts(userId, page, size);
+            Map<String, Object> result = Map.of(
+                "records", pageVO.getRecords(),
+                "total", pageVO.getTotal(),
+                "page", pageVO.getPage(),
+                "size", pageVO.getSize()
+            );
+            return Result.success(result);
+        } catch (Exception e) {
+            log.error("获取收藏列表失败", e);
+            return Result.fail(ResultCode.INTERNAL_ERROR, "获取收藏列表失败");
         }
     }
 

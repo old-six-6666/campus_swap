@@ -68,6 +68,8 @@ function handleCommand(command) {
     router.push('/profile')
   } else if (command === 'myItems') {
     router.push('/my-items')
+  } else if (command === 'myFavorites') {
+    router.push('/my-favorites')
   } else if (command === 'myTrades') {
     router.push('/trade')
   } else if (command === 'changePassword') {
@@ -161,6 +163,7 @@ function handleCommand(command) {
               <el-dropdown-menu>
                 <el-dropdown-item command="profile">个人中心</el-dropdown-item>
                 <el-dropdown-item command="myItems">我的闲置</el-dropdown-item>
+                <el-dropdown-item command="myFavorites">我的收藏</el-dropdown-item>
                 <el-dropdown-item command="myTrades">我的交易</el-dropdown-item>
                 <el-dropdown-item command="chat">
                   消息
