@@ -29,6 +29,11 @@ export const useUserStore = defineStore('user', () => {
     return isSuperAdmin.value || permissions.value.includes(code)
   }
 
+  /** 统一头像 getter：url 无效时回退到品牌 logo */
+  function getAvatar(url) {
+    return (url && typeof url === 'string' && url.trim()) ? url : '/huanleme.png'
+  }
+
   function _persist() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({
       token: token.value,
@@ -79,7 +84,7 @@ export const useUserStore = defineStore('user', () => {
   return {
     token, userInfo, permissions,
     isLoggedIn, isAdmin, isSuperAdmin,
-    hasPermission,
+    hasPermission, getAvatar,
     login, fetchProfile, fetchPermissions, logout,
   }
 })

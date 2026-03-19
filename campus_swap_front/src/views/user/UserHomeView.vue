@@ -15,14 +15,12 @@ const userStore = useUserStore()
 const userInfo = ref(null)
 const userLoading = ref(false)
 
-// 商品 Tab
 const items = ref([])
 const itemsLoading = ref(false)
 const itemsPage = ref(1)
 const itemsTotal = ref(0)
 const itemsSize = 12
 
-// 动态 Tab
 const posts = ref([])
 const postsLoading = ref(false)
 const postsPage = ref(1)
@@ -39,7 +37,6 @@ async function fetchUser() {
   try {
     userInfo.value = await userApi.getUserProfile(targetUserId.value)
   } catch (e) {
-    console.error('[UserHome] fetchUser failed, userId=', targetUserId.value, e)
     userInfo.value = null
   } finally {
     userLoading.value = false
@@ -75,9 +72,7 @@ async function fetchPosts(page = 1) {
 }
 
 function handleTabChange(tab) {
-  if (tab === 'posts' && posts.value.length === 0) {
-    fetchPosts(1)
-  }
+  if (tab === 'posts' && posts.value.length === 0) fetchPosts(1)
 }
 
 function contactUser() {
@@ -87,11 +82,7 @@ function contactUser() {
   }
   router.push({
     name: 'Chat',
-    query: {
-      to: userInfo.value.id,
-      nickname: userInfo.value.nickname,
-      avatar: userInfo.value.avatar || '',
-    },
+    query: { to: userInfo.value.id, nickname: userInfo.value.nickname, avatar: userInfo.value.avatar || '' },
   })
 }
 
@@ -100,7 +91,6 @@ onMounted(async () => {
   await fetchItems(1)
 })
 
-// 当路由参数变化时（从一个用户主页跳转到另一个），重新加载数据
 watch(targetUserId, () => {
   userInfo.value = null
   items.value = []
@@ -117,74 +107,66 @@ watch(targetUserId, () => {
 
     <template v-if="userInfo">
       <!-- 用户信息卡片 -->
-      <el-card class="profile-card" shadow="never">
-        <div class="profile-header">
-          <el-avatar :size="80" :src="userInfo.avatar" class="profile-avatar">
+      <div class="profile-card">
+        <div class="profile-bg"></div>
+        <div class="profile-body">
+          <el-avatar :size="80" :src="userStore.getAvatar(userInfo.avatar)" class="profile-avatar" style="object-fit:cover">
             <el-icon :size="40"><UserIcon /></el-icon>
           </el-avatar>
           <div class="profile-info">
             <div class="nickname-row">
               <span class="nickname">{{ userInfo.nickname }}</span>
-              <el-tag v-if="userInfo.isVerified === 1" type="success" size="small" effect="plain">
-                已认证
-              </el-tag>
+              <el-tag v-if="userInfo.isVerified === 1" size="small" effect="plain">已认证</el-tag>
             </div>
-            <div v-if="userInfo.school" class="school">{{ userInfo.school }}</div>
+            <div v-if="userInfo.school" class="school">
+              {{ userInfo.school }}
+            </div>
           </div>
           <div class="profile-actions">
             <el-button
               v-if="!isSelf && userStore.isLoggedIn"
               type="primary"
               :icon="ChatDotRound"
+              round
               @click="contactUser"
-            >
-              私信
-            </el-button>
+            >私信</el-button>
             <el-button
               v-if="isSelf"
-              type="default"
+              round
               @click="router.push({ name: 'Profile' })"
-            >
-              编辑资料
-            </el-button>
+            >编辑资料</el-button>
           </div>
         </div>
-      </el-card>
+      </div>
 
       <!-- Tab 切换 -->
-      <el-tabs v-model="activeTab" class="content-tabs" @tab-change="handleTabChange">
-        <!-- 在售物品 -->
-        <el-tab-pane label="在售物品" name="items">
-          <div v-loading="itemsLoading" class="items-grid">
-            <el-empty v-if="!itemsLoading && items.length === 0" description="暂无在售物品" :image-size="80" />
-            <el-row :gutter="16">
-              <el-col
-                v-for="item in items"
-                :key="item.id"
-                :xs="12" :sm="8" :md="6"
-              >
-                <RouterLink :to="`/item/${item.id}`" class="item-card-link">
-                  <el-card shadow="hover" class="item-card">
-                    <el-image
-                      :src="item.coverImage"
-                      fit="cover"
-                      class="item-image"
-                      lazy
-                    >
+      <div class="content-panel">
+        <el-tabs v-model="activeTab" @tab-change="handleTabChange">
+          <!-- 在售物品 -->
+          <el-tab-pane label="在售物品" name="items">
+            <div v-loading="itemsLoading" class="items-grid">
+              <el-empty v-if="!itemsLoading && items.length === 0" description="暂无在售物品" :image-size="80" />
+              <template v-else>
+                <RouterLink
+                  v-for="item in items"
+                  :key="item.id"
+                  :to="`/item/${item.id}`"
+                  class="item-card"
+                >
+                  <div class="card-img-wrap">
+                    <el-image :src="item.coverImage" fit="cover" class="card-img" lazy>
                       <template #error>
-                        <div class="image-placeholder">
-                          <el-icon size="28"><Picture /></el-icon>
-                        </div>
+                        <div class="img-placeholder"><el-icon size="24"><Picture /></el-icon></div>
                       </template>
                     </el-image>
-                    <div class="item-info">
-                      <p class="item-title">{{ item.title }}</p>
-                      <p class="item-price">¥ {{ item.price }}</p>
-                    </div>
-                  </el-card>
+                  </div>
+                  <div class="card-info">
+                    <p class="card-title">{{ item.title }}</p>
+                    <p class="card-price">¥ {{ item.price }}</p>
+                  </div>
                 </RouterLink>
-              </el-col>
-            </el-row>
+              </template>
+            </div>
             <div v-if="itemsTotal > itemsSize" class="pagination-wrap">
               <el-pagination
                 :current-page="itemsPage"
@@ -194,18 +176,14 @@ watch(targetUserId, () => {
                 @current-change="fetchItems"
               />
             </div>
-          </div>
-        </el-tab-pane>
+          </el-tab-pane>
 
-        <!-- 发布动态 -->
-        <el-tab-pane label="发布动态" name="posts">
-          <div v-loading="postsLoading" class="posts-list">
-            <el-empty v-if="!postsLoading && posts.length === 0" description="暂无动态" :image-size="80" />
-            <SquareCard
-              v-for="post in posts"
-              :key="post.id"
-              :post="post"
-            />
+          <!-- 发布动态 -->
+          <el-tab-pane label="发布动态" name="posts">
+            <div v-loading="postsLoading" class="posts-list">
+              <el-empty v-if="!postsLoading && posts.length === 0" description="暂无动态" :image-size="80" />
+              <SquareCard v-for="post in posts" :key="post.id" :post="post" />
+            </div>
             <div v-if="postsTotal > postsSize" class="pagination-wrap">
               <el-pagination
                 :current-page="postsPage"
@@ -215,121 +193,160 @@ watch(targetUserId, () => {
                 @current-change="fetchPosts"
               />
             </div>
-          </div>
-        </el-tab-pane>
-      </el-tabs>
+          </el-tab-pane>
+        </el-tabs>
+      </div>
     </template>
   </div>
 </template>
 
 <style scoped lang="scss">
+@import '@/assets/styles/variables.scss';
+
 .user-home {
   max-width: 900px;
   margin: 0 auto;
-  padding: 20px 16px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 20px;
 }
 
+/* ── 用户信息卡 ─────────────────────────── */
 .profile-card {
-  border-radius: 12px;
+  background: $bg-card;
+  border-radius: $border-radius-lg;
+  overflow: hidden;
+  box-shadow: $shadow-card;
+  border: 1px solid $border-color;
+}
 
-  .profile-header {
+.profile-bg {
+  height: 88px;
+  background: linear-gradient(135deg, $primary 0%, $primary-light 100%);
+}
+
+.profile-body {
+  display: flex;
+  align-items: flex-end;
+  gap: 20px;
+  padding: 0 28px 24px;
+  margin-top: -40px;
+  flex-wrap: wrap;
+}
+
+.profile-avatar {
+  border: 4px solid #fff;
+  box-shadow: $shadow-sm;
+  flex-shrink: 0;
+}
+
+.profile-info {
+  flex: 1;
+  min-width: 0;
+  padding-top: 44px;
+
+  .nickname-row {
     display: flex;
     align-items: center;
-    gap: 20px;
+    gap: 8px;
+    margin-bottom: 4px;
+    flex-wrap: wrap;
 
-    .profile-avatar {
-      flex-shrink: 0;
+    .nickname {
+      font-size: 20px;
+      font-weight: 700;
+      color: $text-primary;
+      letter-spacing: $letter-spacing-base;
     }
+  }
 
-    .profile-info {
-      flex: 1;
-
-      .nickname-row {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        margin-bottom: 6px;
-
-        .nickname {
-          font-size: 20px;
-          font-weight: 700;
-          color: #303133;
-        }
-      }
-
-      .school {
-        font-size: 14px;
-        color: #909399;
-      }
-    }
-
-    .profile-actions {
-      flex-shrink: 0;
-    }
+  .school {
+    font-size: 13px;
+    color: $text-secondary;
+    letter-spacing: $letter-spacing-base;
   }
 }
 
-.content-tabs {
-  :deep(.el-tabs__header) {
-    margin-bottom: 16px;
-  }
+.profile-actions {
+  padding-top: 44px;
+  flex-shrink: 0;
 }
 
+/* ── 内容面板 ───────────────────────────── */
+.content-panel {
+  background: $bg-card;
+  border-radius: $border-radius-lg;
+  padding: 16px 24px 24px;
+  box-shadow: $shadow-card;
+  border: 1px solid $border-color;
+}
+
+/* ── 物品网格 ───────────────────────────── */
 .items-grid {
-  .item-card-link {
-    text-decoration: none;
-    display: block;
-    margin-bottom: 16px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 16px;
+  min-height: 140px;
+}
+
+.item-card {
+  text-decoration: none;
+  display: block;
+  background: $bg-card;
+  border-radius: $border-radius;
+  overflow: hidden;
+  border: 1px solid $border-color;
+  box-shadow: $shadow-card;
+  transition: $transition-base;
+
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: $shadow-md;
+    border-color: $primary-light;
+  }
+}
+
+.card-img-wrap {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+}
+
+.card-img {
+  width: 100%;
+  height: 100%;
+  transition: transform 0.4s ease;
+  .item-card:hover & { transform: scale(1.04); }
+}
+
+.img-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: $bg-subtle;
+  color: $text-secondary;
+}
+
+.card-info {
+  padding: 10px 12px;
+
+  .card-title {
+    font-size: 13px;
+    color: $text-primary;
+    font-weight: 500;
+    margin-bottom: 4px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    letter-spacing: $letter-spacing-base;
   }
 
-  .item-card {
-    border-radius: 10px;
-    overflow: hidden;
-    cursor: pointer;
-    transition: transform 0.15s;
-
-    &:hover {
-      transform: translateY(-2px);
-    }
-
-    .item-image {
-      width: 100%;
-      height: 160px;
-      display: block;
-    }
-
-    .image-placeholder {
-      width: 100%;
-      height: 160px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: #f5f7fa;
-      color: #c0c4cc;
-    }
-
-    .item-info {
-      padding: 8px 10px;
-
-      .item-title {
-        font-size: 13px;
-        color: #303133;
-        margin: 0 0 4px;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-      }
-
-      .item-price {
-        font-size: 14px;
-        font-weight: 600;
-        color: #f56c6c;
-        margin: 0;
-      }
-    }
+  .card-price {
+    font-size: 14px;
+    font-weight: 700;
+    color: $warning;
   }
 }
 
@@ -342,6 +359,12 @@ watch(targetUserId, () => {
 .pagination-wrap {
   display: flex;
   justify-content: center;
-  margin-top: 20px;
+  margin-top: 24px;
+}
+
+@media (max-width: 600px) {
+  .profile-body { padding: 0 16px 20px; }
+  .content-panel { padding: 14px 14px 20px; }
+  .items-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
 }
 </style>

@@ -14,7 +14,6 @@ const userStore = useUserStore()
 const unreadCount = ref(0)
 let unreadTimer = null
 
-// 用户搜索
 const userSearchKeyword = ref('')
 const userSearchResults = ref([])
 const userSearchLoading = ref(false)
@@ -81,394 +80,415 @@ function handleCommand(command) {
 </script>
 
 <template>
-  <el-container class="layout-wrapper">
+  <div class="layout-root">
     <!-- 顶部导航 -->
-    <el-header class="header">
-      <div class="header-left">
-        <RouterLink to="/" class="logo">换了吗</RouterLink>
-      </div>
-      
-      <!-- 导航菜单 -->
-      <div class="header-nav">
-        <RouterLink :to="{ name: 'Home' }" class="nav-item" :class="{ active: route.name === 'Home' }">首页</RouterLink>
-        <RouterLink :to="{ name: 'Category' }" class="nav-item" :class="{ active: route.name === 'Category' }">物品分类</RouterLink>
-        <RouterLink :to="{ name: 'Publish' }" class="nav-item" :class="{ active: route.name === 'Publish' }">发布闲置</RouterLink>
-        <RouterLink :to="{ name: 'Square' }" class="nav-item" :class="{ active: route.name === 'Square' }">广场</RouterLink>
-        <RouterLink v-if="userStore.isLoggedIn" :to="{ name: 'Chat' }" class="nav-item" active-class="active">
-          <el-badge :value="unreadCount || 0" :hidden="!unreadCount" class="msg-badge">
-            消息
-          </el-badge>
+    <header class="header">
+      <div class="header-inner">
+        <!-- Logo -->
+        <RouterLink to="/" class="logo-link">
+          <img src="/logo.png" alt="换了吗" class="logo-img" />
+          <span class="logo-text">换了吗</span>
         </RouterLink>
-        <RouterLink v-if="userStore.isLoggedIn" :to="{ name: 'MyTrades' }" class="nav-item" active-class="active">
-          交易
-        </RouterLink>
-      </div>
-      
-      <div class="header-right">
-        <!-- 搜索用户 -->
-        <el-popover
-          :visible="searchPopoverVisible"
-          placement="bottom-end"
-          :width="280"
-          trigger="click"
-          @update:visible="searchPopoverVisible = $event"
-        >
-          <template #reference>
-            <el-button :icon="Search" circle size="small" class="search-user-btn" title="搜索用户" />
-          </template>
-          <div class="user-search-panel">
-            <el-input
-              v-model="userSearchKeyword"
-              placeholder="搜索用户昵称..."
-              size="small"
-              clearable
-              :prefix-icon="Search"
-              @keyup.enter="handleUserSearch"
-              @clear="userSearchResults = []"
-            />
-            <div v-if="userSearchLoading" class="search-loading">搜索中...</div>
-            <div v-else-if="userSearchResults.length === 0 && userSearchKeyword" class="search-empty">未找到用户</div>
-            <div v-else class="search-results">
-              <div
-                v-for="u in userSearchResults"
-                :key="u.id"
-                class="search-result-item"
-                @click="goUserHome(u.id)"
-              >
-                <el-avatar :size="32" :src="u.avatar" />
-                <div class="result-info">
-                  <span class="result-name">{{ u.nickname }}</span>
-                  <span v-if="u.school" class="result-school">{{ u.school }}</span>
+
+        <!-- 导航菜单 -->
+        <nav class="header-nav">
+          <RouterLink :to="{ name: 'Home' }" class="nav-item" :class="{ active: route.name === 'Home' }">首页</RouterLink>
+          <RouterLink :to="{ name: 'Category' }" class="nav-item" :class="{ active: route.name === 'Category' }">物品分类</RouterLink>
+          <RouterLink :to="{ name: 'Publish' }" class="nav-item" :class="{ active: route.name === 'Publish' }">发布闲置</RouterLink>
+          <RouterLink :to="{ name: 'Square' }" class="nav-item" :class="{ active: route.name === 'Square' }">广场</RouterLink>
+          <RouterLink v-if="userStore.isLoggedIn" :to="{ name: 'Chat' }" class="nav-item" :class="{ active: route.name === 'Chat' }">
+            <el-badge :value="unreadCount || 0" :hidden="!unreadCount" class="msg-badge">消息</el-badge>
+          </RouterLink>
+          <RouterLink v-if="userStore.isLoggedIn" :to="{ name: 'MyTrades' }" class="nav-item" :class="{ active: route.name === 'MyTrades' }">
+            交易
+          </RouterLink>
+        </nav>
+
+        <div class="header-right">
+          <!-- 搜索用户 -->
+          <el-popover
+            :visible="searchPopoverVisible"
+            placement="bottom-end"
+            :width="300"
+            trigger="click"
+            @update:visible="searchPopoverVisible = $event"
+          >
+            <template #reference>
+              <button class="search-btn" title="搜索用户">
+                <el-icon><Search /></el-icon>
+              </button>
+            </template>
+            <div class="user-search-panel">
+              <el-input
+                v-model="userSearchKeyword"
+                placeholder="搜索用户昵称..."
+                size="small"
+                clearable
+                :prefix-icon="Search"
+                @keyup.enter="handleUserSearch"
+                @clear="userSearchResults = []"
+              />
+              <div v-if="userSearchLoading" class="search-loading">搜索中...</div>
+              <div v-else-if="userSearchResults.length === 0 && userSearchKeyword" class="search-empty">未找到用户</div>
+              <div v-else class="search-results">
+                <div
+                  v-for="u in userSearchResults"
+                  :key="u.id"
+                  class="search-result-item"
+                  @click="goUserHome(u.id)"
+                >
+                  <el-avatar :size="34" :src="userStore.getAvatar(u.avatar)" style="object-fit:cover;flex-shrink:0" />
+                  <div class="result-info">
+                    <span class="result-name">{{ u.nickname }}</span>
+                    <span v-if="u.school" class="result-school">{{ u.school }}</span>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        </el-popover>
+          </el-popover>
 
-        <template v-if="userStore.isLoggedIn">
-          <el-dropdown @command="handleCommand">
-            <span class="user-avatar">
-              <el-tag
-                v-if="userStore.isAdmin"
-                :type="userStore.isSuperAdmin ? 'danger' : 'warning'"
-                size="small"
-                style="margin-right:6px"
-              >{{ userStore.isSuperAdmin ? '超管' : '管理员' }}</el-tag>
-              {{ userStore.userInfo?.nickname || '用户' }}
-              <el-icon style="margin-left:2px;vertical-align:middle;"><arrow-down /></el-icon>
-            </span>
-            <template #dropdown>
-              <el-dropdown-menu>
-                <el-dropdown-item command="profile">个人中心</el-dropdown-item>
-                <el-dropdown-item command="myItems">我的闲置</el-dropdown-item>
-                <el-dropdown-item command="myTrades">我的交易</el-dropdown-item>
-                <el-dropdown-item command="chat">
-                  消息
-                  <el-badge v-if="unreadCount" :value="unreadCount" style="margin-left:6px" />
-                </el-dropdown-item>
-                <el-dropdown-item command="changePassword">修改密码</el-dropdown-item>
-                <el-dropdown-item v-if="userStore.isAdmin" command="admin" divided>
-                  管理面板
-                </el-dropdown-item>
-                <el-dropdown-item command="logout" :divided="!userStore.isAdmin">退出登录</el-dropdown-item>
-              </el-dropdown-menu>
-            </template>
-          </el-dropdown>
-        </template>
-        <template v-else>
-          <RouterLink to="/login">
-            <el-button size="small">登录</el-button>
-          </RouterLink>
-          <RouterLink to="/register">
-            <el-button type="primary" size="small">注册</el-button>
-          </RouterLink>
-        </template>
+          <template v-if="userStore.isLoggedIn">
+            <el-dropdown @command="handleCommand">
+              <span class="user-chip">
+                <el-avatar
+                  :size="28"
+                  :src="userStore.getAvatar(userStore.userInfo?.avatar)"
+                  class="chip-avatar"
+                  style="object-fit:cover"
+                />
+                <el-tag
+                  v-if="userStore.isAdmin"
+                  :type="userStore.isSuperAdmin ? 'danger' : 'warning'"
+                  size="small"
+                  class="role-tag"
+                >{{ userStore.isSuperAdmin ? '超管' : '管理员' }}</el-tag>
+                {{ userStore.userInfo?.nickname || '用户' }}
+                <el-icon style="margin-left:4px;"><arrow-down /></el-icon>
+              </span>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item command="profile">个人中心</el-dropdown-item>
+                  <el-dropdown-item command="myItems">我的闲置</el-dropdown-item>
+                  <el-dropdown-item command="myTrades">我的交易</el-dropdown-item>
+                  <el-dropdown-item command="chat">
+                    消息
+                    <el-badge v-if="unreadCount" :value="unreadCount" style="margin-left:6px" />
+                  </el-dropdown-item>
+                  <el-dropdown-item command="changePassword">修改密码</el-dropdown-item>
+                  <el-dropdown-item v-if="userStore.isAdmin" command="admin" divided>管理面板</el-dropdown-item>
+                  <el-dropdown-item command="logout" :divided="!userStore.isAdmin">退出登录</el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
+          </template>
+          <template v-else>
+            <RouterLink to="/login">
+              <el-button class="btn-login" size="small">登录</el-button>
+            </RouterLink>
+            <RouterLink to="/register">
+              <el-button type="primary" size="small">注册</el-button>
+            </RouterLink>
+          </template>
+        </div>
       </div>
-    </el-header>
+    </header>
 
     <!-- 主内容区 -->
-    <el-main class="main-content">
+    <main class="main-content">
       <RouterView />
-    </el-main>
+    </main>
 
     <!-- 底部 -->
-    <el-footer class="footer">© 2025 换了吗</el-footer>
-  </el-container>
+    <footer class="footer">
+      <span>© 2025 换了吗 · 校园闲置交换平台</span>
+    </footer>
+  </div>
 </template>
 
 <style scoped lang="scss">
-.layout-wrapper {
+@import '@/assets/styles/variables.scss';
+
+.layout-root {
   min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: $bg-page;
 }
 
+/* ── 导航栏 ─────────────────────────────── */
 .header {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  padding: 10px 16px 0;
+}
+
+.header-inner {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: rgb(27, 153, 170);
-  padding: 0 32px;
-  height: 64px;
-  box-shadow: 0 4px 20px rgba(27, 153, 170, 0.2);
-  border-radius: 16px;
-  margin: 12px 12px 0 12px;
-  position: sticky;
-  top: 12px;
-  z-index: 1000;
-  transition: all 0.3s ease;
+  background: $primary;
+  border-radius: 20px;
+  padding: 0 28px;
+  height: $header-height;
+  box-shadow: $shadow-md;
+  /* 关键：增加整体过渡动画 */
+  transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.3s ease;
+
+  /* 1. 实现导航栏整体鼠标划入悬浮效果 */
+  &:hover {
+    transform: translateY(-4px); /* 整体向上浮动 */
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15); /* 增加更柔和的深层阴影 */
+  }
+}
+
+/* Logo */
+.logo-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  flex-shrink: 0;
+}
+
+.logo-img {
+  height: 50px;
+  width: 50px;
+  object-fit: contain;
+  /* 2. 取消 Logo 独自的特效（移除了之前的 transition） */
+}
+
+.logo-text {
+  font-size: 20px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: $letter-spacing-wide;
+}
+.logo-link:hover .logo-text {
+  color: $warning;
+}
+/* 导航项 */
+.header-nav {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  justify-content: center;
+}
+
+.nav-item {
+  color: rgba(255, 255, 255, 0.82);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  padding: 7px 14px;
+  border-radius: 50px;
+  letter-spacing: $letter-spacing-base;
+  transition: all 0.2s ease; /* 统一过渡 */
+  white-space: nowrap;
+
+  /* 3. 划入导航项时：取消局部浮动，改为和激活状态一样的背景效果 */
+  &:hover {
+    color: $primary;       /* 变成主色调文字 */
+    background: #fff;      /* 变成纯白背景 */
+    transform: none;       /* 强制取消之前的 translateY 浮动 */
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  }
+
+  /* 保持激活状态（点击后）的效果 */
+  &.active {
+    color: $primary;
+    background: #fff;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+  }
+
+
+  :deep(.el-badge__content) {
+    top: -4px;
+    right: -14px;
+  }
+}
+
+.msg-badge {
+  :deep(.el-badge__content) {
+    top: -6px;
+    right: -18px;
+  }
+}
+
+/* 右侧操作区 */
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.search-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: #fff;
+  cursor: pointer;
+  transition: $transition-fast;
+  font-size: 16px;
 
   &:hover {
-    box-shadow: 0 6px 30px rgba(27, 153, 170, 0.3);
-    transform: translateY(-2px);
-  }
-
-  .logo {
-    font-size: 22px;
-    font-weight: 700;
-    color: #fff;
-    text-decoration: none;
-    letter-spacing: 0.5px;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-    transition: all 0.3s ease;
-
-    &:hover {
-      color: #ffd700;
-      transform: scale(1.05);
-    }
-  }
-
-  .header-nav {
-    display: flex;
-    align-items: center;
-    gap: 32px;
-    margin: 0 32px;
-    
-    .msg-badge {
-      :deep(.el-badge__content) {
-        top: -4px;
-        right: -16px;
-      }
-    }
-
-    .nav-item {
-      color: rgba(255, 255, 255, 0.85);
-      text-decoration: none;
-      font-size: 15px;
-      font-weight: 500;
-      padding: 8px 0;
-      position: relative;
-      transition: all 0.3s ease;
-      
-      &:hover {
-        color: #ffd700;
-        transform: translateY(-2px);
-      }
-      
-      &.active {
-        color: #ffd700;
-        font-weight: 600;
-        
-        &::after {
-          content: '';
-          position: absolute;
-          bottom: 0;
-          left: 0;
-          right: 0;
-          height: 2px;
-          background: #ffd700;
-          border-radius: 1px;
-          animation: slideIn 0.3s ease;
-        }
-      }
-    }
-  }
-
-  .header-right {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-  }
-
-  .search-user-btn {
-    background: rgba(255, 255, 255, 0.15);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    color: #fff;
-    &:hover { background: rgba(255, 255, 255, 0.25); }
-  }
-
-  .user-avatar {
-    display: flex;
-    align-items: center;
-    cursor: pointer;
-    color: #fff;
-    font-size: 14px;
-    font-weight: 500;
-    padding: 8px 16px;
-    background: rgba(255, 255, 255, 0.15);
-    border-radius: 50px;
-    transition: all 0.3s ease;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-
-    &:hover {
-      background: rgba(255, 255, 255, 0.25);
-      color: #ffd700;
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    }
-
-    .el-icon {
-      margin-left: 6px;
-      transition: transform 0.3s ease;
-    }
-
-    &:hover .el-icon {
-      transform: rotate(180deg);
-    }
-  }
-
-  :deep(.el-button) {
-    border-radius: 50px;
-    font-weight: 500;
-    transition: all 0.3s ease;
-    border: none;
-
-    &.el-button--primary {
-      background: linear-gradient(135deg, #ff9a9e 0%, #fad0c4 100%);
-      color: #333;
-      box-shadow: 0 4px 15px rgba(255, 154, 158, 0.3);
-
-      &:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 6px 20px rgba(255, 154, 158, 0.4);
-      }
-    }
-
-    &.el-button--default {
-      background: rgba(255, 255, 255, 0.2);
-      color: #fff;
-      border: 1px solid rgba(255, 255, 255, 0.3);
-
-      &:hover {
-        background: rgba(255, 255, 255, 0.3);
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(255, 255, 255, 0.2);
-      }
-    }
-  }
-
-  :deep(.el-dropdown) {
-    .el-dropdown-link {
-      display: flex;
-      align-items: center;
-    }
-  }
-  
-  // 导航项下划线动画
-  @keyframes slideIn {
-    from {
-      transform: scaleX(0);
-      opacity: 0;
-    }
-    to {
-      transform: scaleX(1);
-      opacity: 1;
-    }
+    background: rgba(255, 255, 255, 0.28);
+    transform: scale(1.08);
   }
 }
 
+.user-chip {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 500;
+  padding: 5px 14px 5px 5px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 50px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  transition: $transition-fast;
+  letter-spacing: $letter-spacing-base;
+  gap: 8px;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.25);
+    color: $warning;
+  }
+
+  .chip-avatar {
+    flex-shrink: 0;
+    border: 2px solid rgba(255, 255, 255, 0.5);
+  }
+
+  // 超管标签：暖金色，与深青底形成色相对比
+  :deep(.role-tag.el-tag--danger) {
+    background:   #F1C65E !important;
+    color:        #5a3a00 !important;
+    border-color: #d4a017 !important;
+    font-weight:  700 !important;
+    border-radius: 6px !important;
+    letter-spacing: 0.05em !important;
+    padding: 0 7px !important;
+  }
+  // 普通管理员标签：冷光银，与超管暖金形成呼应
+  :deep(.role-tag.el-tag--warning) {
+    background:   linear-gradient(135deg, #f0f4f8 0%, #b8ccd8 40%, #dce8ef 70%, #f0f4f8 100%) !important;
+    color:        #1a3a4a !important;
+    border-color: rgba(160, 200, 220, 0.7) !important;
+    font-weight:  700 !important;
+    border-radius: 6px !important;
+    letter-spacing: 0.05em !important;
+    padding: 0 7px !important;
+    box-shadow: 0 1px 4px rgba(27,153,170,0.18), inset 0 1px 0 rgba(255,255,255,0.85) !important;
+    text-shadow: 0 1px 0 rgba(255,255,255,0.8) !important;
+  }
+}
+
+.btn-login {
+  background: rgba(255,255,255,0.15) !important;
+  border: 1px solid rgba(255,255,255,0.3) !important;
+  color: #fff !important;
+  &:hover { background: rgba(255,255,255,0.28) !important; }
+}
+
+/* ── 主内容 ────────────────────────────── */
 .main-content {
-  background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
-  padding: 24px;
-  min-height: calc(100vh - 180px);
-  margin: 0 12px;
-  border-radius: 16px;
-  margin-top: 12px;
+  flex: 1;
+  padding: 20px 16px;
+  max-width: calc($max-content-width + 32px);
+  width: 100%;
+  margin: 0 auto;
+  box-sizing: border-box;
 }
 
+/* ── 页脚 ──────────────────────────────── */
 .footer {
   text-align: center;
-  color: #909399;
+  color: $text-secondary;
   font-size: 13px;
-  line-height: 60px;
-  background: #fff;
-  border-radius: 16px;
-  margin: 12px;
-  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.05);
+  padding: 18px;
+  letter-spacing: $letter-spacing-base;
+  border-top: 1px solid $border-color;
+  background: $bg-card;
+  margin-top: 8px;
 }
 
-// 响应式调整
+/* ── 响应式 ────────────────────────────── */
 @media (max-width: 768px) {
-  .header {
+  .header { padding: 8px 8px 0; }
+
+  .header-inner {
     padding: 0 16px;
-    border-radius: 0 0 12px 12px;
+    border-radius: $border-radius;
+  }
 
-    .logo {
-      font-size: 18px;
-    }
+  .logo-text { font-size: 17px; }
 
-    .header-nav {
-      display: none; // 在小屏幕上隐藏导航菜单，或者可以改为下拉菜单
-    }
-
-    .header-right {
-      gap: 8px;
-    }
-
-    .user-avatar {
-      padding: 6px 12px;
+  .header-nav {
+    gap: 2px;
+    .nav-item {
+      padding: 6px 10px;
       font-size: 13px;
     }
   }
 
-  .main-content {
-    padding: 16px;
+  .main-content { padding: 14px 10px; }
+}
+
+@media (max-width: 480px) {
+  .header-nav {
+    display: none;
   }
+
+  .logo-text { font-size: 16px; }
 }
 </style>
 
 <style lang="scss">
-.user-search-panel {
-  padding: 4px 0;
+@import '@/assets/styles/variables.scss';
 
-  .el-input { margin-bottom: 8px; }
+/* 搜索面板（全局，弹出层在 teleport 中） */
+.user-search-panel {
+  padding: 6px 0;
+
+  .el-input { margin-bottom: 10px; }
 
   .search-loading,
   .search-empty {
     text-align: center;
     font-size: 13px;
-    color: #909399;
-    padding: 12px 0;
+    color: $text-secondary;
+    padding: 14px 0;
   }
 
-  .search-results {
-    max-height: 240px;
-    overflow-y: auto;
-  }
+  .search-results { max-height: 260px; overflow-y: auto; }
 
   .search-result-item {
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 8px 4px;
+    padding: 8px 6px;
     cursor: pointer;
-    border-radius: 6px;
+    border-radius: 12px;
     transition: background 0.15s;
 
-    &:hover { background: #f5f7fa; }
+    &:hover { background: rgba(27, 153, 170, 0.08); }
 
     .result-info {
       display: flex;
       flex-direction: column;
-
-      .result-name {
-        font-size: 14px;
-        color: #303133;
-        font-weight: 500;
-      }
-
-      .result-school {
-        font-size: 12px;
-        color: #909399;
-      }
+      .result-name  { font-size: 14px; color: $text-primary; font-weight: 500; }
+      .result-school { font-size: 12px; color: $text-secondary; margin-top: 2px; }
     }
   }
 }

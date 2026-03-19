@@ -149,6 +149,8 @@ async function handleSave() {
 </template>
 
 <style scoped lang="scss">
+@import '@/assets/styles/variables.scss';
+
 .edit-view {
   max-width: 700px;
   margin: 0 auto;
@@ -156,7 +158,8 @@ async function handleSave() {
 
 .upload-tip {
   font-size: 12px;
-  color: #909399;
-  margin-bottom: 8px;
+  color: $text-secondary;
+  margin-bottom: 10px;
+  letter-spacing: $letter-spacing-base;
 }
 </style>

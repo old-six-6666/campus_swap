@@ -2,17 +2,39 @@
 import { ref, onMounted, computed } from 'vue'
 import { useUserStore } from '@/stores/useUserStore'
 import { userApi } from '@/api/modules/user'
+import { itemApi } from '@/api/modules/item'
 import { ElMessage } from 'element-plus'
+import { Loading } from '@element-plus/icons-vue'
 
 const userStore = useUserStore()
 
-// 认证申请相关
 const verifyInfo = ref(null)
 const verifyLoading = ref(false)
 const applyVisible = ref(false)
 const applyLoading = ref(false)
 const applyFormRef = ref()
 const applyForm = ref({ school: '', studentId: '', realName: '', extraInfo: '' })
+
+// 头像上传
+const avatarUploading = ref(false)
+const avatarInputRef = ref(null)
+
+async function handleAvatarChange(e) {
+  const file = e.target.files?.[0]
+  if (!file) return
+  avatarUploading.value = true
+  try {
+    const url = await itemApi.uploadImage(file)
+    await userApi.updateProfile({ avatar: url })
+    await userStore.fetchProfile()
+    ElMessage.success('头像已更新')
+  } catch {
+    ElMessage.error('头像上传失败，请重试')
+  } finally {
+    avatarUploading.value = false
+    e.target.value = ''
+  }
+}
 
 const STATUS_MAP = {
   0: { label: '审核中', type: 'warning', desc: '您的认证申请已提交，请耐心等待管理员审核。' },
@@ -22,7 +44,7 @@ const STATUS_MAP = {
 
 const canApply = computed(() => {
   if (!verifyInfo.value) return true
-  return verifyInfo.value.status === 2  // 已拒绝可重新提交
+  return verifyInfo.value.status === 2
 })
 
 async function fetchVerifyStatus() {
@@ -37,7 +59,6 @@ async function fetchVerifyStatus() {
 }
 
 function openApply() {
-  // 被拒绝时预填之前的信息
   if (verifyInfo.value?.status === 2) {
     applyForm.value = {
       school: verifyInfo.value.school,
@@ -46,12 +67,7 @@ function openApply() {
       extraInfo: verifyInfo.value.extraInfo || '',
     }
   } else {
-    applyForm.value = {
-      school: userStore.userInfo?.school || '',
-      studentId: '',
-      realName: '',
-      extraInfo: '',
-    }
+    applyForm.value = { school: userStore.userInfo?.school || '', studentId: '', realName: '', extraInfo: '' }
   }
   applyVisible.value = true
 }
@@ -75,111 +91,116 @@ onMounted(fetchVerifyStatus)
 <template>
   <div class="profile-view">
     <!-- 个人信息 -->
-    <el-card>
-      <template #header>
-        <h3 style="margin: 0;">个人信息</h3>
-      </template>
-      <el-descriptions :column="1" border>
-        <el-descriptions-item label="昵称">{{ userStore.userInfo?.nickname }}</el-descriptions-item>
-        <el-descriptions-item label="邮箱">{{ userStore.userInfo?.email }}</el-descriptions-item>
-        <el-descriptions-item label="学校">{{ userStore.userInfo?.school || '未填写' }}</el-descriptions-item>
-        <el-descriptions-item label="手机号">{{ userStore.userInfo?.phone || '未填写' }}</el-descriptions-item>
-        <el-descriptions-item label="学生认证">
-          <el-tag
-            v-if="userStore.userInfo?.isVerified === 1"
-            type="success"
-            size="small"
-          >已认证</el-tag>
-          <el-tag v-else type="info" size="small">未认证</el-tag>
-        </el-descriptions-item>
-      </el-descriptions>
-    </el-card>
-
-    <!-- 学生认证 -->
-    <el-card style="margin-top: 20px" v-loading="verifyLoading">
-      <template #header>
-        <div style="display: flex; align-items: center; justify-content: space-between;">
-          <h3 style="margin: 0;">学生身份认证</h3>
-          <el-button
-            v-if="canApply"
-            type="primary"
-            size="small"
-            @click="openApply"
-          >
-            {{ verifyInfo?.status === 2 ? '重新申请' : '申请认证' }}
-          </el-button>
-        </div>
-      </template>
-
-      <!-- 无申请记录 -->
-      <div v-if="!verifyInfo" class="verify-empty">
-        <el-icon size="40" color="#c0c4cc"><QuestionFilled /></el-icon>
-        <p>您尚未提交学生认证申请</p>
-        <p class="verify-hint">通过填写真实姓名和学号，即可获得学生认证标识，提升交易可信度。</p>
+    <div class="section-card">
+      <div class="section-header">
+        <h3 class="section-title">个人信息</h3>
       </div>
 
-      <!-- 有申请记录 -->
+      <!-- 头像 -->
+      <div class="avatar-row">
+        <div class="avatar-wrap" @click="avatarInputRef?.click()" :title="avatarUploading ? '上传中...' : '点击修改头像'">
+          <el-avatar
+            :size="80"
+            :src="userStore.getAvatar(userStore.userInfo?.avatar)"
+            class="profile-avatar"
+            style="object-fit:cover"
+          />
+          <div class="avatar-overlay">
+            <span v-if="!avatarUploading">修改</span>
+            <el-icon v-else class="is-loading"><Loading /></el-icon>
+          </div>
+        </div>
+        <input
+          ref="avatarInputRef"
+          type="file"
+          accept="image/*"
+          style="display:none"
+          @change="handleAvatarChange"
+        />
+        <div class="avatar-hint">点击头像可修改，支持 JPG / PNG / GIF</div>
+      </div>
+
+      <div class="info-grid">
+        <div class="info-item">
+          <span class="info-label">昵称</span>
+          <span class="info-value">{{ userStore.userInfo?.nickname }}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">邮箱</span>
+          <span class="info-value">{{ userStore.userInfo?.email }}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">学校</span>
+          <span class="info-value">{{ userStore.userInfo?.school || '未填写' }}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">手机号</span>
+          <span class="info-value">{{ userStore.userInfo?.phone || '未填写' }}</span>
+        </div>
+        <div class="info-item">
+          <span class="info-label">学生认证</span>
+          <el-tag v-if="userStore.userInfo?.isVerified === 1" size="small" effect="plain">已认证</el-tag>
+          <el-tag v-else type="info" size="small" effect="plain">未认证</el-tag>
+        </div>
+      </div>
+    </div>
+
+    <!-- 学生认证 -->
+    <div class="section-card" v-loading="verifyLoading">
+      <div class="section-header">
+        <h3 class="section-title">学生身份认证</h3>
+        <el-button v-if="canApply" type="primary" size="small" round @click="openApply">
+          {{ verifyInfo?.status === 2 ? '重新申请' : '申请认证' }}
+        </el-button>
+      </div>
+
+      <div v-if="!verifyInfo" class="verify-empty">
+        <div class="verify-icon">🎓</div>
+        <p class="verify-empty-title">尚未申请学生认证</p>
+        <p class="verify-empty-hint">通过填写真实姓名和学号，即可获得学生认证标识，提升交易可信度。</p>
+      </div>
+
       <template v-else>
         <el-alert
           :type="STATUS_MAP[verifyInfo.status]?.type"
           :title="STATUS_MAP[verifyInfo.status]?.label"
-          :description="verifyInfo.status === 2 ? (STATUS_MAP[2].desc + (verifyInfo.remark ? '  拒绝原因：' + verifyInfo.remark : '')) : STATUS_MAP[verifyInfo.status]?.desc"
+          :description="verifyInfo.status === 2
+            ? (STATUS_MAP[2].desc + (verifyInfo.remark ? '  拒绝原因：' + verifyInfo.remark : ''))
+            : STATUS_MAP[verifyInfo.status]?.desc"
           show-icon
           :closable="false"
-          style="margin-bottom: 12px"
+          style="margin-bottom: 16px; border-radius: 12px;"
         />
-        <el-descriptions :column="2" border size="small">
-          <el-descriptions-item label="学校">{{ verifyInfo.school }}</el-descriptions-item>
-          <el-descriptions-item label="学号">{{ verifyInfo.studentId }}</el-descriptions-item>
-          <el-descriptions-item label="真实姓名">{{ verifyInfo.realName }}</el-descriptions-item>
-          <el-descriptions-item label="补充说明">{{ verifyInfo.extraInfo || '—' }}</el-descriptions-item>
-          <el-descriptions-item label="提交时间">{{ verifyInfo.createdAt?.slice(0, 10) }}</el-descriptions-item>
-          <el-descriptions-item v-if="verifyInfo.reviewedAt" label="审核时间">
-            {{ verifyInfo.reviewedAt?.slice(0, 10) }}
-          </el-descriptions-item>
-        </el-descriptions>
+        <div class="verify-detail-grid">
+          <div class="vd-item"><span class="vd-label">学校</span><span>{{ verifyInfo.school }}</span></div>
+          <div class="vd-item"><span class="vd-label">学号</span><span>{{ verifyInfo.studentId }}</span></div>
+          <div class="vd-item"><span class="vd-label">真实姓名</span><span>{{ verifyInfo.realName }}</span></div>
+          <div class="vd-item"><span class="vd-label">补充说明</span><span>{{ verifyInfo.extraInfo || '—' }}</span></div>
+          <div class="vd-item"><span class="vd-label">提交时间</span><span>{{ verifyInfo.createdAt?.slice(0, 10) }}</span></div>
+          <div v-if="verifyInfo.reviewedAt" class="vd-item">
+            <span class="vd-label">审核时间</span><span>{{ verifyInfo.reviewedAt?.slice(0, 10) }}</span>
+          </div>
+        </div>
       </template>
-    </el-card>
+    </div>
 
     <!-- 申请弹窗 -->
-    <el-dialog
-      v-model="applyVisible"
-      title="申请学生身份认证"
-      width="500px"
-      :close-on-click-modal="false"
-    >
-      <el-alert type="info" :closable="false" style="margin-bottom: 16px">
+    <el-dialog v-model="applyVisible" title="申请学生身份认证" width="500px" :close-on-click-modal="false">
+      <el-alert type="info" :closable="false" style="margin-bottom: 18px; border-radius: 12px;">
         请如实填写您的学校、学号和真实姓名，管理员将核验学生档案后进行审核。
       </el-alert>
       <el-form ref="applyFormRef" :model="applyForm" label-width="90px">
-        <el-form-item
-          label="学校名称"
-          prop="school"
-          :rules="[{ required: true, message: '请填写学校名称' }]"
-        >
+        <el-form-item label="学校名称" prop="school" :rules="[{ required: true, message: '请填写学校名称' }]">
           <el-input v-model="applyForm.school" placeholder="请填写完整学校名称" />
         </el-form-item>
-        <el-form-item
-          label="学号"
-          prop="studentId"
-          :rules="[{ required: true, message: '请填写学号' }]"
-        >
+        <el-form-item label="学号" prop="studentId" :rules="[{ required: true, message: '请填写学号' }]">
           <el-input v-model="applyForm.studentId" placeholder="请填写您的学号" />
         </el-form-item>
-        <el-form-item
-          label="真实姓名"
-          prop="realName"
-          :rules="[{ required: true, message: '请填写真实姓名' }]"
-        >
+        <el-form-item label="真实姓名" prop="realName" :rules="[{ required: true, message: '请填写真实姓名' }]">
           <el-input v-model="applyForm.realName" placeholder="请填写与档案一致的姓名" />
         </el-form-item>
         <el-form-item label="补充说明">
-          <el-input
-            v-model="applyForm.extraInfo"
-            placeholder="选填：专业、年级等辅助信息"
-            maxlength="200"
-            show-word-limit
-          />
+          <el-input v-model="applyForm.extraInfo" placeholder="选填：专业、年级等辅助信息" maxlength="200" show-word-limit />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -191,21 +212,143 @@ onMounted(fetchVerifyStatus)
 </template>
 
 <style scoped lang="scss">
+@import '@/assets/styles/variables.scss';
+
 .profile-view {
   max-width: 700px;
   margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.section-card {
+  background: $bg-card;
+  border-radius: $border-radius-lg;
+  padding: 24px 28px;
+  box-shadow: $shadow-card;
+  border: 1px solid $border-color;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+
+  .section-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: $text-primary;
+    letter-spacing: $letter-spacing-base;
+  }
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+
+  @media (max-width: 500px) { grid-template-columns: 1fr; }
+}
+
+.info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  background: $bg-subtle;
+  border-radius: $border-radius-sm;
+}
+
+.info-label {
+  font-size: 12px;
+  color: $text-secondary;
+  font-weight: 500;
+  letter-spacing: $letter-spacing-base;
+}
+
+.info-value {
+  font-size: 14px;
+  color: $text-primary;
+  font-weight: 500;
 }
 
 .verify-empty {
   text-align: center;
-  padding: 20px 0;
-  color: #909399;
+  padding: 28px 0;
 
-  p { margin: 8px 0 0; }
+  .verify-icon { font-size: 48px; margin-bottom: 12px; }
+  .verify-empty-title { font-size: 15px; font-weight: 600; color: $text-regular; margin-bottom: 6px; }
+  .verify-empty-hint { font-size: 13px; color: $text-secondary; line-height: 1.6; max-width: 340px; margin: 0 auto; }
 }
 
-.verify-hint {
+.verify-detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+
+  @media (max-width: 500px) { grid-template-columns: 1fr; }
+}
+
+.vd-item {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 10px 12px;
+  background: $bg-subtle;
+  border-radius: $border-radius-sm;
   font-size: 13px;
-  color: #c0c4cc;
+
+  .vd-label {
+    font-size: 11px;
+    color: $text-secondary;
+    font-weight: 500;
+    letter-spacing: $letter-spacing-base;
+  }
+}
+
+/* ── 头像区域 ─────────────────────────────── */
+.avatar-row {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.avatar-wrap {
+  position: relative;
+  cursor: pointer;
+  border-radius: 50%;
+  flex-shrink: 0;
+
+  &:hover .avatar-overlay { opacity: 1; }
+}
+
+.profile-avatar {
+  display: block;
+  border: 3px solid $primary-light;
+  box-shadow: $shadow-sm;
+}
+
+.avatar-overlay {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.avatar-hint {
+  font-size: 12px;
+  color: $text-secondary;
+  line-height: 1.6;
 }
 </style>

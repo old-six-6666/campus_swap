@@ -130,6 +130,8 @@ onMounted(fetchMyItems)
 </template>
 
 <style scoped lang="scss">
+@import '@/assets/styles/variables.scss';
+
 .my-items-view {
   max-width: 860px;
   margin: 0 auto;
@@ -139,42 +141,50 @@ onMounted(fetchMyItems)
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 16px;
+  margin-bottom: 20px;
 
   h2 {
     margin: 0;
-    font-size: 20px;
+    font-size: 22px;
+    font-weight: 700;
+    color: $text-primary;
+    letter-spacing: $letter-spacing-base;
   }
+}
+
+:deep(.el-card) {
+  border-radius: $border-radius-lg !important;
+  padding: 8px 0;
 }
 
 .item-row {
   display: flex;
   align-items: center;
   gap: 16px;
-  padding: 16px 0;
-  border-bottom: 1px solid #f0f0f0;
+  padding: 16px 20px;
+  border-bottom: 1px solid $border-color;
+  transition: $transition-fast;
 
-  &:last-child {
-    border-bottom: none;
-  }
+  &:last-child { border-bottom: none; }
+  &:hover { background: $bg-subtle; border-radius: $border-radius-sm; }
 }
 
 .item-thumb {
-  width: 80px;
-  height: 80px;
-  border-radius: 6px;
+  width: 84px;
+  height: 84px;
+  border-radius: $border-radius-sm;
   flex-shrink: 0;
 }
 
 .thumb-placeholder {
-  width: 80px;
-  height: 80px;
+  width: 84px;
+  height: 84px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #f5f7fa;
-  color: #c0c4cc;
-  border-radius: 6px;
+  background: $bg-subtle;
+  color: $text-secondary;
+  border-radius: $border-radius-sm;
 }
 
 .item-body {
@@ -183,45 +193,49 @@ onMounted(fetchMyItems)
 
   .item-title {
     font-size: 15px;
-    font-weight: 500;
-    color: #303133;
+    font-weight: 600;
+    color: $text-primary;
     cursor: pointer;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
     margin-bottom: 8px;
+    letter-spacing: $letter-spacing-base;
+    transition: color 0.2s;
 
-    &:hover {
-      color: #409eff;
-    }
+    &:hover { color: $primary; }
   }
 
   .item-meta {
     display: flex;
     align-items: center;
-    gap: 10px;
-    margin-bottom: 6px;
+    gap: 8px;
+    margin-bottom: 5px;
+    flex-wrap: wrap;
 
     .price {
       font-size: 16px;
-      font-weight: 600;
-      color: #f56c6c;
+      font-weight: 700;
+      color: $warning;
     }
 
     .category {
       font-size: 12px;
-      color: #909399;
+      color: $text-secondary;
+      background: $bg-subtle;
+      padding: 2px 8px;
+      border-radius: 50px;
     }
   }
 
   .item-time {
     font-size: 12px;
-    color: #c0c4cc;
+    color: $text-secondary;
   }
 
   .audit-remark {
     font-size: 12px;
-    color: #f56c6c;
+    color: $danger;
     margin-top: 4px;
   }
 }

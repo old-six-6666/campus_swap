@@ -211,6 +211,8 @@ async function handleChangeByEmail() {
 </template>
 
 <style scoped lang="scss">
+@import '@/assets/styles/variables.scss';
+
 .change-password-view {
   max-width: 560px;
   margin: 0 auto;
@@ -218,29 +220,38 @@ async function handleChangeByEmail() {
 
 .card-header h3 {
   margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: $text-primary;
+  letter-spacing: $letter-spacing-base;
 }
 
 .pwd-form {
-  max-width: 400px;
+  max-width: 440px;
   margin-top: 16px;
 }
 
 .code-row {
   display: flex;
-  gap: 8px;
+  gap: 10px;
   width: 100%;
 
   .el-input { flex: 1; }
 
   .el-button {
     white-space: nowrap;
-    min-width: 110px;
+    min-width: 116px;
+    border-radius: 50px !important;
+    border-color: $primary !important;
+    color: $primary !important;
+    font-weight: 500 !important;
   }
 }
 
 .code-tip {
   font-size: 12px;
-  color: #909399;
-  margin-top: 4px;
+  color: $text-secondary;
+  margin-top: 5px;
+  letter-spacing: $letter-spacing-base;
 }
 </style>

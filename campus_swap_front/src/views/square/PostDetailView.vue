@@ -488,6 +488,8 @@ onUnmounted(() => {
 </script>
 
 <style scoped lang="scss">
+@import '@/assets/styles/variables.scss';
+
 .post-detail-page {
   max-width: 760px;
   margin: 0 auto;
@@ -517,15 +519,15 @@ onUnmounted(() => {
         flex: 1;
         display: flex;
         flex-direction: column;
-        .username { font-weight: 600; font-size: 15px; color: #303133; }
-        .post-time { font-size: 12px; color: #909399; margin-top: 2px; }
+        .username { font-weight: 600; font-size: 15px; color: #1a2e35; }
+        .post-time { font-size: 12px; color: #8fa8b2; margin-top: 2px; }
       }
     }
 
     .post-content {
       font-size: 15px;
       line-height: 1.7;
-      color: #303133;
+      color: #1a2e35;
       white-space: pre-wrap;
       margin-bottom: 12px;
     }
@@ -561,8 +563,8 @@ onUnmounted(() => {
         display: flex;
         align-items: center;
         justify-content: center;
-        background: #f5f7fa;
-        color: #c0c4cc;
+        background: #F4F7F8;
+        color: #8fa8b2;
       }
     }
 
@@ -586,7 +588,7 @@ onUnmounted(() => {
         align-items: center;
         gap: 4px;
         font-size: 13px;
-        color: #909399;
+        color: #8fa8b2;
       }
     }
 
@@ -616,11 +618,11 @@ onUnmounted(() => {
         height: 80px;
         border-radius: 6px;
         flex-shrink: 0;
-        background: #f5f7fa;
+        background: #F4F7F8;
         display: flex;
         align-items: center;
         justify-content: center;
-        color: #c0c4cc;
+        color: #8fa8b2;
       }
 
       .item-info {
@@ -630,7 +632,7 @@ onUnmounted(() => {
         .item-title {
           font-weight: 600;
           font-size: 14px;
-          color: #303133;
+          color: #1a2e35;
           margin-bottom: 6px;
           overflow: hidden;
           text-overflow: ellipsis;
@@ -643,19 +645,19 @@ onUnmounted(() => {
           gap: 8px;
           margin-bottom: 4px;
 
-          .item-price { font-size: 14px; color: #f56c6c; font-weight: 600; }
+          .item-price { font-size: 14px; color: #F1C65E; font-weight: 600; }
         }
 
         .item-desc {
           font-size: 12px;
-          color: #909399;
+          color: #8fa8b2;
           overflow: hidden;
           text-overflow: ellipsis;
           white-space: nowrap;
         }
       }
 
-      .item-link-hint { color: #c0c4cc; flex-shrink: 0; }
+      .item-link-hint { color: #8fa8b2; flex-shrink: 0; }
     }
 
     .action-row {
@@ -663,9 +665,9 @@ onUnmounted(() => {
       gap: 8px;
 
       .action-btn {
-        color: #909399;
+        color: #8fa8b2;
         &.is-active { font-weight: 600; }
-        &.el-button--primary.is-active { color: #409eff; }
+        &.el-button--primary.is-active { color: #1B99AA; }
         &.el-button--warning.is-active { color: #e6a23c; }
       }
     }
@@ -740,8 +742,8 @@ onUnmounted(() => {
             gap: 8px;
             margin-bottom: 4px;
 
-            .comment-username { font-weight: 600; font-size: 13px; color: #303133; }
-            .comment-time { font-size: 12px; color: #c0c4cc; }
+            .comment-username { font-weight: 600; font-size: 13px; color: #1a2e35; }
+            .comment-time { font-size: 12px; color: #8fa8b2; }
             .delete-btn { margin-left: auto; }
           }
 
@@ -815,7 +817,7 @@ onUnmounted(() => {
           .ai-markdown {
             line-height: 1.7;
             :deep(p) { margin: 4px 0; }
-            :deep(strong) { font-weight: 700; color: #303133; }
+            :deep(strong) { font-weight: 700; color: #1a2e35; }
             :deep(ul), :deep(ol) { padding-left: 18px; margin: 4px 0; }
             :deep(li) { margin: 2px 0; }
             :deep(h1), :deep(h2), :deep(h3) { font-size: 14px; font-weight: 700; margin: 6px 0 2px; }
