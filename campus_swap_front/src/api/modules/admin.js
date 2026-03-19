@@ -56,4 +56,16 @@ export const adminApi = {
   listReports: (params) => request.get('/admin/reports', { params }),
   /** 审核举报：action=1 处理(内容下架)  action=2 驳回(内容正常) */
   reviewReport: (id, action, remark) => request.put(`/admin/reports/${id}/review`, { action, remark }),
+
+  // ===== 公告管理（全部管理员可用） =====
+  /** 获取全部公告列表（含下线） */
+  listAnnouncements: () => request.get('/admin/announcements'),
+  /** 新增公告 */
+  createAnnouncement: (data) => request.post('/admin/announcements', data),
+  /** 更新公告 */
+  updateAnnouncement: (id, data) => request.put(`/admin/announcements/${id}`, data),
+  /** 上线/下线公告 */
+  updateAnnouncementStatus: (id, status) => request.put(`/admin/announcements/${id}/status`, null, { params: { status } }),
+  /** 删除公告 */
+  deleteAnnouncement: (id) => request.delete(`/admin/announcements/${id}`),
 }

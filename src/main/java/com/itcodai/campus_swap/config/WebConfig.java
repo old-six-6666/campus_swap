@@ -44,7 +44,8 @@ public class WebConfig implements WebMvcConfigurer {
                         "/api/user/forgot-password",
                         "/api/item/list",
                         "/post/stats",
-                        "/api/trade/item/*"
+                        "/api/trade/item/*",
+                        "/api/announcements/active"
                         // 注意：用户主页、用户商品、用户动态等公开接口通过
                         // JwtInterceptor 内部的 optionalAuth 逻辑处理（有token解析，无token放行）
                 );

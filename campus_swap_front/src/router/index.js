@@ -146,6 +146,11 @@ const routes = [
         component: () => import('@/views/admin/ReportManageView.vue'),
         meta: { requiresPermission: 'CONTENT_AUDIT' },
       },
+      {
+        path: 'announcements',
+        name: 'AnnouncementManage',
+        component: () => import('@/views/admin/AnnouncementManageView.vue'),
+      },
     ],
   },
   {

@@ -115,11 +115,12 @@ export const squareApi = {
    * @param {number} data.parentId 父评论ID（可选）
    * @returns {Promise}
    */
-  addComment(data) {
+  addComment(data, config) {
     return request({
       url: '/square/comment',
       method: 'post',
-      data
+      data,
+      ...config
     })
   },
 
@@ -167,11 +168,12 @@ export const squareApi = {
    * @param {Array} data.tagIds 标签ID数组
    * @returns {Promise}
    */
-  createPost(data) {
+  createPost(data, config) {
     return request({
       url: '/post/create',
       method: 'post',
-      data
+      data,
+      ...config
     })
   },
 
@@ -252,6 +254,14 @@ export const squareApi = {
       url: `/post/${postId}/report`,
       method: 'post',
       data
+    })
+  },
+
+  /** 获取上线中的公告列表（广场横幅用） */
+  getAnnouncements() {
+    return request({
+      url: '/announcements/active',
+      method: 'get'
     })
   }
 }

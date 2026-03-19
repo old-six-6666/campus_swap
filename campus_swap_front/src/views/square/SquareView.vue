@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue'
-import { Search, Refresh, Clock, Star, Plus, TrendCharts } from '@element-plus/icons-vue'
+import { Search, Refresh, Clock, Star, Plus, TrendCharts, Bell } from '@element-plus/icons-vue'
 import { squareApi } from '@/api/modules/square'
 import SquareCard from '@/components/square/SquareCard.vue'
 import TagFilter from '@/components/square/TagFilter.vue'
@@ -13,6 +13,9 @@ const selectedTags = ref([])
 const activeTab = ref('recommend') // recommend | latest | hot
 const stats = ref(null)
 const showPublishDialog = ref(false)
+
+// 公告
+const announcements = ref([])
 
 // 分页 - 创建一个适配器函数给 usePagination
 async function fetchPostsForPagination(params) {
@@ -168,8 +171,18 @@ watch(selectedTags, () => {
 onMounted(() => {
   fetchData()
   fetchStats()
+  fetchAnnouncements()
 })
 
+
+// 获取公告
+async function fetchAnnouncements() {
+  try {
+    announcements.value = await squareApi.getAnnouncements() || []
+  } catch {
+    announcements.value = []
+  }
+}
 
 // 处理发布动态
 function handlePublishClick() {
@@ -257,8 +270,40 @@ function handlePublishSuccess() {
       </el-tabs>
     </div>
 
+    <!-- 公告横幅 -->
+    <div v-if="announcements.length > 0" class="announcement-section">
+      <el-carousel
+        v-if="announcements.length > 1"
+        height="48px"
+        direction="vertical"
+        :autoplay="true"
+        :interval="4000"
+        indicator-position="none"
+        arrow="never"
+        class="announcement-carousel"
+      >
+        <el-carousel-item
+          v-for="ann in announcements"
+          :key="ann.id"
+        >
+          <div :class="['announcement-banner', `type-${ann.type}`]">
+            <el-icon class="ann-icon"><Bell /></el-icon>
+            <span class="ann-title">{{ ann.title }}：</span>
+            <span class="ann-content">{{ ann.content }}</span>
+          </div>
+        </el-carousel-item>
+      </el-carousel>
+      <div v-else :class="['announcement-banner', `type-${announcements[0].type}`]">
+        <el-icon class="ann-icon"><Bell /></el-icon>
+        <span class="ann-title">{{ announcements[0].title }}：</span>
+        <span class="ann-content">{{ announcements[0].content }}</span>
+      </div>
+    </div>
+
     <!-- 标签筛选 -->
-    <TagFilter v-model="selectedTags" />
+    <div class="tag-filter-section">
+      <TagFilter v-model="selectedTags" />
+    </div>
 
     <!-- 动态列表 -->
     <div class="posts-section">
@@ -494,6 +539,69 @@ function handlePublishSuccess() {
     .el-icon {
       margin-right: 6px;
     }
+  }
+}
+
+.announcement-section {
+  margin-bottom: 24px;
+  padding: 0 20px;
+}
+
+.announcement-carousel {
+  border-radius: 8px;
+  overflow: visible;
+
+  :deep(.el-carousel__container) {
+    border-radius: 8px;
+    overflow: hidden;
+  }
+}
+
+.tag-filter-section {
+  padding: 0 20px;
+}
+
+.announcement-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 16px;
+  height: 48px;
+  border-radius: 8px;
+  font-size: 14px;
+  overflow: hidden;
+
+  &.type-1 {
+    background: linear-gradient(135deg, #ecf5ff, #d9ecff);
+    color: #409eff;
+    border: 1px solid #b3d8ff;
+  }
+  &.type-2 {
+    background: linear-gradient(135deg, #fdf6ec, #faecd8);
+    color: #e6a23c;
+    border: 1px solid #f5dab1;
+  }
+  &.type-3 {
+    background: linear-gradient(135deg, #fef0f0, #fde2e2);
+    color: #f56c6c;
+    border: 1px solid #fbc4c4;
+  }
+
+  .ann-icon {
+    flex-shrink: 0;
+    font-size: 16px;
+  }
+
+  .ann-title {
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+
+  .ann-content {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 }
 

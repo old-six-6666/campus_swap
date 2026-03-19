@@ -419,7 +419,7 @@ async function handleComment() {
   const content = commentContent.value.trim()
   postingComment.value = true
   try {
-    await squareApi.addComment({ postId: postId.value, content })
+    await squareApi.addComment({ postId: postId.value, content }, { silent: true })
     commentContent.value = ''
     await loadComments()
     if (content.startsWith('@问一问')) {
@@ -427,8 +427,14 @@ async function handleComment() {
     } else {
       ElMessage.success('评论成功')
     }
-  } catch {
-    ElMessage.error('评论失败')
+  } catch (e) {
+    const msg = e?.message || ''
+    if (msg.includes('违规')) {
+      ElMessage.error(msg)
+      commentContent.value = ''
+    } else {
+      ElMessage.error('评论失败')
+    }
   } finally {
     postingComment.value = false
   }
@@ -449,7 +455,7 @@ async function handleReply(parentId) {
   postingReply.value = true
   const isAiConversation = replyTarget.value?.username === '问一问'
   try {
-    await squareApi.addComment({ postId: postId.value, content: replyContent.value.trim(), parentId })
+    await squareApi.addComment({ postId: postId.value, content: replyContent.value.trim(), parentId }, { silent: true })
     replyContent.value = ''
     replyTarget.value = null
     await loadComments()
@@ -458,8 +464,14 @@ async function handleReply(parentId) {
     } else {
       ElMessage.success('回复成功')
     }
-  } catch {
-    ElMessage.error('回复失败')
+  } catch (e) {
+    const msg = e?.message || ''
+    if (msg.includes('违规')) {
+      ElMessage.error(msg)
+      replyContent.value = ''
+    } else {
+      ElMessage.error('回复失败')
+    }
   } finally {
     postingReply.value = false
   }
