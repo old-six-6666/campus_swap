@@ -243,16 +243,15 @@ export const squareApi = {
   },
 
   /**
-   * 获取指定用户发布的动态列表（公开）
-   * @param {number} userId 目标用户ID
-   * @param {Object} params 分页参数 { page, size }
-   * @returns {Promise}
+   * 举报动态
+   * @param {number} postId 动态ID
+   * @param {Object} data { reason: 1-6, description: string }
    */
-  getUserPosts(userId, params) {
+  reportPost(postId, data) {
     return request({
-      url: `/post/user/${userId}`,
-      method: 'get',
-      params
+      url: `/post/${postId}/report`,
+      method: 'post',
+      data
     })
   }
 }

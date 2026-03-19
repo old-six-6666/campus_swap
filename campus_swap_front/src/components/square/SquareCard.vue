@@ -10,7 +10,8 @@ import {
   Share,
   CircleCheck,
   Delete,
-  Edit
+  Edit,
+  Warning
 } from '@element-plus/icons-vue'
 import EmojiPicker from 'vue3-emoji-picker'
 import 'vue3-emoji-picker/css'
@@ -181,6 +182,8 @@ function handleAction(command) {
     router.push({ name: 'EditPost', params: { id: props.post.id } })
   } else if (command === 'delete') {
     handleDelete()
+  } else if (command === 'report') {
+    openReportDialog()
   }
 }
 
@@ -217,6 +220,50 @@ async function handleDelete() {
 const isCurrentUserPost = computed(() => {
   return userStore.isLoggedIn && userStore.userInfo?.id === props.post.userId
 })
+
+// ===== 举报 =====
+const showReportDialog = ref(false)
+const reportForm = ref({ reason: null, description: '' })
+const submittingReport = ref(false)
+
+const reportReasons = [
+  { value: 1, label: '违法违规' },
+  { value: 2, label: '色情低俗' },
+  { value: 3, label: '虚假信息' },
+  { value: 4, label: '侮辱谩骂' },
+  { value: 5, label: '广告骚扰' },
+  { value: 6, label: '其他' },
+]
+
+function openReportDialog() {
+  if (!userStore.isLoggedIn) {
+    ElMessage.warning('请先登录')
+    return
+  }
+  reportForm.value = { reason: null, description: '' }
+  showReportDialog.value = true
+}
+
+async function submitReport() {
+  if (!reportForm.value.reason) {
+    ElMessage.warning('请选择举报原因')
+    return
+  }
+  submittingReport.value = true
+  try {
+    await squareApi.reportPost(props.post.id, {
+      reason: reportForm.value.reason,
+      description: reportForm.value.description
+    })
+    showReportDialog.value = false
+    ElMessage.success('举报已提交，我们将尽快审核')
+  } catch (error) {
+    const msg = error?.response?.data?.message
+    ElMessage.error(msg || '举报失败，请稍后再试')
+  } finally {
+    submittingReport.value = false
+  }
+}
 </script>
 
 <template>
@@ -239,6 +286,7 @@ const isCurrentUserPost = computed(() => {
         </div>
       </div>
       <div class="post-actions">
+        <!-- 自己的动态：编辑/删除 -->
         <el-dropdown v-if="isCurrentUserPost" trigger="click" @command="handleAction">
           <el-button type="info" link :icon="More" />
           <template #dropdown>
@@ -250,6 +298,18 @@ const isCurrentUserPost = computed(() => {
               <el-dropdown-item command="delete" style="color: #f56c6c;">
                 <el-icon><Delete /></el-icon>
                 删除动态
+              </el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
+        <!-- 他人的动态：举报 -->
+        <el-dropdown v-else-if="userStore.isLoggedIn" trigger="click" @command="handleAction">
+          <el-button type="info" link :icon="More" />
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item command="report" style="color: #e6a23c;">
+                <el-icon><Warning /></el-icon>
+                举报动态
               </el-dropdown-item>
             </el-dropdown-menu>
           </template>
@@ -433,6 +493,38 @@ const isCurrentUserPost = computed(() => {
         </el-button>
       </div>
     </div>
+
+    <!-- 举报对话框：append-to-body 避免卡片 hover 动画引起闪烁 -->
+    <el-dialog
+      v-model="showReportDialog"
+      title="举报动态"
+      width="420px"
+      append-to-body
+    >
+      <el-form label-width="80px">
+        <el-form-item label="举报原因" required>
+          <el-radio-group v-model="reportForm.reason" class="report-reason-group">
+            <el-radio v-for="r in reportReasons" :key="r.value" :value="r.value">
+              {{ r.label }}
+            </el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item label="补充说明">
+          <el-input
+            v-model="reportForm.description"
+            type="textarea"
+            :rows="3"
+            placeholder="请描述具体情况（选填，最多200字）"
+            maxlength="200"
+            show-word-limit
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="showReportDialog = false">取消</el-button>
+        <el-button type="warning" :loading="submittingReport" @click="submitReport">提交举报</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 

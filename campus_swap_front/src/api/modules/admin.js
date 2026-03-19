@@ -50,4 +50,10 @@ export const adminApi = {
   listVerifications: (params) => request.get('/admin/verifications', { params }),
   /** 审核认证申请：action=1 通过  action=2 拒绝 */
   reviewVerification: (id, action, remark) => request.put(`/admin/verifications/${id}/review`, { action, remark }),
+
+  // ===== 举报内容审核（CONTENT_AUDIT） =====
+  /** 分页查询举报列表 */
+  listReports: (params) => request.get('/admin/reports', { params }),
+  /** 审核举报：action=1 处理(内容下架)  action=2 驳回(内容正常) */
+  reviewReport: (id, action, remark) => request.put(`/admin/reports/${id}/review`, { action, remark }),
 }

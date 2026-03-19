@@ -140,6 +140,12 @@ const routes = [
         component: () => import('@/views/admin/VerifyManageView.vue'),
         meta: { requiresPermission: 'STUDENT_MANAGE' },
       },
+      {
+        path: 'reports',
+        name: 'ReportManage',
+        component: () => import('@/views/admin/ReportManageView.vue'),
+        meta: { requiresPermission: 'CONTENT_AUDIT' },
+      },
     ],
   },
   {

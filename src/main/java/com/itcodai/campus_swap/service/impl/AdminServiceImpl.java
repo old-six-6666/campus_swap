@@ -35,7 +35,7 @@ public class AdminServiceImpl implements AdminService {
     private final AdminPermissionMapper adminPermissionMapper;
 
     /** 合法权限码集合 */
-    private static final Set<String> VALID_PERM_CODES = Set.of("USER_MANAGE", "ITEM_MANAGE", "ITEM_AUDIT", "STUDENT_MANAGE");
+    private static final Set<String> VALID_PERM_CODES = Set.of("USER_MANAGE", "ITEM_MANAGE", "ITEM_AUDIT", "STUDENT_MANAGE", "CONTENT_AUDIT");
 
     // ===== 用户管理 =====
 

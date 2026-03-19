@@ -3,6 +3,7 @@ package com.itcodai.campus_swap.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.itcodai.campus_swap.common.result.Result;
 import com.itcodai.campus_swap.common.result.ResultCode;
+import com.itcodai.campus_swap.dto.PostReportDTO;
 import com.itcodai.campus_swap.entity.Item;
 import com.itcodai.campus_swap.entity.Post;
 import com.itcodai.campus_swap.entity.Trade;
@@ -10,10 +11,12 @@ import com.itcodai.campus_swap.entity.User;
 import com.itcodai.campus_swap.mapper.ItemMapper;
 import com.itcodai.campus_swap.mapper.TradeMapper;
 import com.itcodai.campus_swap.mapper.UserMapper;
+import com.itcodai.campus_swap.service.PostReportService;
 import com.itcodai.campus_swap.service.PostService;
 import com.itcodai.campus_swap.vo.PageVO;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
@@ -31,15 +34,18 @@ import java.util.Map;
 public class PostController {
 
     private final PostService postService;
+    private final PostReportService postReportService;
     private final TradeMapper tradeMapper;
     private final ItemMapper itemMapper;
     private final UserMapper userMapper;
 
     public PostController(PostService postService,
+                          PostReportService postReportService,
                           TradeMapper tradeMapper,
                           ItemMapper itemMapper,
                           UserMapper userMapper) {
         this.postService = postService;
+        this.postReportService = postReportService;
         this.tradeMapper = tradeMapper;
         this.itemMapper = itemMapper;
         this.userMapper = userMapper;
@@ -382,6 +388,22 @@ public class PostController {
             log.error("获取用户动态列表失败", e);
             return Result.fail(ResultCode.INTERNAL_ERROR, "获取动态列表失败");
         }
+    }
+
+    /**
+     * 举报动态
+     * POST /api/post/{postId}/report
+     */
+    @PostMapping("/{postId:\\d+}/report")
+    public Result<Void> reportPost(@PathVariable Long postId,
+                                   @Valid @RequestBody PostReportDTO dto,
+                                   HttpServletRequest request) {
+        Long userId = getUserIdFromRequest(request);
+        if (userId == null) {
+            return Result.fail(ResultCode.UNAUTHORIZED, "请先登录");
+        }
+        postReportService.reportPost(postId, userId, dto.getReason(), dto.getDescription());
+        return Result.success();
     }
 
     /**
