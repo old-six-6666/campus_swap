@@ -322,3 +322,10 @@ CREATE TABLE IF NOT EXISTS t_notification (
   KEY idx_is_read (receiver_id, is_read),
   KEY idx_created_at (created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='消息通知表';
+
+-- ----------------------------
+-- AI 问一问机器人账号（固定 ID，勿删）
+-- ----------------------------
+INSERT IGNORE INTO t_user (id, email, password, nickname, avatar, role, status, is_verified, deleted, created_at, updated_at)
+VALUES (999999999, 'ai_assistant@campus-swap.local', 'NOT_A_REAL_PASSWORD', '问一问', '', 0, 0, 0, 0, NOW(), NOW());
+

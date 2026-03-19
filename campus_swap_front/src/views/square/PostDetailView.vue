@@ -126,7 +126,7 @@
               v-model="commentContent"
               type="textarea"
               :rows="2"
-              placeholder="写下你的评论..."
+              placeholder="写下你的评论...（输入 @问一问 可向AI提问）"
               maxlength="500"
               show-word-limit
             />
@@ -190,12 +190,16 @@
               <!-- 子评论（回复列表） -->
               <div v-if="comment.replies?.length" class="reply-list">
                 <div v-for="reply in comment.replies" :key="reply.id" class="reply-item">
-                  <el-avatar :size="28" :src="reply.user?.avatar" class="reply-avatar">
-                    <el-icon><User /></el-icon>
+                  <el-avatar :size="28" :src="reply.user?.avatar" class="reply-avatar" :class="{ 'ai-avatar': reply.userId === AI_USER_ID }">
+                    <el-icon v-if="reply.userId === AI_USER_ID"><Cpu /></el-icon>
+                    <el-icon v-else><User /></el-icon>
                   </el-avatar>
-                  <div class="reply-body">
+                  <div class="reply-body" :class="{ 'ai-reply': reply.userId === AI_USER_ID }">
                     <div class="comment-meta">
-                      <span class="comment-username">{{ reply.user?.username || '匿名用户' }}</span>
+                      <span class="comment-username" :class="{ 'ai-username': reply.userId === AI_USER_ID }">
+                        {{ reply.user?.username || '匿名用户' }}
+                        <el-tag v-if="reply.userId === AI_USER_ID" size="small" type="primary" effect="plain" class="ai-tag">AI</el-tag>
+                      </span>
                       <span class="comment-time">{{ formatTime(reply.createdAt) }}</span>
                       <el-button
                         v-if="userStore.userInfo?.id === reply.userId"
@@ -204,13 +208,21 @@
                         class="delete-btn"
                       >删除</el-button>
                     </div>
-                    <div class="comment-content">{{ reply.content }}</div>
+                    <div
+                      class="comment-content"
+                      :class="{ 'ai-markdown': reply.userId === AI_USER_ID }"
+                      v-html="reply.userId === AI_USER_ID ? renderMarkdown(reply.content) : reply.content"
+                    ></div>
+                    <!-- AI 回复下方提示可继续对话 -->
+                    <div v-if="reply.userId === AI_USER_ID" class="ai-continue-hint">
+                      💬 点击「回复」可继续追问
+                    </div>
                     <!-- 回复某条子评论：parentId 仍指向一级评论，但 @ 被回复人 -->
                     <el-button
                       type="primary" link size="small"
                       @click="toggleReplyInput(comment.id, reply.user?.username)"
                       class="reply-btn"
-                    >回复</el-button>
+                    >{{ reply.userId === AI_USER_ID ? '继续提问' : '回复' }}</el-button>
                   </div>
                 </div>
               </div>
@@ -258,15 +270,25 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { ArrowLeft, ArrowRight, User, Picture, CircleCheck, Star, ChatDotRound, Share } from '@element-plus/icons-vue'
+import { ArrowLeft, ArrowRight, User, Picture, CircleCheck, Star, ChatDotRound, Share, Cpu } from '@element-plus/icons-vue'
 import EmojiPicker from 'vue3-emoji-picker'
 import 'vue3-emoji-picker/css'
+import MarkdownIt from 'markdown-it'
 import { squareApi } from '@/api/modules/square'
 import { useUserStore } from '@/stores/useUserStore'
+
+const md = new MarkdownIt({ breaks: true, linkify: false })
+
+function renderMarkdown(content) {
+  if (!content) return ''
+  return md.render(content)
+}
 
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
+
+const AI_USER_ID = 999999999
 
 const postId = computed(() => Number(route.params.id))
 
@@ -394,12 +416,17 @@ function handleShare() {
 
 async function handleComment() {
   if (!userStore.isLoggedIn) { ElMessage.warning('请先登录'); return }
+  const content = commentContent.value.trim()
   postingComment.value = true
   try {
-    await squareApi.addComment({ postId: postId.value, content: commentContent.value.trim() })
+    await squareApi.addComment({ postId: postId.value, content })
     commentContent.value = ''
     await loadComments()
-    ElMessage.success('评论成功')
+    if (content.startsWith('@问一问')) {
+      ElMessage.success('已向 AI 提问，稍后刷新可查看回复')
+    } else {
+      ElMessage.success('评论成功')
+    }
   } catch {
     ElMessage.error('评论失败')
   } finally {
@@ -420,12 +447,17 @@ function toggleReplyInput(commentId, username) {
 async function handleReply(parentId) {
   if (!userStore.isLoggedIn) { ElMessage.warning('请先登录'); return }
   postingReply.value = true
+  const isAiConversation = replyTarget.value?.username === '问一问'
   try {
     await squareApi.addComment({ postId: postId.value, content: replyContent.value.trim(), parentId })
     replyContent.value = ''
     replyTarget.value = null
     await loadComments()
-    ElMessage.success('回复成功')
+    if (isAiConversation) {
+      ElMessage.success('已向 AI 追问，稍后刷新可查看回复')
+    } else {
+      ElMessage.success('回复成功')
+    }
   } catch {
     ElMessage.error('回复失败')
   } finally {
@@ -745,9 +777,49 @@ onUnmounted(() => {
               display: flex;
               gap: 8px;
 
-              .reply-avatar { flex-shrink: 0; margin-top: 2px; }
-              .reply-body { flex: 1; }
+              .reply-avatar {
+                flex-shrink: 0;
+                margin-top: 2px;
+                &.ai-avatar {
+                  background: linear-gradient(135deg, #667eea, #764ba2);
+                  color: #fff;
+                }
+              }
+              .reply-body {
+                flex: 1;
+                &.ai-reply {
+                  background: linear-gradient(135deg, #f0f4ff, #f5f0ff);
+                  border-radius: 8px;
+                  padding: 8px 10px;
+                  border-left: 3px solid #667eea;
+                }
+              }
             }
+          }
+
+          .ai-username {
+            color: #667eea;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            .ai-tag { margin-left: 2px; }
+          }
+
+          .ai-continue-hint {
+            font-size: 11px;
+            color: #a0a8c0;
+            margin-top: 4px;
+          }
+
+          .ai-markdown {
+            line-height: 1.7;
+            :deep(p) { margin: 4px 0; }
+            :deep(strong) { font-weight: 700; color: #303133; }
+            :deep(ul), :deep(ol) { padding-left: 18px; margin: 4px 0; }
+            :deep(li) { margin: 2px 0; }
+            :deep(h1), :deep(h2), :deep(h3) { font-size: 14px; font-weight: 700; margin: 6px 0 2px; }
+            :deep(code) { background: #f0f2f5; padding: 1px 4px; border-radius: 3px; font-size: 12px; }
           }
         }
       }
