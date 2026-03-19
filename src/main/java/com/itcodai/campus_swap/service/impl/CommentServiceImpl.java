@@ -9,10 +9,13 @@ import com.itcodai.campus_swap.entity.User;
 import com.itcodai.campus_swap.mapper.CommentMapper;
 import com.itcodai.campus_swap.mapper.PostMapper;
 import com.itcodai.campus_swap.mapper.UserMapper;
+import com.itcodai.campus_swap.service.AiCommentService;
 import com.itcodai.campus_swap.service.CommentService;
 import com.itcodai.campus_swap.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,6 +32,10 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
     private final PostMapper postMapper;
     private final UserMapper userMapper;
     private final NotificationService notificationService;
+
+    @Lazy
+    @Autowired
+    private AiCommentService aiCommentService;
 
     @Override
     @Transactional
@@ -54,6 +61,28 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
             }
         } catch (Exception e) {
             log.error("发送评论通知失败 postId={} userId={}", postId, userId, e);
+        }
+
+        // 检测 @问一问 触发词，异步调用 AI 首次回复
+        String AI_TRIGGER = "@问一问";
+        if (content != null && content.startsWith(AI_TRIGGER)) {
+            String question = content.substring(AI_TRIGGER.length()).trim();
+            if (!question.isEmpty()) {
+                aiCommentService.triggerAiReply(postId, comment.getId(), question);
+            }
+        }
+        // 检测续对话：用户回复的是某个子评论线程，且该线程中存在过 AI 的回复
+        else if (parentId != null) {
+            Long AI_USER_ID = 999999999L;
+            // 只要当前用户不是 AI 自己，且该线程里 AI 曾经回复过，就触发续对话
+            boolean aiHasReplied = count(
+                    new LambdaQueryWrapper<Comment>()
+                            .eq(Comment::getParentId, parentId)
+                            .eq(Comment::getUserId, AI_USER_ID)
+            ) > 0;
+            if (aiHasReplied && !AI_USER_ID.equals(userId)) {
+                aiCommentService.triggerAiContinue(postId, parentId, comment.getId());
+            }
         }
 
         return comment.getId();
