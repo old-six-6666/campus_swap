@@ -6,7 +6,7 @@ import { notificationApi } from '@/api/modules/notification'
 import { userApi } from '@/api/modules/user'
 import { useUserStore } from '@/stores/useUserStore'
 import { showInfo } from '@/utils/notify'
-import { ChatLineRound, ShoppingBag, Search, Plus, Bell } from '@element-plus/icons-vue'
+import { ChatLineRound, ShoppingBag, Search, Plus } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -76,8 +76,15 @@ const myId = computed(() => userStore.userInfo?.id)
 async function fetchConversations() {
   loadingConvs.value = true
   try {
-    const data = await chatApi.listConversations({ page: 1, size: 50 })
-    conversations.value = data.records || []
+    const data = await chatApi.listConversations({ page: 1, size: 200 })
+    const all = data.records || []
+    // 同一个对方用户可能有多条会话（关联不同商品），只保留最新一条（已按 lastMsgTime 降序）
+    const seen = new Set()
+    conversations.value = all.filter(c => {
+      if (seen.has(c.otherUserId)) return false
+      seen.add(c.otherUserId)
+      return true
+    })
   } finally {
     loadingConvs.value = false
   }
@@ -172,8 +179,9 @@ async function openChat(user) {
   addFriendDialog.value = false
   searchKw.value = ''
   searchResults.value = []
-  // 检查是否已有无商品关联的会话
+  // 优先找无商品关联的会话，其次找该用户的任意已有会话
   const existing = conversations.value.find(c => c.otherUserId === user.id && !c.itemId)
+    || conversations.value.find(c => c.otherUserId === user.id)
   if (existing) {
     await selectConv(existing)
   } else {
@@ -198,9 +206,10 @@ async function handleQueryNav() {
   const avatar = route.query.avatar || null
   const itemTitle = route.query.itemTitle || null
 
+  // 优先精确匹配（相同对方 + 相同商品），其次找该用户的任意已有会话
   const existing = conversations.value.find(
     c => c.otherUserId === toId && (c.itemId || 0) === itemId
-  )
+  ) || conversations.value.find(c => c.otherUserId === toId)
   if (existing) {
     await selectConv(existing)
   } else {
@@ -359,10 +368,11 @@ watch(() => route.query, async () => {
             <el-avatar :size="32" :src="msg.senderAvatar" class="msg-avatar" />
             <div class="msg-bubble">
               <div class="bubble-content">
-                <template v-for="(part, i) in parseMsgParts(msg.content)" :key="i">
-                  <span v-if="part.type === 'text'">{{ part.value }}</span>
+                <template v-for="(part, i) in parseMsgParts(msg.content)">
+                  <span v-if="part.type === 'text'" :key="`t-${i}`">{{ part.value }}</span>
                   <router-link
                     v-else
+                    :key="`l-${i}`"
                     :to="{ name: 'TradeDetail', params: { id: part.id } }"
                     class="trade-link"
                   >📋 查看交易详情</router-link>
