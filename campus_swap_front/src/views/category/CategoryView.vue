@@ -77,10 +77,13 @@ watch(keyword, () => {
           placeholder="搜索闲置物品..."
           size="large"
           clearable
+          class="search-input"
           @keyup.enter="fetchItems"
         >
-          <template #append>
-            <el-button :icon="Search" @click="fetchItems" />
+          <template #suffix>
+            <button class="search-icon-btn" @click="fetchItems">
+              <el-icon><Search /></el-icon>
+            </button>
           </template>
         </el-input>
       </el-col>
@@ -174,92 +177,147 @@ watch(keyword, () => {
             </el-card>
           </RouterLink>
         </el-col>
-        <el-empty v-if="!loading && items.length === 0" description="暂无商品" />
+        <div v-if="!loading && items.length === 0" class="empty-wrap">
+          <el-empty description="暂无商品，快来发布第一件吧~" />
+        </div>
       </el-row>
     </div>
   </div>
 </template>
 
 <style scoped lang="scss">
+@import '@/assets/styles/variables.scss';
+
 .category-view {
-  max-width: 1200px;
+  max-width: $max-content-width;
   margin: 0 auto;
-  padding: 20px 0;
 }
 
 .page-header {
   text-align: center;
-  margin-bottom: 32px;
+  margin-bottom: 28px;
+  padding: 32px 20px 28px;
+  background: linear-gradient(135deg, rgba(27,153,170,0.06) 0%, rgba(158,208,204,0.1) 100%);
+  border-radius: $border-radius-lg;
 
   h1 {
-    font-size: 32px;
-    color: #333;
+    font-size: 28px;
+    font-weight: 700;
+    color: $primary;
     margin-bottom: 8px;
+    letter-spacing: $letter-spacing-wide;
   }
 
   .subtitle {
-    font-size: 16px;
-    color: #666;
+    font-size: 14px;
+    color: $text-secondary;
+    letter-spacing: $letter-spacing-base;
   }
 }
 
-.search-bar {
-  margin-bottom: 32px;
+.search-bar { margin-bottom: 24px; }
+
+.search-input {
+  :deep(.el-input__wrapper) {
+    border-radius: 50px !important;
+    padding-right: 6px;
+    box-shadow: 0 2px 12px rgba(27,153,170,0.12) !important;
+    border: 1.5px solid rgba(27,153,170,0.25) !important;
+    transition: box-shadow 0.2s, border-color 0.2s;
+
+    &:hover, &.is-focus {
+      border-color: $primary !important;
+      box-shadow: 0 4px 18px rgba(27,153,170,0.22) !important;
+    }
+  }
+}
+
+.search-icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: $primary;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  font-size: 15px;
+  transition: background 0.2s, transform 0.15s;
+  flex-shrink: 0;
+
+  &:hover {
+    background: darken(#1B99AA, 8%);
+    transform: scale(1.08);
+  }
+
+  &:active { transform: scale(0.96); }
 }
 
 .category-filter {
-  background: #f8f9fa;
-  border-radius: 12px;
-  padding: 24px;
-  margin-bottom: 32px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+  background: $bg-card;
+  border-radius: $border-radius-lg;
+  padding: 24px 28px;
+  margin-bottom: 28px;
+  box-shadow: $shadow-card;
+  border: 1px solid $border-color;
 
   .filter-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 10px;
 
     h3 {
-      font-size: 18px;
-      color: #333;
+      font-size: 15px;
+      font-weight: 600;
+      color: $text-primary;
       margin: 0;
+      letter-spacing: $letter-spacing-base;
     }
 
     .filter-actions {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 10px;
     }
   }
 
   .category-tags {
     display: flex;
     flex-wrap: wrap;
-    gap: 12px;
-    margin-bottom: 20px;
+    gap: 10px;
+    margin-bottom: 18px;
 
     .category-tag {
       cursor: pointer;
-      transition: all 0.3s ease;
-      padding: 8px 20px;
-      font-size: 15px;
-      border-radius: 20px;
+      transition: $transition-fast;
+      padding: 8px 22px;
+      font-size: 14px;
+      border-radius: 50px !important;
+      border: 1.5px solid $border-color !important;
+      background: $bg-subtle !important;
+      color: $text-regular !important;
+      letter-spacing: $letter-spacing-base;
 
       &:hover {
         transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        box-shadow: $shadow-sm;
+        border-color: $primary !important;
+        color: $primary !important;
       }
 
       &.selected {
-        background: linear-gradient(135deg, #409eff, #66b1ff);
-        border-color: #409eff;
+        background: $primary !important;
+        border-color: $primary !important;
+        color: #fff !important;
+        box-shadow: $shadow-sm;
       }
 
-      .check-icon {
-        margin-left: 6px;
-        font-size: 14px;
-      }
+      .check-icon { margin-left: 6px; font-size: 12px; }
     }
   }
 
@@ -268,53 +326,48 @@ watch(keyword, () => {
     align-items: center;
     flex-wrap: wrap;
     gap: 8px;
-    padding-top: 16px;
-    border-top: 1px solid #e4e7ed;
+    padding-top: 14px;
+    border-top: 1px solid $border-color;
 
-    span {
-      color: #666;
-      font-size: 14px;
-    }
-
-    .count-text {
-      margin-left: auto;
-      color: #409eff;
-      font-weight: 500;
-    }
+    span { color: $text-secondary; font-size: 13px; }
+    .count-text { margin-left: auto; color: $primary; font-weight: 500; }
   }
 }
 
 .items-section {
   h3 {
-    font-size: 20px;
-    color: #333;
-    margin-bottom: 20px;
+    font-size: 18px;
+    font-weight: 600;
+    color: $text-primary;
+    margin-bottom: 18px;
     padding-bottom: 12px;
-    border-bottom: 2px solid #f0f2f5;
+    border-bottom: 2px solid rgba(27, 153, 170, 0.15);
+    letter-spacing: $letter-spacing-base;
   }
 }
 
-.item-list {
-  min-height: 200px;
+.item-list { min-height: 200px; }
+
+.empty-wrap {
+  width: 100%;
+  padding: 60px 0;
+  text-align: center;
 }
 
-.item-card-link {
-  text-decoration: none;
-}
+.item-card-link { text-decoration: none; }
 
 .item-card {
   margin-bottom: 16px;
   cursor: pointer;
-  transition: transform 0.3s ease;
+  border-radius: $border-radius !important;
+  overflow: hidden;
+  transition: $transition-base;
 
-  &:hover {
-    transform: translateY(-4px);
-  }
+  &:hover { transform: translateY(-4px); box-shadow: $shadow-md !important; border-color: $primary-light !important; }
 
   .item-image {
     width: 100%;
     height: 160px;
-    border-radius: 4px;
   }
 
   .image-placeholder {
@@ -323,88 +376,43 @@ watch(keyword, () => {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: #f5f7fa;
-    color: #c0c4cc;
-    border-radius: 4px;
+    background: $bg-subtle;
+    color: $text-secondary;
   }
 
   .item-info {
-    padding: 12px 0 0;
+    padding: 12px 2px 4px;
 
     .item-title {
-      font-size: 14px;
-      color: #303133;
-      margin: 0 0 8px;
+      font-size: 13px;
+      color: $text-primary;
+      font-weight: 500;
+      margin-bottom: 8px;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
-      line-height: 1.4;
+      letter-spacing: $letter-spacing-base;
     }
 
     .item-meta {
       display: flex;
       justify-content: space-between;
       align-items: center;
+      flex-wrap: wrap;
+      gap: 4px;
 
       .item-price {
-        font-size: 16px;
-        font-weight: 600;
-        color: #f56c6c;
+        font-size: 15px;
+        font-weight: 700;
+        color: $warning;
         margin: 0;
-      }
-
-      .item-category {
-        font-size: 12px;
-        background: #f0f9ff;
-        color: #409eff;
-        border-color: #d9ecff;
       }
     }
   }
 }
 
-// 响应式调整
 @media (max-width: 768px) {
-  .category-view {
-    padding: 16px;
-  }
-
-  .page-header {
-    h1 {
-      font-size: 24px;
-    }
-
-    .subtitle {
-      font-size: 14px;
-    }
-  }
-
-  .category-filter {
-    padding: 16px;
-
-    .filter-header {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 12px;
-
-      .filter-actions {
-        width: 100%;
-        justify-content: space-between;
-      }
-    }
-
-    .category-tags {
-      .category-tag {
-        padding: 6px 16px;
-        font-size: 14px;
-      }
-    }
-  }
-
-  .items-section {
-    h3 {
-      font-size: 18px;
-    }
-  }
+  .page-header { padding: 24px 16px 20px; h1 { font-size: 22px; } }
+  .category-filter { padding: 16px; .filter-header { flex-direction: column; align-items: flex-start; } }
 }
 </style>

@@ -459,6 +459,8 @@ function goItem(itemId) {
 </template>
 
 <style scoped lang="scss">
+@import '@/assets/styles/variables.scss';
+
 .trade-detail {
   max-width: 900px;
   margin: 0 auto;

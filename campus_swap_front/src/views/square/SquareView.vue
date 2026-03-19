@@ -317,236 +317,152 @@ function handlePublishSuccess() {
 </template>
 
 <style scoped lang="scss">
+@import '@/assets/styles/variables.scss';
+
 .square-view {
-  max-width: 1200px;
+  max-width: 800px;
   margin: 0 auto;
-  padding: 20px 0 40px;
+  padding: 0 0 40px;
 }
 
 .page-header {
   text-align: center;
-  margin-bottom: 32px;
-  padding: 0 20px;
-  
+  margin-bottom: 28px;
+  padding: 36px 20px 32px;
+  background: linear-gradient(135deg, rgba(27,153,170,0.06) 0%, rgba(158,208,204,0.1) 100%);
+  border-radius: $border-radius-lg;
+
   .header-content {
     margin-bottom: 24px;
-    
+
     .page-title {
-      font-size: 36px;
+      font-size: 32px;
       font-weight: 700;
-      color: #303133;
       margin-bottom: 8px;
-      background: linear-gradient(135deg, #409eff, #66b1ff);
+      background: linear-gradient(135deg, $primary, $primary-light);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
+      letter-spacing: $letter-spacing-wide;
     }
-    
+
     .page-subtitle {
-      font-size: 16px;
-      color: #909399;
-      margin: 0;
+      font-size: 15px;
+      color: $text-secondary;
+      letter-spacing: $letter-spacing-base;
     }
   }
-  
+
   .stats-container {
     display: flex;
     justify-content: center;
     flex-wrap: wrap;
-    gap: 24px;
-    
+    gap: 20px;
+
     .stat-item {
       text-align: center;
-      min-width: 100px;
-      
+      min-width: 90px;
+      padding: 12px 16px;
+      background: rgba(255,255,255,0.7);
+      border-radius: $border-radius-sm;
+      backdrop-filter: blur(4px);
+
       .stat-value {
-        font-size: 28px;
+        font-size: 24px;
         font-weight: 700;
-        color: #409eff;
-        margin-bottom: 4px;
+        color: $primary;
+        margin-bottom: 3px;
+        letter-spacing: 0.02em;
       }
-      
+
       .stat-label {
-        font-size: 14px;
-        color: #909399;
+        font-size: 12px;
+        color: $text-secondary;
+        letter-spacing: $letter-spacing-base;
       }
     }
   }
 }
 
 .search-section {
-  margin-bottom: 24px;
-  padding: 0 20px;
-  
+  margin-bottom: 20px;
+
   .search-bar {
     .refresh-col {
       display: flex;
       justify-content: flex-end;
-      
-      .el-button {
-        height: 40px;
-        width: 40px;
-      }
+      align-items: center;
     }
   }
 }
 
 .tab-section {
-  margin-bottom: 24px;
-  padding: 0 20px;
-  
+  margin-bottom: 20px;
+  background: $bg-card;
+  border-radius: $border-radius;
+  padding: 4px 16px 0;
+  box-shadow: $shadow-card;
+  border: 1px solid $border-color;
+
   .tab-label {
     display: flex;
     align-items: center;
     gap: 6px;
     font-weight: 500;
+    font-size: 14px;
   }
-  
-  :deep(.el-tabs__nav-wrap) {
-    &::after {
-      height: 1px;
-    }
-  }
-  
-  :deep(.el-tabs__item) {
-    font-size: 16px;
-    padding: 0 20px;
-    
-    &.is-active {
-      color: #409eff;
-      font-weight: 600;
-    }
-  }
-  
-  :deep(.el-tabs__active-bar) {
-    background-color: #409eff;
-    height: 3px;
-  }
+
+  :deep(.el-tabs__nav-wrap::after) { height: 1px; }
+  :deep(.el-tabs__item) { font-size: 14px; padding: 0 18px; }
 }
 
 .posts-section {
-  padding: 0 20px;
-  
-  .posts-container {
-    min-height: 300px;
-  }
-  
+  .posts-container { min-height: 300px; }
+
   .empty-state {
     text-align: center;
     padding: 60px 0;
-    
-    .empty-hint {
-      margin-top: 16px;
-      color: #909399;
-      font-size: 14px;
-    }
+
+    .empty-hint { margin-top: 12px; color: $text-secondary; font-size: 13px; }
   }
-  
+
   .load-more {
     text-align: center;
-    padding: 24px 0;
-    
-    .load-more-btn {
-      font-size: 15px;
-      font-weight: 500;
-    }
+    padding: 20px 0;
+
+    .load-more-btn { font-size: 14px; font-weight: 500; }
   }
-  
+
   .no-more {
-    padding: 24px 0;
-    
-    .no-more-text {
-      color: #909399;
-      font-size: 14px;
-    }
+    padding: 20px 0;
+    .no-more-text { color: $text-secondary; font-size: 13px; }
   }
 }
 
 .publish-fab {
   position: fixed;
-  right: 40px;
-  bottom: 40px;
+  right: 36px;
+  bottom: 36px;
   z-index: 1000;
-  
+
   .publish-btn {
     padding: 12px 24px;
-    font-size: 16px;
+    font-size: 15px;
     font-weight: 500;
-    box-shadow: 0 4px 20px rgba(64, 158, 255, 0.3);
-    
-    .el-icon {
-      margin-right: 6px;
-    }
+    box-shadow: $shadow-lg;
+    letter-spacing: $letter-spacing-base;
+
+    .el-icon { margin-right: 6px; }
   }
 }
 
-// 响应式调整
 @media (max-width: 768px) {
-  .square-view {
-    padding: 16px 0 32px;
-  }
-  
+  .square-view { padding: 0 0 28px; }
   .page-header {
-    .header-content {
-      .page-title {
-        font-size: 28px;
-      }
-      
-      .page-subtitle {
-        font-size: 14px;
-      }
-    }
-    
-    .stats-container {
-      gap: 16px;
-      
-      .stat-item {
-        min-width: 80px;
-        
-        .stat-value {
-          font-size: 22px;
-        }
-        
-        .stat-label {
-          font-size: 12px;
-        }
-      }
-    }
+    padding: 24px 16px 20px;
+    .header-content .page-title { font-size: 24px; }
+    .stats-container { gap: 10px; .stat-item { min-width: 72px; .stat-value { font-size: 18px; } } }
   }
-  
-  .search-section,
-  .tab-section,
-  .posts-section {
-    padding: 0 16px;
-  }
-  
-  .publish-fab {
-    right: 20px;
-    bottom: 20px;
-    
-    .publish-btn {
-      padding: 10px 20px;
-      font-size: 14px;
-    }
-  }
-}
-
-@media (max-width: 480px) {
-  .stats-container {
-    .stat-item {
-      min-width: 70px !important;
-      
-      .stat-value {
-        font-size: 18px !important;
-      }
-    }
-  }
-  
-  .tab-section {
-    :deep(.el-tabs__item) {
-      padding: 0 12px !important;
-      font-size: 14px !important;
-    }
-  }
+  .publish-fab { right: 18px; bottom: 18px; .publish-btn { padding: 10px 18px; font-size: 13px; } }
 }
 </style>
