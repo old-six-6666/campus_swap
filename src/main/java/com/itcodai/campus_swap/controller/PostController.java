@@ -13,6 +13,7 @@ import com.itcodai.campus_swap.mapper.TradeMapper;
 import com.itcodai.campus_swap.mapper.UserMapper;
 import com.itcodai.campus_swap.service.PostReportService;
 import com.itcodai.campus_swap.service.PostService;
+import com.itcodai.campus_swap.service.ContentFilterService;
 import com.itcodai.campus_swap.vo.PageVO;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import jakarta.servlet.http.HttpServletRequest;
@@ -35,17 +36,20 @@ public class PostController {
 
     private final PostService postService;
     private final PostReportService postReportService;
+    private final ContentFilterService contentFilterService;
     private final TradeMapper tradeMapper;
     private final ItemMapper itemMapper;
     private final UserMapper userMapper;
 
     public PostController(PostService postService,
                           PostReportService postReportService,
+                          ContentFilterService contentFilterService,
                           TradeMapper tradeMapper,
                           ItemMapper itemMapper,
                           UserMapper userMapper) {
         this.postService = postService;
         this.postReportService = postReportService;
+        this.contentFilterService = contentFilterService;
         this.tradeMapper = tradeMapper;
         this.itemMapper = itemMapper;
         this.userMapper = userMapper;
@@ -254,6 +258,11 @@ public class PostController {
                 return Result.fail(ResultCode.BAD_REQUEST, "动态内容不能为空");
             }
 
+            // 敏感词检测
+            if (contentFilterService.containsSensitiveWord(post.getContent())) {
+                return Result.fail(ResultCode.BAD_REQUEST, "内容含有违规词汇，不符合社区规范，请修改后重新发布");
+            }
+
             // 将前端传来的 imageList 序列化为 JSON 字符串存入 images 字段
             if (post.getImageList() != null && !post.getImageList().isEmpty()) {
                 post.setImages(new ObjectMapper().writeValueAsString(post.getImageList()));
@@ -298,6 +307,11 @@ public class PostController {
 
             if (post.getContent() != null && post.getContent().trim().isEmpty()) {
                 return Result.fail(ResultCode.BAD_REQUEST, "动态内容不能为空");
+            }
+
+            // 敏感词检测
+            if (post.getContent() != null && contentFilterService.containsSensitiveWord(post.getContent())) {
+                return Result.fail(ResultCode.BAD_REQUEST, "内容含有违规词汇，不符合社区规范，请修改后重新发布");
             }
 
             // 将前端传来的 imageList 序列化为 JSON 字符串
