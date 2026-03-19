@@ -14,6 +14,7 @@ import com.itcodai.campus_swap.vo.ItemVO;
 import com.itcodai.campus_swap.vo.PageVO;
 import cn.hutool.json.JSONUtil;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -30,6 +31,9 @@ public class ItemServiceImpl implements ItemService {
 
     private final ItemMapper itemMapper;
     private final UserMapper userMapper;
+
+    @Value("${item.default-cover:/img.png}")
+    private String defaultCover;
 
     @Override
     public PageVO<ItemVO> listItems(String keyword, String category, int page, int size) {
@@ -72,6 +76,9 @@ public class ItemServiceImpl implements ItemService {
         if (imgs != null && !imgs.isEmpty()) {
             item.setCoverImage(imgs.get(0));
             item.setImages(JSONUtil.toJsonStr(imgs));
+        } else {
+            item.setCoverImage(defaultCover);
+            item.setImages(JSONUtil.toJsonStr(List.of(defaultCover)));
         }
         itemMapper.insert(item);
         return item.getId();
@@ -93,8 +100,8 @@ public class ItemServiceImpl implements ItemService {
             item.setCoverImage(imgs.get(0));
             item.setImages(JSONUtil.toJsonStr(imgs));
         } else {
-            item.setCoverImage(null);
-            item.setImages(null);
+            item.setCoverImage(defaultCover);
+            item.setImages(JSONUtil.toJsonStr(List.of(defaultCover)));
         }
         itemMapper.updateById(item);
     }
