@@ -2,10 +2,11 @@
 import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { chatApi } from '@/api/modules/chat'
+import { notificationApi } from '@/api/modules/notification'
 import { userApi } from '@/api/modules/user'
 import { useUserStore } from '@/stores/useUserStore'
 import { showInfo } from '@/utils/notify'
-import { ChatLineRound, ShoppingBag, Search, Plus } from '@element-plus/icons-vue'
+import { ChatLineRound, ShoppingBag, Search, Plus, Bell } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -22,6 +23,46 @@ const loadingMsgs = ref(false)
 const newMsg = ref('')
 const sending = ref(false)
 const messagesEl = ref(null)
+
+// ── 通知 ──────────────────────────────────────────────────────────────────
+const activeTab = ref('chat')   // 'chat' | 'notification'
+const notifications = ref([])
+const notifUnread = ref(0)
+const notifLoading = ref(false)
+
+async function fetchNotifications() {
+  notifLoading.value = true
+  try {
+    notifications.value = await notificationApi.list({ page: 1, size: 50 })
+  } finally {
+    notifLoading.value = false
+  }
+}
+
+async function switchTab(tab) {
+  activeTab.value = tab
+  if (tab === 'notification') {
+    await fetchNotifications()
+    if (notifUnread.value > 0) {
+      await notificationApi.markAllRead().catch(() => {})
+      notifUnread.value = 0
+    }
+  }
+}
+
+async function fetchNotifUnread() {
+  try {
+    const data = await notificationApi.getUnreadCount()
+    notifUnread.value = data?.count || 0
+  } catch { /* ignore */ }
+}
+
+function notifTypeLabel(type) {
+  if (type === 'LIKE') return '赞了你的帖子'
+  if (type === 'FAVORITE') return '收藏了你的帖子'
+  if (type === 'COMMENT') return '评论了你的帖子'
+  return ''
+}
 
 // ── 添加好友弹窗 ─────────────────────────────────────────────────────────
 const addFriendDialog = ref(false)
@@ -212,6 +253,7 @@ function onCloseDialog() {
 onMounted(async () => {
   await fetchConversations()
   await handleQueryNav()
+  fetchNotifUnread()
 })
 
 watch(() => route.query, async () => {
@@ -222,16 +264,25 @@ watch(() => route.query, async () => {
 
 <template>
   <div class="chat-page">
-    <!-- 左栏：会话列表 -->
+    <!-- 左栏：tab 切换 -->
     <div class="chat-left">
       <div class="left-header">
-        <span class="left-title">消息</span>
-        <el-button type="primary" size="small" :icon="Plus" @click="addFriendDialog = true">
+        <div class="tab-bar">
+          <div class="tab-item" :class="{ active: activeTab === 'chat' }" @click="switchTab('chat')">
+            聊天
+          </div>
+          <div class="tab-item" :class="{ active: activeTab === 'notification' }" @click="switchTab('notification')">
+            通知
+            <el-badge v-if="notifUnread > 0" :value="notifUnread" class="tab-badge" />
+          </div>
+        </div>
+        <el-button v-if="activeTab === 'chat'" type="primary" size="small" :icon="Plus" @click="addFriendDialog = true">
           添加好友
         </el-button>
       </div>
 
-      <div v-loading="loadingConvs" class="conv-list">
+      <!-- 聊天会话列表 -->
+      <div v-if="activeTab === 'chat'" v-loading="loadingConvs" class="conv-list">
         <div v-if="conversations.length === 0 && !loadingConvs" class="empty-hint">
           暂无会话，点击「添加好友」开始聊天
         </div>
@@ -257,6 +308,24 @@ watch(() => route.query, async () => {
               {{ conv.itemTitle }}
             </div>
           </div>
+        </div>
+      </div>
+
+      <!-- 通知列表 -->
+      <div v-else v-loading="notifLoading" class="notif-list">
+        <div v-if="notifications.length === 0 && !notifLoading" class="empty-hint">
+          暂无通知
+        </div>
+        <div v-for="n in notifications" :key="n.id" class="notif-item" :class="{ unread: !n.isRead }"
+          @click="$router.push({ name: 'PostDetail', params: { id: n.postId } })">
+          <el-avatar :size="36" :src="n.sender?.avatar" />
+          <div class="notif-body">
+            <span class="notif-name">{{ n.sender?.nickname }}</span>
+            <span class="notif-action">{{ notifTypeLabel(n.type) }}</span>
+            <div v-if="n.content" class="notif-content">{{ n.content }}</div>
+            <div class="notif-time">{{ formatTime(n.createdAt) }}</div>
+          </div>
+          <span v-if="!n.isRead" class="unread-dot" />
         </div>
       </div>
     </div>
@@ -675,5 +744,79 @@ watch(() => route.query, async () => {
     font-size: 12px;
     color: #909399;
   }
+}
+
+/* ── 通知列表 ──────────────────────────────────────────── */
+.tab-bar {
+  display: flex;
+  gap: 4px;
+  flex: 1;
+
+  .tab-item {
+    position: relative;
+    padding: 4px 12px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #606266;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all 0.15s;
+
+    &:hover { background: #f0f2f5; }
+    &.active { background: #ecf5ff; color: #409eff; }
+
+    .tab-badge {
+      position: absolute;
+      top: 0;
+      right: 0;
+    }
+  }
+}
+
+.notif-list {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.notif-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  cursor: pointer;
+  border-bottom: 1px solid #f0f0f0;
+  transition: background 0.15s;
+  position: relative;
+
+  &:hover { background: #f2f6fc; }
+  &.unread { background: #fef9f0; }
+}
+
+.notif-body {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  color: #606266;
+  line-height: 1.6;
+
+  .notif-name { font-weight: 600; color: #303133; margin-right: 4px; }
+  .notif-content {
+    color: #909399;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 12px;
+    margin-top: 2px;
+  }
+  .notif-time { font-size: 11px; color: #c0c4cc; margin-top: 2px; }
+}
+
+.unread-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #f56c6c;
+  flex-shrink: 0;
+  margin-top: 6px;
 }
 </style>

@@ -10,7 +10,9 @@ import com.itcodai.campus_swap.mapper.CommentMapper;
 import com.itcodai.campus_swap.mapper.PostMapper;
 import com.itcodai.campus_swap.mapper.UserMapper;
 import com.itcodai.campus_swap.service.CommentService;
+import com.itcodai.campus_swap.service.NotificationService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,12 +21,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> implements CommentService {
 
     private final PostMapper postMapper;
     private final UserMapper userMapper;
+    private final NotificationService notificationService;
 
     @Override
     @Transactional
@@ -40,6 +44,17 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
                 .eq(Post::getId, postId)
                 .setSql("comment_count = comment_count + 1")
                 .setSql("hot_score = like_count * 3 + (comment_count + 1) * 2 + favorite_count * 4 + share_count * 1 + view_count * 0.1"));
+
+        // 通知帖主
+        try {
+            Post post = postMapper.selectById(postId);
+            if (post != null) {
+                String preview = content != null && content.length() > 50 ? content.substring(0, 50) : content;
+                notificationService.send(post.getUserId(), userId, "COMMENT", postId, preview);
+            }
+        } catch (Exception e) {
+            log.error("发送评论通知失败 postId={} userId={}", postId, userId, e);
+        }
 
         return comment.getId();
     }
