@@ -34,6 +34,9 @@ public class Item {
     /** 所有图片 URL 列表（JSON 字符串存储，如 ["url1","url2"]） */
     private String images;
 
+    /** 标签列表（JSON 字符串存储，如 ["九成新","免议价","可小刀"]） */
+    private String tags;
+
     /** 发布者 ID */
     private Long sellerId;
 

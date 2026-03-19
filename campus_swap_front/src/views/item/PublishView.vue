@@ -1,9 +1,10 @@
 <script setup>
-import { reactive, ref } from 'vue'
+import { reactive, ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { itemApi } from '@/api/modules/item'
 import { showSuccess, showError, showWarning } from '@/utils/notify'
 import { Plus } from '@element-plus/icons-vue'
+import { CATEGORIES, CATEGORY_TAGS, COMMON_TAGS } from '@/constants/itemTags'
 
 const router = useRouter()
 const formRef = ref(null)
@@ -15,6 +16,7 @@ const form = reactive({
   category: '',
   description: '',
   images: [],
+  tags: [],
 })
 
 const rules = {
@@ -23,12 +25,24 @@ const rules = {
   category: [{ required: true, message: '请选择分类', trigger: 'change' }],
 }
 
-const categories = ['数码', '书籍', '服饰', '生活用品', '其他']
+const availableTags = computed(() => {
+  if (!form.category) return []
+  return [...(CATEGORY_TAGS[form.category] || []), ...COMMON_TAGS]
+})
 
-// el-upload 文件列表（用于显示预览）
+function onCategoryChange(val) {
+  const valid = [...(CATEGORY_TAGS[val] || []), ...COMMON_TAGS]
+  form.tags = form.tags.filter(t => valid.includes(t))
+}
+
+function toggleTag(tag) {
+  const idx = form.tags.indexOf(tag)
+  if (idx === -1) form.tags.push(tag)
+  else form.tags.splice(idx, 1)
+}
+
 const fileList = ref([])
 
-// 自定义上传：通过 axios 上传，获取 token 并拿到 URL
 async function handleUpload({ file, onSuccess, onError }) {
   try {
     const url = await itemApi.uploadImage(file)
@@ -40,13 +54,11 @@ async function handleUpload({ file, onSuccess, onError }) {
   }
 }
 
-// 删除图片时同步 form.images
 function handleRemove(uploadFile) {
   const url = uploadFile.response ?? uploadFile.url
   form.images = form.images.filter((u) => u !== url)
 }
 
-// 限制图片数量
 function handleExceed() {
   showWarning('最多上传 9 张图片')
 }
@@ -55,7 +67,10 @@ async function handlePublish() {
   await formRef.value.validate()
   loading.value = true
   try {
-    await itemApi.publish(form)
+    const tags = form.tags.includes(form.category)
+      ? form.tags
+      : [form.category, ...form.tags]
+    await itemApi.publish({ ...form, tags })
     await showSuccess('发布成功')
     router.push('/')
   } finally {
@@ -80,9 +95,21 @@ async function handlePublish() {
         </el-form-item>
 
         <el-form-item label="分类" prop="category">
-          <el-select v-model="form.category" placeholder="请选择分类">
-            <el-option v-for="c in categories" :key="c" :label="c" :value="c" />
+          <el-select v-model="form.category" placeholder="请选择分类" @change="onCategoryChange">
+            <el-option v-for="c in CATEGORIES" :key="c" :label="c" :value="c" />
           </el-select>
+        </el-form-item>
+
+        <el-form-item label="标签">
+          <div v-if="!form.category" class="tag-tip">请先选择分类</div>
+          <div v-else class="tag-selector">
+            <el-check-tag
+              v-for="tag in availableTags"
+              :key="tag"
+              :checked="form.tags.includes(tag)"
+              @change="toggleTag(tag)"
+            >{{ tag }}</el-check-tag>
+          </div>
         </el-form-item>
 
         <el-form-item label="描述">
@@ -128,5 +155,16 @@ async function handlePublish() {
   font-size: 12px;
   color: #909399;
   margin-bottom: 8px;
+}
+
+.tag-selector {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tag-tip {
+  font-size: 13px;
+  color: #c0c4cc;
 }
 </style>

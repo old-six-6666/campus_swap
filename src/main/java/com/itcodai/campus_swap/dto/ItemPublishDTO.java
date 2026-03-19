@@ -28,4 +28,7 @@ public class ItemPublishDTO {
 
     /** 图片 URL 列表（第一张自动作为封面） */
     private List<String> images;
+
+    /** 标签列表，如 ["九成新","免议价"] */
+    private List<String> tags;
 }

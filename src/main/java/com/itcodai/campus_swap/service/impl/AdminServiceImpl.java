@@ -246,6 +246,11 @@ public class AdminServiceImpl implements AdminService {
         } else {
             vo.setImages(Collections.emptyList());
         }
+        if (StringUtils.hasText(item.getTags())) {
+            vo.setTags(JSONUtil.toList(item.getTags(), String.class));
+        } else {
+            vo.setTags(Collections.emptyList());
+        }
         // 查询卖家信息
         User seller = userMapper.selectById(item.getSellerId());
         if (seller != null) {
