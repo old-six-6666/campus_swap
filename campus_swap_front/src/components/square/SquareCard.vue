@@ -7,9 +7,10 @@ import {
   More,
   User,
   Picture,
-  Share,
   CircleCheck,
-  Delete
+  Delete,
+  Edit,
+  Warning
 } from '@element-plus/icons-vue'
 import EmojiPicker from 'vue3-emoji-picker'
 import 'vue3-emoji-picker/css'
@@ -20,7 +21,7 @@ const props = defineProps({
   post: { type: Object, required: true }
 })
 
-const emit = defineEmits(['like-changed', 'favorite-changed', 'comment-added', 'post-deleted'])
+const emit = defineEmits(['like-changed', 'favorite-changed', 'comment-added', 'post-deleted', 'post-updated'])
 
 const userStore = useUserStore()
 const router = useRouter()
@@ -110,16 +111,14 @@ async function handleComment() {
   }
 }
 
-function handleShare() {
-  const shareUrl = `${window.location.origin}/square/post/${props.post.id}`
-  navigator.clipboard.writeText(shareUrl)
-    .then(() => ElMessage.success('链接已复制到剪贴板'))
-    .catch(() => ElMessage.info(`分享链接: ${shareUrl}`))
-  squareApi.sharePost(props.post.id).catch(() => {})
-}
-
 function handleAction(command) {
-  if (command === 'delete') handleDelete()
+  if (command === 'edit') {
+    router.push({ name: 'EditPost', params: { id: props.post.id } })
+  } else if (command === 'delete') {
+    handleDelete()
+  } else if (command === 'report') {
+    openReportDialog()
+  }
 }
 
 async function handleDelete() {
@@ -141,465 +140,388 @@ async function handleDelete() {
   }
 }
 
-const isCurrentUserPost = computed(() =>
-  userStore.isLoggedIn && userStore.userInfo?.id === props.post.userId
-)
+// 检查当前用户是否是动态的作者
+const isCurrentUserPost = computed(() => {
+  return userStore.isLoggedIn && userStore.userInfo?.id === props.post.userId
+})
+
+// 封面图优先级：动态第一张图 > 物品封面图
+const coverSrc = computed(() => {
+  if (props.post.images?.length) return props.post.images[0]
+  if (props.post.item?.coverImage) return props.post.item.coverImage
+  return null
+})
+
+// ===== 举报 =====
+const showReportDialog = ref(false)
+const reportForm = ref({ reason: null, description: '' })
+const submittingReport = ref(false)
+
+const reportReasons = [
+  { value: 1, label: '违法违规' },
+  { value: 2, label: '色情低俗' },
+  { value: 3, label: '虚假信息' },
+  { value: 4, label: '侮辱谩骂' },
+  { value: 5, label: '广告骚扰' },
+  { value: 6, label: '其他' },
+]
+
+function openReportDialog() {
+  if (!userStore.isLoggedIn) {
+    ElMessage.warning('请先登录')
+    return
+  }
+  reportForm.value = { reason: null, description: '' }
+  showReportDialog.value = true
+}
+
+async function submitReport() {
+  if (!reportForm.value.reason) {
+    ElMessage.warning('请选择举报原因')
+    return
+  }
+  submittingReport.value = true
+  try {
+    await squareApi.reportPost(props.post.id, {
+      reason: reportForm.value.reason,
+      description: reportForm.value.description
+    })
+    showReportDialog.value = false
+    ElMessage.success('举报已提交，我们将尽快审核')
+  } catch (error) {
+    const msg = error?.response?.data?.message
+    ElMessage.error(msg || '举报失败，请稍后再试')
+  } finally {
+    submittingReport.value = false
+  }
+}
 </script>
 
 <template>
-  <div class="square-card">
-    <!-- 用户信息行 -->
-    <div class="card-header">
-      <el-avatar
-        :size="42"
-        :src="userStore.getAvatar(post.user?.avatar)"
-        class="user-avatar clickable"
-        style="object-fit:cover"
-        @click.stop="router.push({ name: 'UserHome', params: { id: post.userId } })"
-      >
-        <el-icon><User /></el-icon>
-      </el-avatar>
-      <div class="user-meta">
-        <span
-          class="username clickable"
-          @click.stop="router.push({ name: 'UserHome', params: { id: post.userId } })"
-        >{{ post.user?.username || '匿名用户' }}</span>
-        <div class="post-meta">
-          <span class="post-type-badge">{{ postTypeInfo.icon }} {{ postTypeInfo.text }}</span>
-          <span class="post-time">· {{ formatTime(post.createdAt) }}</span>
-        </div>
-      </div>
-      <div class="card-more">
-        <el-dropdown v-if="isCurrentUserPost" trigger="click" @command="handleAction">
-          <el-button type="info" link :icon="More" />
-          <template #dropdown>
-            <el-dropdown-menu>
-              <el-dropdown-item command="delete" style="color: #e74c6a;">
-                <el-icon><Delete /></el-icon>
-                删除动态
-              </el-dropdown-item>
-            </el-dropdown-menu>
-          </template>
-        </el-dropdown>
-      </div>
+  <div class="card-wrapper">
+  <!-- 小红书风格卡片：点击跳详情，互动按钮阻止冒泡 -->
+  <div class="square-card" @click="router.push({ name: 'PostDetail', params: { id: post.id } })">
+
+    <!-- 封面图：有图才显示 -->
+    <div v-if="coverSrc" class="card-cover">
+      <el-image :src="coverSrc" fit="cover" class="cover-img">
+        <template #error>
+          <div class="cover-placeholder"><el-icon><Picture /></el-icon></div>
+        </template>
+      </el-image>
+
+      <!-- 多图角标 -->
+      <span v-if="post.images?.length > 1" class="img-count">{{ post.images.length }}图</span>
+      <!-- 物品价格角标 -->
+      <span v-if="post.type === 1 && post.item?.price != null" class="price-badge">¥{{ post.item.price }}</span>
     </div>
 
-    <!-- 动态内容 -->
-    <div class="card-content clickable" @click="router.push({ name: 'PostDetail', params: { id: post.id } })">
-      <p v-if="post.content" class="content-text">{{ post.content }}</p>
+    <!-- 右上角操作菜单（始终可见，移出封面区） -->
+    <div class="card-menu" @click.stop>
+      <el-dropdown v-if="isCurrentUserPost" trigger="click" @command="handleAction">
+        <el-button class="menu-btn" text><el-icon><More /></el-icon></el-button>
+        <template #dropdown>
+          <el-dropdown-menu>
+            <el-dropdown-item command="edit"><el-icon><Edit /></el-icon>编辑</el-dropdown-item>
+            <el-dropdown-item command="delete" style="color:#f56c6c"><el-icon><Delete /></el-icon>删除</el-dropdown-item>
+          </el-dropdown-menu>
+        </template>
+      </el-dropdown>
+      <el-dropdown v-else-if="userStore.isLoggedIn" trigger="click" @command="handleAction">
+        <el-button class="menu-btn" text><el-icon><More /></el-icon></el-button>
+        <template #dropdown>
+          <el-dropdown-menu>
+            <el-dropdown-item command="report" style="color:#e6a23c"><el-icon><Warning /></el-icon>举报</el-dropdown-item>
+          </el-dropdown-menu>
+        </template>
+      </el-dropdown>
+    </div>
 
-      <!-- 图片组 -->
-      <div v-if="post.images?.length" class="post-images" :class="`count-${Math.min(post.images.length, 9)}`">
-        <el-image
-          v-for="(img, idx) in post.images"
-          :key="idx"
-          :src="img"
-          fit="cover"
-          class="post-img"
-          :preview-src-list="post.images"
-          :initial-index="idx"
-          @click.stop
-        >
-          <template #error>
-            <div class="img-error"><el-icon><Picture /></el-icon></div>
-          </template>
-        </el-image>
+    <!-- 卡片内容区 -->
+    <div class="card-body">
+      <!-- 正文（最多3行） -->
+      <p class="card-content">{{ post.content || post.item?.title || '动态' }}</p>
+
+      <!-- 标签 -->
+      <div v-if="post.tags?.length" class="card-tags">
+        <span v-for="tag in post.tags.slice(0, 3)" :key="tag.id" class="tag">#{{ tag.name }}</span>
       </div>
 
-      <!-- 物品卡片 -->
-      <div v-if="post.type === 1 && post.item" class="item-embed">
-        <el-image
-          v-if="post.item.coverImage"
-          :src="post.item.coverImage"
-          fit="cover"
-          class="embed-img"
-          :preview-src-list="[post.item.coverImage]"
-          @click.stop
-        >
-          <template #error>
-            <div class="img-error"><el-icon size="24"><Picture /></el-icon></div>
-          </template>
-        </el-image>
-        <div class="embed-info">
-          <h4 class="embed-title">{{ post.item.title }}</h4>
-          <div class="embed-meta">
-            <el-tag size="small">{{ post.item.condition || '未知成色' }}</el-tag>
-            <span class="embed-price">¥ {{ post.item.price }}</span>
-          </div>
-          <p v-if="post.item.description" class="embed-desc">{{ post.item.description }}</p>
-          <div v-if="post.tags?.length" class="embed-tags">
-            <el-tag v-for="tag in post.tags" :key="tag.id" size="small" class="embed-tag">
-              #{{ tag.name }}
-            </el-tag>
-          </div>
-          <div v-if="post.item.exchangeFor" class="exchange-for">
-            <span class="ex-label">想换：</span>
-            <span>{{ post.item.exchangeFor }}</span>
-          </div>
+      <!-- 用户信息 + 互动 -->
+      <div class="card-footer" @click.stop>
+        <div class="author" @click="router.push({ name: 'UserHome', params: { id: post.userId } })">
+          <el-avatar :size="22" :src="post.user?.avatar" class="author-avatar">
+            <el-icon><User /></el-icon>
+          </el-avatar>
+          <span class="author-name">{{ post.user?.username || '匿名' }}</span>
+        </div>
+
+        <div class="footer-actions">
+          <!-- 点赞 -->
+          <button class="action-btn" :class="{ active: isLiked }" @click="handleLike">
+            <el-icon><CircleCheck /></el-icon>
+            <span>{{ likeCount }}</span>
+          </button>
+          <!-- 收藏 -->
+          <button class="action-btn fav" :class="{ active: isFavorited }" @click="handleFavorite">
+            <el-icon><Star /></el-icon>
+            <span>{{ favoriteCount }}</span>
+          </button>
+          <!-- 评论 -->
+          <button class="action-btn" @click="showCommentInput = !showCommentInput">
+            <el-icon><ChatDotRound /></el-icon>
+            <span>{{ commentCount }}</span>
+          </button>
         </div>
       </div>
 
-      <!-- 换物成功 -->
-      <div v-if="post.type === 2 && post.swapRecord" class="swap-success">
-        <span class="swap-emoji">🎉</span>
-        <div class="swap-info">
-          <p>成功与 <strong>{{ post.swapRecord.partnerName }}</strong> 完成换物</p>
-          <div class="swap-items">
-            <span class="swap-item-tag">{{ post.swapRecord.itemATitle }}</span>
-            <span class="swap-arrow">↔</span>
-            <span class="swap-item-tag">{{ post.swapRecord.itemBTitle }}</span>
+      <!-- 评论输入框 -->
+      <div v-if="showCommentInput" class="comment-input-area" @click.stop>
+        <el-input
+          v-model="commentContent"
+          type="textarea"
+          :rows="2"
+          placeholder="写下你的评论..."
+          maxlength="500"
+          show-word-limit
+        />
+        <div class="comment-actions">
+          <div class="emoji-wrap">
+            <el-button type="info" link size="small" @click="showCommentEmoji = !showCommentEmoji">😊</el-button>
+            <EmojiPicker
+              v-if="showCommentEmoji"
+              class="emoji-picker-popup"
+              :native="true"
+              :disable-skin-tones="true"
+              @select="onSelectEmoji"
+            />
           </div>
+          <el-button size="small" @click="showCommentInput = false; showCommentEmoji = false">取消</el-button>
+          <el-button type="primary" size="small" :loading="postingComment" @click="handleComment">发布</el-button>
         </div>
       </div>
     </div>
+  </div>
 
-    <!-- 互动区 -->
-    <div class="interaction-bar">
-      <div class="stats-row">
-        <span class="stat"><el-icon><CircleCheck /></el-icon> {{ likeCount }}</span>
-        <span class="stat"><el-icon><Star /></el-icon> {{ favoriteCount }}</span>
-        <span class="stat"><el-icon><ChatDotRound /></el-icon> {{ commentCount }}</span>
-      </div>
-
-      <div class="action-row">
-        <button class="action-btn" :class="{ active: isLiked }" @click="handleLike">
-          <el-icon><CircleCheck /></el-icon>
-          <span>{{ isLiked ? '已赞' : '点赞' }}</span>
-        </button>
-        <button class="action-btn fav" :class="{ active: isFavorited }" @click="handleFavorite">
-          <el-icon><Star /></el-icon>
-          <span>{{ isFavorited ? '已收藏' : '收藏' }}</span>
-        </button>
-        <button class="action-btn" @click="showCommentInput = !showCommentInput">
-          <el-icon><ChatDotRound /></el-icon>
-          <span>评论</span>
-        </button>
-        <button class="action-btn" @click="handleShare">
-          <el-icon><Share /></el-icon>
-          <span>分享</span>
-        </button>
-      </div>
-    </div>
-
-    <!-- 评论输入 -->
-    <div v-if="showCommentInput" class="comment-area">
-      <el-input
-        v-model="commentContent"
-        type="textarea"
-        :rows="2"
-        placeholder="写下你的评论..."
-        maxlength="500"
-        show-word-limit
-      />
-      <div class="comment-actions">
-        <div class="emoji-wrap">
-          <el-button type="info" link size="small" @click="showCommentEmoji = !showCommentEmoji">😊 表情</el-button>
-          <EmojiPicker
-            v-if="showCommentEmoji"
-            class="emoji-picker-popup"
-            :native="true"
-            :disable-skin-tones="true"
-            @select="onSelectEmoji"
-          />
-        </div>
-        <el-button size="small" @click="showCommentInput = false; showCommentEmoji = false">取消</el-button>
-        <el-button type="primary" size="small" :loading="postingComment" @click="handleComment">
-          发表评论
-        </el-button>
-      </div>
-    </div>
+  <!-- 举报对话框 -->
+  <el-dialog v-model="showReportDialog" title="举报动态" width="420px" append-to-body>
+    <el-form label-width="80px">
+      <el-form-item label="举报原因" required>
+        <el-radio-group v-model="reportForm.reason" class="report-reason-group">
+          <el-radio v-for="r in reportReasons" :key="r.value" :value="r.value">{{ r.label }}</el-radio>
+        </el-radio-group>
+      </el-form-item>
+      <el-form-item label="补充说明">
+        <el-input v-model="reportForm.description" type="textarea" :rows="3"
+          placeholder="请描述具体情况（选填，最多200字）" maxlength="200" show-word-limit />
+      </el-form-item>
+    </el-form>
+    <template #footer>
+      <el-button @click="showReportDialog = false">取消</el-button>
+      <el-button type="warning" :loading="submittingReport" @click="submitReport">提交举报</el-button>
+    </template>
+  </el-dialog>
   </div>
 </template>
 
 <style scoped lang="scss">
-@import '@/assets/styles/variables.scss';
+// 透明包裹层，让 columns 瀑布流的 break-inside 作用在 .square-card 上
+.card-wrapper {
+  break-inside: avoid;
+  margin-bottom: 12px;
+}
 
 .square-card {
-  background: $bg-card;
-  border-radius: $border-radius;
-  padding: 20px 22px;
-  margin-bottom: 14px;
-  box-shadow: $shadow-card;
-  border: 1px solid $border-color;
-  transition: $transition-base;
+  background: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.08);
+  cursor: pointer;
+  position: relative;
+  transition: box-shadow 0.2s, transform 0.2s;
 
   &:hover {
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.14);
     transform: translateY(-2px);
-    box-shadow: $shadow-md;
-    border-color: $primary-light;
   }
 }
 
-/* ── 头部 ────────────────────── */
-.card-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 14px;
-}
+/* ---- 封面图 ---- */
+.card-cover {
+  position: relative;
+  width: 100%;
+  min-height: 120px;
+  background: #f5f7fa;
 
-.user-avatar { flex-shrink: 0; cursor: pointer; transition: $transition-fast; &:hover { opacity: 0.85; } }
-
-.clickable { cursor: pointer; }
-
-.user-meta {
-  flex: 1;
-  min-width: 0;
-
-  .username {
-    font-size: 15px;
-    font-weight: 600;
-    color: $text-primary;
-    letter-spacing: $letter-spacing-base;
-    display: inline-block;
-    transition: color 0.2s;
-    &:hover { color: $primary; }
+  .cover-img {
+    width: 100%;
+    display: block;
+    max-height: 420px;
+    :deep(img) {
+      width: 100%;
+      height: auto;
+      max-height: 420px;
+      object-fit: cover;
+      display: block;
+    }
   }
 
-  .post-meta {
-    font-size: 12px;
-    color: $text-secondary;
-    margin-top: 2px;
+  .cover-placeholder {
+    width: 100%;
+    height: 140px;
     display: flex;
     align-items: center;
-    flex-wrap: wrap;
-    gap: 4px;
+    justify-content: center;
+    color: #c0c4cc;
+    background: #f5f7fa;
   }
 
-  .post-type-badge {
-    color: $primary;
-    font-weight: 500;
+  .img-count {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    background: rgba(0,0,0,0.45);
+    color: #fff;
+    font-size: 11px;
+    padding: 2px 6px;
+    border-radius: 10px;
+  }
+
+  .price-badge {
+    position: absolute;
+    bottom: 8px;
+    left: 8px;
+    background: rgba(245, 108, 108, 0.9);
+    color: #fff;
     font-size: 12px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 10px;
   }
-
-  .post-time { color: $text-secondary; }
 }
 
-.card-more { margin-left: auto; }
+/* ---- 操作菜单（绝对定位到卡片右上角） ---- */
+.card-menu {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 1;
 
-/* ── 内容 ────────────────────── */
+  .menu-btn {
+    width: 26px;
+    height: 26px;
+    background: rgba(0,0,0,0.18);
+    color: #606266;
+    border-radius: 50%;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+
+    &:hover {
+      background: rgba(0,0,0,0.32);
+      color: #303133;
+    }
+  }
+}
+
+/* ---- 卡片内容 ---- */
+.card-body {
+  padding: 10px 12px 8px;
+}
+
 .card-content {
-  margin-bottom: 14px;
-  cursor: pointer;
-}
-
-.content-text {
-  font-size: 15px;
-  line-height: 1.65;
-  color: $text-primary;
-  margin-bottom: 12px;
-  white-space: pre-wrap;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #303133;
+  margin: 0 0 6px;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
   word-break: break-word;
-  letter-spacing: $letter-spacing-base;
 }
 
-/* 图片组 */
-.post-images {
-  display: grid;
+.card-tags {
+  display: flex;
+  flex-wrap: wrap;
   gap: 4px;
-  margin-bottom: 12px;
-  border-radius: $border-radius-sm;
-  overflow: hidden;
+  margin-bottom: 8px;
 
-  &.count-1 {
-    grid-template-columns: 1fr;
-    .post-img { height: 220px; }
-  }
-  &.count-2, &.count-4 {
-    grid-template-columns: repeat(2, 1fr);
-    .post-img { height: 150px; }
-  }
-  &.count-3, &.count-5, &.count-6,
-  &.count-7, &.count-8, &.count-9 {
-    grid-template-columns: repeat(3, 1fr);
-    .post-img { height: 120px; }
-  }
-
-  .post-img {
-    width: 100%;
-    object-fit: cover;
-    cursor: pointer;
-    border-radius: 8px;
+  .tag {
+    font-size: 11px;
+    color: #409eff;
   }
 }
 
-.img-error {
-  width: 100%;
-  height: 100%;
+/* ---- 底栏：作者 + 互动 ---- */
+.card-footer {
   display: flex;
   align-items: center;
-  justify-content: center;
-  background: $bg-subtle;
-  color: $text-secondary;
-}
+  justify-content: space-between;
+  gap: 6px;
 
-/* 物品嵌入卡 */
-.item-embed {
-  border: 1px solid $border-color;
-  border-radius: $border-radius-sm;
-  overflow: hidden;
-  background: $bg-subtle;
-  margin-bottom: 4px;
-
-  .embed-img {
-    width: 100%;
-    height: 180px;
-    object-fit: cover;
-  }
-
-  .embed-info {
-    padding: 14px 16px;
-
-    .embed-title {
-      font-size: 15px;
-      font-weight: 600;
-      color: $text-primary;
-      margin-bottom: 8px;
-      letter-spacing: $letter-spacing-base;
-    }
-
-    .embed-meta {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 8px;
-
-      .embed-price {
-        font-size: 17px;
-        font-weight: 700;
-        color: $warning;
-      }
-    }
-
-    .embed-desc {
-      font-size: 13px;
-      color: $text-regular;
-      line-height: 1.5;
-      margin-bottom: 8px;
-    }
-
-    .embed-tags {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      margin-bottom: 8px;
-
-      .embed-tag {
-        background: rgba(27, 153, 170, 0.1) !important;
-        color: $primary !important;
-        font-size: 11px;
-      }
-    }
-
-    .exchange-for {
-      padding: 8px 12px;
-      background: rgba(241, 198, 94, 0.1);
-      border-radius: 10px;
-      border-left: 3px solid $warning;
-      font-size: 13px;
-
-      .ex-label { font-weight: 600; color: #8a6200; }
-    }
-  }
-}
-
-/* 换物成功 */
-.swap-success {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 16px;
-  background: rgba(27, 153, 170, 0.06);
-  border-radius: $border-radius-sm;
-  border: 1px solid rgba(27, 153, 170, 0.15);
-
-  .swap-emoji { font-size: 28px; flex-shrink: 0; }
-
-  .swap-info {
-    p { font-size: 14px; color: $text-primary; margin-bottom: 8px; font-weight: 500; }
-
-    .swap-items {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      flex-wrap: wrap;
-
-      .swap-item-tag {
-        padding: 3px 10px;
-        background: #fff;
-        border-radius: 50px;
-        font-size: 13px;
-        border: 1px solid $border-color;
-        color: $text-regular;
-      }
-
-      .swap-arrow { color: $primary; font-weight: 700; font-size: 16px; }
-    }
-  }
-}
-
-/* ── 互动区 ──────────────────── */
-.interaction-bar {
-  border-top: 1px solid $border-color;
-  padding-top: 12px;
-}
-
-.stats-row {
-  display: flex;
-  gap: 18px;
-  margin-bottom: 10px;
-
-  .stat {
+  .author {
     display: flex;
     align-items: center;
     gap: 5px;
-    font-size: 13px;
-    color: $text-secondary;
-    .el-icon { font-size: 14px; }
-  }
-}
+    cursor: pointer;
+    min-width: 0;
 
-.action-row {
-  display: flex;
-  justify-content: space-around;
+    &:hover .author-name { color: #409eff; }
+
+    .author-avatar { flex-shrink: 0; }
+
+    .author-name {
+      font-size: 12px;
+      color: #909399;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 70px;
+    }
+  }
+
+  .footer-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
 }
 
 .action-btn {
   display: flex;
   align-items: center;
-  gap: 5px;
-  flex: 1;
-  justify-content: center;
-  padding: 8px 0;
+  gap: 3px;
   background: none;
   border: none;
+  padding: 0;
   cursor: pointer;
-  font-size: 13px;
-  color: $text-secondary;
-  border-radius: 10px;
-  transition: $transition-fast;
-  letter-spacing: $letter-spacing-base;
+  font-size: 12px;
+  color: #909399;
+  transition: color 0.15s;
 
-  &:hover { background: $bg-subtle; color: $primary; }
-  &.active { color: $primary; font-weight: 600; }
-  &.fav.active { color: $warning; }
+  &:hover { color: #606266; }
+  &.active { color: #409eff; }
+  &.fav.active { color: #e6a23c; }
 
-  .el-icon { font-size: 15px; }
+  .el-icon { font-size: 14px; }
 }
 
-/* ── 评论区 ──────────────────── */
-.comment-area {
-  margin-top: 12px;
-  padding-top: 12px;
-  border-top: 1px solid $border-color;
-
-  .el-textarea { margin-bottom: 10px; }
+/* ---- 评论框 ---- */
+.comment-input-area {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #f0f2f5;
 
   .comment-actions {
     display: flex;
     justify-content: flex-end;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
+    margin-top: 8px;
 
     .emoji-wrap {
       position: relative;
@@ -610,18 +532,17 @@ const isCurrentUserPost = computed(() =>
         bottom: 32px;
         left: 0;
         z-index: 9999;
-        box-shadow: $shadow-lg;
-        border-radius: $border-radius;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+        border-radius: 8px;
         overflow: hidden;
       }
     }
   }
 }
 
-/* ── 响应式 ──────────────────── */
-@media (max-width: 768px) {
-  .square-card { padding: 16px; }
-  .action-btn span { display: none; }
-  .item-embed .embed-img { height: 140px; }
+.report-reason-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 </style>

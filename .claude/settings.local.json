@@ -5,7 +5,9 @@
       "Bash(ls:*)",
       "Bash(cat:*)",
       "Bash(xargs grep:*)",
-      "Bash(find /d/code/workspaces/project/campus_swap -type f \\\\\\(-name *.sql -o -name schema* -o -name *init* \\\\\\))"
+      "Bash(find /d/code/workspaces/project/campus_swap -type f \\\\\\(-name *.sql -o -name schema* -o -name *init* \\\\\\))",
+      "Bash(cd:*)",
+      "Bash(curl:*)"
     ]
   }
 }

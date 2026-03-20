@@ -64,6 +64,7 @@ CREATE TABLE `t_item` (
   `cover_image`  varchar(255)          DEFAULT NULL   COMMENT '封面图 URL',
   `seller_id`    bigint        NOT NULL               COMMENT '发布者用户 ID',
   `images`       text                  DEFAULT NULL   COMMENT '图片 URL 列表（JSON 数组）',
+  `tags`         varchar(500)          DEFAULT NULL   COMMENT '标签列表（JSON 数组，如 ["九成新","包邮"]）',
   `status`       tinyint       NOT NULL DEFAULT '0'   COMMENT '状态: 0-在售 1-已下架 2-已售出',
   `audit_status` tinyint       NOT NULL DEFAULT '0'   COMMENT '审核状态: 0-待审核 1-已通过 2-已拒绝',
   `audit_remark` varchar(200)          DEFAULT NULL   COMMENT '审核备注（拒绝原因）',
@@ -298,6 +299,45 @@ CREATE TABLE `t_post_tag` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='动态标签关联表';
 
 
+-- ----------------------------
+-- 15. 学生档案表
+-- ----------------------------
+DROP TABLE IF EXISTS `t_student_record`;
+CREATE TABLE `t_student_record` (
+  `id`          bigint       NOT NULL AUTO_INCREMENT COMMENT '主键 ID',
+  `school`      varchar(100) NOT NULL                COMMENT '学校名称',
+  `student_id`  varchar(50)  NOT NULL                COMMENT '学号',
+  `real_name`   varchar(50)  NOT NULL                COMMENT '真实姓名',
+  `extra_info`  varchar(200)         DEFAULT NULL    COMMENT '附加信息（专业/年级等）',
+  `created_by`  bigint               DEFAULT NULL    COMMENT '录入管理员用户 ID',
+  `created_at`  datetime     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '录入时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_school_student` (`school`, `student_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='学生档案表';
+
+
+-- ----------------------------
+-- 16. 学生认证申请表
+-- ----------------------------
+DROP TABLE IF EXISTS `t_student_verify`;
+CREATE TABLE `t_student_verify` (
+  `id`           bigint       NOT NULL AUTO_INCREMENT COMMENT '主键 ID',
+  `user_id`      bigint       NOT NULL                COMMENT '申请用户 ID',
+  `school`       varchar(100) NOT NULL                COMMENT '填写的学校名称',
+  `student_id`   varchar(50)  NOT NULL                COMMENT '填写的学号',
+  `real_name`    varchar(50)  NOT NULL                COMMENT '填写的真实姓名',
+  `extra_info`   varchar(200)         DEFAULT NULL    COMMENT '补充说明',
+  `status`       tinyint      NOT NULL DEFAULT 0      COMMENT '状态: 0-待审核 1-已通过 2-已拒绝',
+  `remark`       varchar(200)         DEFAULT NULL    COMMENT '审核备注（拒绝原因）',
+  `reviewed_by`  bigint               DEFAULT NULL    COMMENT '审核管理员 ID',
+  `reviewed_at`  datetime             DEFAULT NULL    COMMENT '审核时间',
+  `created_at`   datetime     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '提交时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_user_id` (`user_id`),
+  KEY `idx_status`  (`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='学生认证申请表';
+
+
 SET FOREIGN_KEY_CHECKS = 1;
 
 
@@ -329,3 +369,45 @@ CREATE TABLE IF NOT EXISTS t_notification (
 INSERT IGNORE INTO t_user (id, email, password, nickname, avatar, role, status, is_verified, deleted, created_at, updated_at)
 VALUES (999999999, 'ai_assistant@campus-swap.local', 'NOT_A_REAL_PASSWORD', '问一问', '', 0, 0, 0, 0, NOW(), NOW());
 
+
+
+-- 创建动态举报表
+CREATE TABLE IF NOT EXISTS `t_post_report` (
+    `id`          BIGINT       NOT NULL AUTO_INCREMENT COMMENT '举报ID',
+    `reporter_id` BIGINT       NOT NULL COMMENT '举报者用户ID',
+    `post_id`     BIGINT       NOT NULL COMMENT '被举报动态ID',
+    `reason`      TINYINT      NOT NULL COMMENT '举报原因：1-违法违规 2-色情低俗 3-虚假信息 4-侮辱谩骂 5-广告骚扰 6-其他',
+    `description` VARCHAR(200) DEFAULT NULL COMMENT '补充说明',
+    `status`      TINYINT      NOT NULL DEFAULT 0 COMMENT '处理状态：0-待审核 1-已处理(内容下架) 2-已驳回(内容正常)',
+    `remark`      VARCHAR(500) DEFAULT NULL COMMENT '管理员审核备注',
+    `reviewed_by` BIGINT       DEFAULT NULL COMMENT '审核员ID',
+    `reviewed_at` DATETIME     DEFAULT NULL COMMENT '审核时间',
+    `created_at`  DATETIME     DEFAULT NULL COMMENT '举报时间',
+    PRIMARY KEY (`id`),
+    INDEX `idx_post_id` (`post_id`),
+    INDEX `idx_reporter_id` (`reporter_id`),
+    INDEX `idx_status` (`status`),
+    INDEX `idx_created_at` (`created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='动态举报表';
+
+
+
+
+-- 公告表
+CREATE TABLE IF NOT EXISTS t_announcement (
+    id          BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '公告ID',
+    title       VARCHAR(100) NOT NULL COMMENT '公告标题',
+    content     TEXT NOT NULL COMMENT '公告内容',
+    type        TINYINT NOT NULL DEFAULT 1 COMMENT '公告类型: 1-普通 2-重要 3-紧急',
+    status      TINYINT NOT NULL DEFAULT 1 COMMENT '状态: 0-下线 1-上线',
+    sort        INT NOT NULL DEFAULT 0 COMMENT '排序，越大越靠前',
+    created_by  BIGINT COMMENT '创建人ID',
+    created_at  DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    updated_at  DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='公告表';
+
+-- 初始公告数据
+INSERT INTO t_announcement (title, content, type, status, sort, created_at)
+VALUES
+  ('欢迎使用换物广场', '欢迎来到校园换物广场！在这里，你可以发布闲置物品，和同学进行以物换物，让物品流转，让校园更环保。', 1, 1, 10, NOW()),
+  ('文明换物倡议', '请遵守平台规范，发布真实信息，禁止发布违法违规内容。共建友好、诚信的校园换物社区。', 2, 1, 5, NOW());

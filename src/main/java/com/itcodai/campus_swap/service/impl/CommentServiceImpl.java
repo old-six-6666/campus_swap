@@ -63,6 +63,24 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
             log.error("发送评论通知失败 postId={} userId={}", postId, userId, e);
         }
 
+        // 通知被回复者（回复评论时，若被回复者不是帖主也不是自己，单独通知）
+        if (parentId != null) {
+            try {
+                Comment parentComment = getById(parentId);
+                if (parentComment != null && !parentComment.getUserId().equals(userId)) {
+                    Post post = postMapper.selectById(postId);
+                    // 避免与帖主通知重复：只有被回复者不是帖主时才单独发
+                    boolean isPostOwner = post != null && parentComment.getUserId().equals(post.getUserId());
+                    if (!isPostOwner) {
+                        String preview = content != null && content.length() > 50 ? content.substring(0, 50) : content;
+                        notificationService.send(parentComment.getUserId(), userId, "REPLY", postId, preview);
+                    }
+                }
+            } catch (Exception e) {
+                log.error("发送回复通知失败 parentId={} userId={}", parentId, userId, e);
+            }
+        }
+
         // 检测 @问一问 触发词，异步调用 AI 首次回复
         String AI_TRIGGER = "@问一问";
         if (content != null && content.startsWith(AI_TRIGGER)) {

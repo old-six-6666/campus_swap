@@ -6,14 +6,17 @@ import com.itcodai.campus_swap.common.result.ResultCode;
 import com.itcodai.campus_swap.dto.AdminPermissionsDTO;
 import com.itcodai.campus_swap.dto.BatchStudentRecordDTO;
 import com.itcodai.campus_swap.dto.ItemAuditDTO;
+import com.itcodai.campus_swap.dto.PostReportReviewDTO;
 import com.itcodai.campus_swap.dto.StudentRecordDTO;
 import com.itcodai.campus_swap.dto.StudentVerifyReviewDTO;
 import com.itcodai.campus_swap.service.AdminService;
+import com.itcodai.campus_swap.service.PostReportService;
 import com.itcodai.campus_swap.service.StudentService;
 import com.itcodai.campus_swap.vo.AdminDetailVO;
 import com.itcodai.campus_swap.vo.AdminUserVO;
 import com.itcodai.campus_swap.vo.ItemVO;
 import com.itcodai.campus_swap.vo.PageVO;
+import com.itcodai.campus_swap.vo.PostReportVO;
 import com.itcodai.campus_swap.vo.StudentRecordVO;
 import com.itcodai.campus_swap.vo.StudentVerifyVO;
 import jakarta.servlet.http.HttpServletRequest;
@@ -33,6 +36,7 @@ public class AdminController {
 
     private final AdminService adminService;
     private final StudentService studentService;
+    private final PostReportService postReportService;
 
     // ================================================================
     //  用户管理
@@ -181,7 +185,7 @@ public class AdminController {
         int role = (int) request.getAttribute("userRole");
         if (role >= 2) {
             // 超级管理员拥有所有权限
-            return Result.success(List.of("USER_MANAGE", "ITEM_MANAGE", "ITEM_AUDIT", "STUDENT_MANAGE"));
+            return Result.success(List.of("USER_MANAGE", "ITEM_MANAGE", "ITEM_AUDIT", "STUDENT_MANAGE", "CONTENT_AUDIT"));
         }
         Long userId = (Long) request.getAttribute("userId");
         return Result.success(adminService.getAdminPermissions(userId));
@@ -256,6 +260,32 @@ public class AdminController {
         requirePermission(request, "STUDENT_MANAGE");
         Long reviewerId = (Long) request.getAttribute("userId");
         studentService.reviewVerification(id, dto.getAction(), dto.getRemark(), reviewerId);
+        return Result.success();
+    }
+
+    // ================================================================
+    //  举报内容审核（需 CONTENT_AUDIT 权限）
+    // ================================================================
+
+    /** 分页查询举报列表 */
+    @GetMapping("/reports")
+    public Result<PageVO<PostReportVO>> listReports(
+            @RequestParam(required = false) Integer status,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "15") int size,
+            HttpServletRequest request) {
+        requirePermission(request, "CONTENT_AUDIT");
+        return Result.success(postReportService.listReports(status, page, size));
+    }
+
+    /** 审核举报（处理/驳回） */
+    @PutMapping("/reports/{id:\\d+}/review")
+    public Result<Void> reviewReport(@PathVariable Long id,
+                                     @Valid @RequestBody PostReportReviewDTO dto,
+                                     HttpServletRequest request) {
+        requirePermission(request, "CONTENT_AUDIT");
+        Long reviewerId = (Long) request.getAttribute("userId");
+        postReportService.reviewReport(id, dto.getAction(), dto.getRemark(), reviewerId);
         return Result.success();
     }
 

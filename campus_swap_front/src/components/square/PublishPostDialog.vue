@@ -228,14 +228,19 @@ async function handleSubmit() {
     }
     
     // 调用真实API - API拦截器已经处理了错误，成功时返回数据
-    await squareApi.createPost(postData)
-    
+    await squareApi.createPost(postData, { silent: true })
+
     ElMessage.success('动态发布成功！')
     emit('success')
     handleClose()
   } catch (error) {
-    console.error('发布动态失败:', error)
-    ElMessage.error('发布失败，请稍后重试')
+    const msg = error?.message || ''
+    if (msg.includes('违规')) {
+      ElMessage.error(msg)
+      form.content = ''
+    } else {
+      ElMessage.error('发布失败，请稍后重试')
+    }
   } finally {
     submitting.value = false
   }

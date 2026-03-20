@@ -3,6 +3,7 @@ package com.itcodai.campus_swap.controller;
 import com.itcodai.campus_swap.common.result.Result;
 import com.itcodai.campus_swap.common.result.ResultCode;
 import com.itcodai.campus_swap.service.CommentService;
+import com.itcodai.campus_swap.service.ContentFilterService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,6 +26,7 @@ import java.util.Map;
 public class CommentController {
 
     private final CommentService commentService;
+    private final ContentFilterService contentFilterService;
 
     @GetMapping("/comments/{postId}")
     public Result<List<Map<String, Object>>> getComments(@PathVariable Long postId) {
@@ -52,6 +54,10 @@ public class CommentController {
         String content = contentObj.toString().trim();
         if (!StringUtils.hasText(content)) {
             return Result.fail(ResultCode.BAD_REQUEST, "评论内容不能为空");
+        }
+
+        if (contentFilterService.containsSensitiveWord(content)) {
+            return Result.fail(ResultCode.BAD_REQUEST, "评论内容含有违规信息，请修改后重试");
         }
 
         Long postId = Long.valueOf(postIdObj.toString());

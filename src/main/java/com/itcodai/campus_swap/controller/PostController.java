@@ -3,6 +3,7 @@ package com.itcodai.campus_swap.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.itcodai.campus_swap.common.result.Result;
 import com.itcodai.campus_swap.common.result.ResultCode;
+import com.itcodai.campus_swap.dto.PostReportDTO;
 import com.itcodai.campus_swap.entity.Item;
 import com.itcodai.campus_swap.entity.Post;
 import com.itcodai.campus_swap.entity.Trade;
@@ -10,10 +11,13 @@ import com.itcodai.campus_swap.entity.User;
 import com.itcodai.campus_swap.mapper.ItemMapper;
 import com.itcodai.campus_swap.mapper.TradeMapper;
 import com.itcodai.campus_swap.mapper.UserMapper;
+import com.itcodai.campus_swap.service.PostReportService;
 import com.itcodai.campus_swap.service.PostService;
+import com.itcodai.campus_swap.service.ContentFilterService;
 import com.itcodai.campus_swap.vo.PageVO;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
@@ -31,15 +35,21 @@ import java.util.Map;
 public class PostController {
 
     private final PostService postService;
+    private final PostReportService postReportService;
+    private final ContentFilterService contentFilterService;
     private final TradeMapper tradeMapper;
     private final ItemMapper itemMapper;
     private final UserMapper userMapper;
 
     public PostController(PostService postService,
+                          PostReportService postReportService,
+                          ContentFilterService contentFilterService,
                           TradeMapper tradeMapper,
                           ItemMapper itemMapper,
                           UserMapper userMapper) {
         this.postService = postService;
+        this.postReportService = postReportService;
+        this.contentFilterService = contentFilterService;
         this.tradeMapper = tradeMapper;
         this.itemMapper = itemMapper;
         this.userMapper = userMapper;
@@ -248,6 +258,11 @@ public class PostController {
                 return Result.fail(ResultCode.BAD_REQUEST, "动态内容不能为空");
             }
 
+            // 敏感词检测
+            if (contentFilterService.containsSensitiveWord(post.getContent())) {
+                return Result.fail(ResultCode.BAD_REQUEST, "内容含有违规词汇，不符合社区规范，请修改后重新发布");
+            }
+
             // 将前端传来的 imageList 序列化为 JSON 字符串存入 images 字段
             if (post.getImageList() != null && !post.getImageList().isEmpty()) {
                 post.setImages(new ObjectMapper().writeValueAsString(post.getImageList()));
@@ -277,6 +292,45 @@ public class PostController {
     }
     
     /**
+     * 编辑动态（只能编辑自己的动态，content 和 images 均可更新）
+     * PUT /api/post/{postId}
+     */
+    @PutMapping("/{postId:\\d+}")
+    public Result<Void> updatePost(@PathVariable Long postId,
+                                   @RequestBody Post post,
+                                   HttpServletRequest request) {
+        try {
+            Long userId = getUserIdFromRequest(request);
+            if (userId == null) {
+                return Result.fail(ResultCode.UNAUTHORIZED, "请先登录");
+            }
+
+            if (post.getContent() != null && post.getContent().trim().isEmpty()) {
+                return Result.fail(ResultCode.BAD_REQUEST, "动态内容不能为空");
+            }
+
+            // 敏感词检测
+            if (post.getContent() != null && contentFilterService.containsSensitiveWord(post.getContent())) {
+                return Result.fail(ResultCode.BAD_REQUEST, "内容含有违规词汇，不符合社区规范，请修改后重新发布");
+            }
+
+            // 将前端传来的 imageList 序列化为 JSON 字符串
+            if (post.getImageList() != null) {
+                post.setImages(new ObjectMapper().writeValueAsString(post.getImageList()));
+            }
+
+            boolean success = postService.updatePost(postId, post, userId);
+            if (!success) {
+                return Result.fail(ResultCode.BAD_REQUEST, "编辑失败，动态不存在或无权限");
+            }
+            return Result.success();
+        } catch (Exception e) {
+            log.error("编辑动态失败", e);
+            return Result.fail(ResultCode.INTERNAL_ERROR, "编辑动态失败");
+        }
+    }
+
+    /**
      * 删除动态（只能删除自己的动态）
      * DELETE /api/post/{postId}
      */
@@ -293,6 +347,34 @@ public class PostController {
         } catch (Exception e) {
             log.error("删除动态失败", e);
             return Result.fail(ResultCode.INTERNAL_ERROR, "删除动态失败");
+        }
+    }
+
+    /**
+     * 获取当前用户收藏的动态列表
+     * GET /api/post/favorites
+     */
+    @GetMapping("/favorites")
+    public Result<Map<String, Object>> getMyFavorites(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size,
+            HttpServletRequest request) {
+        try {
+            Long userId = getUserIdFromRequest(request);
+            if (userId == null) {
+                return Result.fail(ResultCode.UNAUTHORIZED, "请先登录");
+            }
+            PageVO<Map<String, Object>> pageVO = postService.getFavoritePosts(userId, page, size);
+            Map<String, Object> result = Map.of(
+                "records", pageVO.getRecords(),
+                "total", pageVO.getTotal(),
+                "page", pageVO.getPage(),
+                "size", pageVO.getSize()
+            );
+            return Result.success(result);
+        } catch (Exception e) {
+            log.error("获取收藏列表失败", e);
+            return Result.fail(ResultCode.INTERNAL_ERROR, "获取收藏列表失败");
         }
     }
 
@@ -320,6 +402,22 @@ public class PostController {
             log.error("获取用户动态列表失败", e);
             return Result.fail(ResultCode.INTERNAL_ERROR, "获取动态列表失败");
         }
+    }
+
+    /**
+     * 举报动态
+     * POST /api/post/{postId}/report
+     */
+    @PostMapping("/{postId:\\d+}/report")
+    public Result<Void> reportPost(@PathVariable Long postId,
+                                   @Valid @RequestBody PostReportDTO dto,
+                                   HttpServletRequest request) {
+        Long userId = getUserIdFromRequest(request);
+        if (userId == null) {
+            return Result.fail(ResultCode.UNAUTHORIZED, "请先登录");
+        }
+        postReportService.reportPost(postId, userId, dto.getReason(), dto.getDescription());
+        return Result.success();
     }
 
     /**

@@ -19,22 +19,11 @@ const localSelectedTags = ref([...props.selectedTags])
 async function fetchHotTags() {
   loading.value = true
   try {
-    // 这里先模拟数据，实际应该调用API
-    tags.value = [
-      { id: 1, name: '数码', count: 128 },
-      { id: 2, name: '书籍', count: 96 },
-      { id: 3, name: '服饰', count: 84 },
-      { id: 4, name: '生活用品', count: 72 },
-      { id: 5, name: '体育用品', count: 56 },
-      { id: 6, name: '文具', count: 48 },
-      { id: 7, name: '美妆', count: 42 },
-      { id: 8, name: '其他', count: 36 }
-    ]
-    
-    // 实际API调用（注释掉，等后端实现）
-    // tags.value = await squareApi.getHotTags()
+    tags.value = await squareApi.getHotTags()
   } catch (error) {
     console.error('获取标签失败:', error)
+    // 接口异常时回退到空列表
+    tags.value = []
   } finally {
     loading.value = false
   }

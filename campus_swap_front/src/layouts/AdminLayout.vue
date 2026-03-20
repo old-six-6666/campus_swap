@@ -26,6 +26,11 @@ const menuItems = computed(() => {
     items.push({ index: '/admin/students', label: '学生档案', icon: 'Notebook' })
     items.push({ index: '/admin/verifications', label: '认证审核', icon: 'CircleCheck' })
   }
+  if (userStore.hasPermission('CONTENT_AUDIT')) {
+    items.push({ index: '/admin/reports', label: '举报审核', icon: 'Warning' })
+  }
+  // 所有管理员均可管理公告
+  items.push({ index: '/admin/announcements', label: '公告管理', icon: 'Bell' })
   if (userStore.isSuperAdmin) {
     items.push({ index: '/admin/admins', label: '管理员管理', icon: 'Setting' })
   }

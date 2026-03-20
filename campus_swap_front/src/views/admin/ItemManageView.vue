@@ -16,7 +16,7 @@ const keyword = ref('')
 const filterCategory = ref('')
 const filterStatus = ref(null)
 
-const CATEGORIES = ['数码', '书籍', '服饰', '生活用品', '其他']
+const CATEGORIES = ['数码', '书籍', '服饰', '生活用品', '运动健身', '美妆护肤', '食品零食', '乐器玩具', '学习用品', '其他']
 const STATUS_MAP = {
   0: { label: '在售', type: 'success' },
   1: { label: '已下架', type: 'info' },
