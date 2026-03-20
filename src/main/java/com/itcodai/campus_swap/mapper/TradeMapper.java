@@ -80,4 +80,25 @@ public interface TradeMapper extends BaseMapper<Trade> {
             "  AND receipt_deadline IS NOT NULL " +
             "  AND receipt_deadline < NOW()")
     List<Trade> selectTimeoutReceiptTrades();
+
+    /**
+     * 查询需要当前用户响应操作的活跃交易数量（"交易"菜单红点用）
+     * <p>
+     * 规则：
+     * <ul>
+     *   <li>PENDING_MATCH：当前用户是 receiver（乙方），等待用户确认匹配</li>
+     *   <li>WAITING_DELIVERY：当前用户尚未发货（initiator且未发货 或 receiver且未发货）</li>
+     *   <li>BOTH_DELIVERED / WAITING_CONFIRM_RECEIPT：当前用户尚未确认收货</li>
+     * </ul>
+     *
+     * @param userId 当前用户ID
+     */
+    @Select("SELECT COUNT(*) FROM t_trade WHERE deleted = 0 AND (" +
+            "  (status = 'PENDING_MATCH' AND receiver_id = #{userId}) OR" +
+            "  (status = 'WAITING_DELIVERY' AND initiator_id = #{userId} AND initiator_delivered = 0) OR" +
+            "  (status = 'WAITING_DELIVERY' AND receiver_id = #{userId} AND receiver_delivered = 0) OR" +
+            "  (status IN ('BOTH_DELIVERED','WAITING_CONFIRM_RECEIPT') AND initiator_id = #{userId} AND initiator_confirmed_receipt = 0) OR" +
+            "  (status IN ('BOTH_DELIVERED','WAITING_CONFIRM_RECEIPT') AND receiver_id = #{userId} AND receiver_confirmed_receipt = 0)" +
+            ")")
+    long countPendingAction(@Param("userId") Long userId);
 }

@@ -117,4 +117,12 @@ public interface TradeService {
      * @param itemId 物品ID
      */
     Result<TradeVO> getItemActiveTrade(Long userId, Long itemId);
+
+    /**
+     * 查询需要当前用户响应的交易数量（"交易"菜单红点用）
+     *
+     * @param userId 当前登录用户
+     * @return 待操作交易数
+     */
+    long countPendingAction(Long userId);
 }

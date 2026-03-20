@@ -14,5 +14,5 @@ export const chatApi = {
   markRead: (convId) => request.put(`/chat/conversations/${convId}/read`),
 
   /** 获取未读消息总数 */
-  getUnreadCount: () => request.get('/chat/unread'),
+  getUnreadCount: () => request.get('/chat/unread', { silent: true }),
 }
