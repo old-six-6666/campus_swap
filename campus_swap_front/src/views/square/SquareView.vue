@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue'
-import { Search, Refresh, Clock, Star, Plus, TrendCharts } from '@element-plus/icons-vue'
+import { Search, Refresh, Clock, Star, Plus, TrendCharts, Bell } from '@element-plus/icons-vue'
 import { squareApi } from '@/api/modules/square'
 import SquareCard from '@/components/square/SquareCard.vue'
 import TagFilter from '@/components/square/TagFilter.vue'
@@ -13,6 +13,9 @@ const selectedTags = ref([])
 const activeTab = ref('recommend') // recommend | latest | hot
 const stats = ref(null)
 const showPublishDialog = ref(false)
+
+// 公告
+const announcements = ref([])
 
 // 分页 - 创建一个适配器函数给 usePagination
 async function fetchPostsForPagination(params) {
@@ -135,6 +138,15 @@ function handleCommentAdded({ postId }) {
   }
 }
 
+// 处理动态编辑
+function handlePostUpdated({ postId, content, images }) {
+  const post = posts.value.find(p => p.id === postId)
+  if (post) {
+    post.content = content
+    post.images = images
+  }
+}
+
 // 处理动态删除
 function handlePostDeleted(postId) {
   // 从列表中移除被删除的动态
@@ -159,8 +171,18 @@ watch(selectedTags, () => {
 onMounted(() => {
   fetchData()
   fetchStats()
+  fetchAnnouncements()
 })
 
+
+// 获取公告
+async function fetchAnnouncements() {
+  try {
+    announcements.value = await squareApi.getAnnouncements() || []
+  } catch {
+    announcements.value = []
+  }
+}
 
 // 处理发布动态
 function handlePublishClick() {
@@ -248,22 +270,57 @@ function handlePublishSuccess() {
       </el-tabs>
     </div>
 
+    <!-- 公告横幅 -->
+    <div v-if="announcements.length > 0" class="announcement-section">
+      <el-carousel
+        v-if="announcements.length > 1"
+        height="48px"
+        direction="vertical"
+        :autoplay="true"
+        :interval="4000"
+        indicator-position="none"
+        arrow="never"
+        class="announcement-carousel"
+      >
+        <el-carousel-item
+          v-for="ann in announcements"
+          :key="ann.id"
+        >
+          <div :class="['announcement-banner', `type-${ann.type}`]">
+            <el-icon class="ann-icon"><Bell /></el-icon>
+            <span class="ann-title">{{ ann.title }}：</span>
+            <span class="ann-content">{{ ann.content }}</span>
+          </div>
+        </el-carousel-item>
+      </el-carousel>
+      <div v-else :class="['announcement-banner', `type-${announcements[0].type}`]">
+        <el-icon class="ann-icon"><Bell /></el-icon>
+        <span class="ann-title">{{ announcements[0].title }}：</span>
+        <span class="ann-content">{{ announcements[0].content }}</span>
+      </div>
+    </div>
+
     <!-- 标签筛选 -->
-    <TagFilter v-model="selectedTags" />
+    <div class="tag-filter-section">
+      <TagFilter v-model="selectedTags" />
+    </div>
 
     <!-- 动态列表 -->
     <div class="posts-section">
       <div v-loading="paginationLoading && page === 1" class="posts-container">
         <template v-if="posts.length > 0">
-          <SquareCard
-            v-for="post in posts"
-            :key="post.id"
-            :post="post"
-            @like-changed="handleLikeChanged"
-            @favorite-changed="handleFavoriteChanged"
-            @comment-added="handleCommentAdded"
-            @post-deleted="handlePostDeleted"
-          />
+          <div class="masonry-grid">
+            <SquareCard
+              v-for="post in posts"
+              :key="post.id"
+              :post="post"
+              @like-changed="handleLikeChanged"
+              @favorite-changed="handleFavoriteChanged"
+              @comment-added="handleCommentAdded"
+              @post-deleted="handlePostDeleted"
+              @post-updated="handlePostUpdated"
+            />
+          </div>
         </template>
         
         <div v-else-if="!paginationLoading" class="empty-state">
@@ -320,7 +377,7 @@ function handlePublishSuccess() {
 @import '@/assets/styles/variables.scss';
 
 .square-view {
-  max-width: 800px;
+  max-width: 1100px;
   margin: 0 auto;
   padding: 0 0 40px;
 }
@@ -417,7 +474,14 @@ function handlePublishSuccess() {
 }
 
 .posts-section {
-  .posts-container { min-height: 300px; }
+  .posts-container {
+    min-height: 300px;
+  }
+
+  .masonry-grid {
+    columns: 2;
+    column-gap: 12px;
+  }
 
   .empty-state {
     text-align: center;
@@ -456,8 +520,58 @@ function handlePublishSuccess() {
   }
 }
 
+.announcement-section {
+  margin-bottom: 24px;
+}
+
+.announcement-carousel {
+  border-radius: 8px;
+  overflow: visible;
+
+  :deep(.el-carousel__container) {
+    border-radius: 8px;
+    overflow: hidden;
+  }
+}
+
+.announcement-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 16px;
+  height: 48px;
+  border-radius: 8px;
+  font-size: 14px;
+  overflow: hidden;
+
+  &.type-1 {
+    background: linear-gradient(135deg, #ecf5ff, #d9ecff);
+    color: #409eff;
+    border: 1px solid #b3d8ff;
+  }
+  &.type-2 {
+    background: linear-gradient(135deg, #fdf6ec, #faecd8);
+    color: #e6a23c;
+    border: 1px solid #f5dab1;
+  }
+  &.type-3 {
+    background: linear-gradient(135deg, #fef0f0, #fde2e2);
+    color: #f56c6c;
+    border: 1px solid #fbc4c4;
+  }
+
+  .ann-icon { flex-shrink: 0; font-size: 16px; }
+  .ann-title { font-weight: 600; flex-shrink: 0; }
+  .ann-content { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+}
+
 @media (max-width: 768px) {
   .square-view { padding: 0 0 28px; }
+
+  .posts-section {
+    .masonry-grid { columns: 1; }
+  }
+
   .page-header {
     padding: 24px 16px 20px;
     .header-content .page-title { font-size: 24px; }

@@ -115,11 +115,12 @@ export const squareApi = {
    * @param {number} data.parentId 父评论ID（可选）
    * @returns {Promise}
    */
-  addComment(data) {
+  addComment(data, config) {
     return request({
       url: '/square/comment',
       method: 'post',
-      data
+      data,
+      ...config
     })
   },
 
@@ -167,11 +168,12 @@ export const squareApi = {
    * @param {Array} data.tagIds 标签ID数组
    * @returns {Promise}
    */
-  createPost(data) {
+  createPost(data, config) {
     return request({
       url: '/post/create',
       method: 'post',
-      data
+      data,
+      ...config
     })
   },
 
@@ -187,6 +189,35 @@ export const squareApi = {
         page: 1,
         size: 100 // 获取所有物品，不需要分页
       }
+    })
+  },
+
+  /**
+   * 获取我的收藏动态列表
+   * @param {Object} params { page, size }
+   * @returns {Promise}
+   */
+  getMyFavorites(params) {
+    return request({
+      url: '/post/favorites',
+      method: 'get',
+      params
+    })
+  },
+
+  /**
+   * 编辑动态（只能编辑自己的动态）
+   * @param {number} postId 动态ID
+   * @param {Object} data 要更新的内容
+   * @param {string} data.content 动态内容
+   * @param {Array} data.imageList 图片列表
+   * @returns {Promise}
+   */
+  updatePost(postId, data) {
+    return request({
+      url: `/post/${postId}`,
+      method: 'put',
+      data
     })
   },
 
@@ -214,16 +245,23 @@ export const squareApi = {
   },
 
   /**
-   * 获取指定用户发布的动态列表（公开）
-   * @param {number} userId 目标用户ID
-   * @param {Object} params 分页参数 { page, size }
-   * @returns {Promise}
+   * 举报动态
+   * @param {number} postId 动态ID
+   * @param {Object} data { reason: 1-6, description: string }
    */
-  getUserPosts(userId, params) {
+  reportPost(postId, data) {
     return request({
-      url: `/post/user/${userId}`,
-      method: 'get',
-      params
+      url: `/post/${postId}/report`,
+      method: 'post',
+      data
+    })
+  },
+
+  /** 获取上线中的公告列表（广场横幅用） */
+  getAnnouncements() {
+    return request({
+      url: '/announcements/active',
+      method: 'get'
     })
   }
 }

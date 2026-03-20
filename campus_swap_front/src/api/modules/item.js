@@ -29,10 +29,20 @@ export const itemApi = {
   uploadImage: (file) => {
     const form = new FormData()
     form.append('file', file)
-    // 注意：不要写 '/api/upload'，axios baseURL 已经是 '/api'，
-    // 写 '/api/upload' 会被组合成 '/api/api/upload'（双重前缀，404）
     return request.post('/upload', form, {
       headers: { 'Content-Type': 'multipart/form-data' },
     })
   },
 }
+
+export const exchangeApi = {
+  /** 以物换物匹配查询 */
+  match: (data) => request.post('/exchange/match', data),
+
+  /** 将物品同步到 ES */
+  syncItem: (itemId) => request.post(`/exchange/sync/${itemId}`),
+
+  /** 初始化 ES 索引（超级管理员） */
+  initIndex: () => request.post('/exchange/init-index'),
+}
+

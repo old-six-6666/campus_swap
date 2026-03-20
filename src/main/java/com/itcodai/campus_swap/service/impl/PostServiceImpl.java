@@ -415,6 +415,43 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements Po
 
     @Override
     @Transactional
+    public boolean updatePost(Long postId, Post updateData, Long userId) {
+        Post post = this.getById(postId);
+        if (post == null) {
+            return false;
+        }
+        if (!post.getUserId().equals(userId)) {
+            log.warn("用户 {} 无权编辑动态 {}", userId, postId);
+            return false;
+        }
+
+        boolean hasChange = false;
+        if (updateData.getContent() != null && !updateData.getContent().trim().isEmpty()) {
+            post.setContent(updateData.getContent().trim());
+            hasChange = true;
+        }
+        if (updateData.getImages() != null) {
+            post.setImages(updateData.getImages());
+            hasChange = true;
+        }
+        if (updateData.getItemId() != null) {
+            post.setItemId(updateData.getItemId());
+            hasChange = true;
+        }
+
+        if (!hasChange) {
+            return true;
+        }
+
+        boolean success = this.updateById(post);
+        if (success) {
+            log.info("用户 {} 编辑了动态 {}", userId, postId);
+        }
+        return success;
+    }
+
+    @Override
+    @Transactional
     public boolean deletePost(Long postId, Long userId) {
         Post post = this.getById(postId);
         if (post == null) {
@@ -501,6 +538,67 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements Po
         PageVO<Map<String, Object>> pageVO = new PageVO<>();
         pageVO.setRecords(records);
         pageVO.setTotal(result.getTotal());
+        pageVO.setPage(page);
+        pageVO.setSize(size);
+        return pageVO;
+    }
+
+    @Override
+    public PageVO<Map<String, Object>> getFavoritePosts(Long userId, int page, int size) {
+        // 分页查询该用户的收藏记录，按收藏时间倒序
+        Page<PostFavorite> favPage = new Page<>(page, size);
+        Page<PostFavorite> favResult = postFavoriteMapper.selectPage(favPage,
+                new LambdaQueryWrapper<PostFavorite>()
+                        .eq(PostFavorite::getUserId, userId)
+                        .orderByDesc(PostFavorite::getCreatedAt));
+
+        List<PostFavorite> favorites = favResult.getRecords();
+
+        List<Map<String, Object>> records = favorites.stream().map(fav -> {
+            Post post = this.getById(fav.getPostId());
+            if (post == null) return null;
+
+            Map<String, Object> map = new HashMap<>();
+            map.put("id", post.getId());
+            map.put("userId", post.getUserId());
+            map.put("type", post.getType());
+            map.put("content", post.getContent());
+            map.put("likeCount", post.getLikeCount());
+            map.put("commentCount", post.getCommentCount());
+            map.put("favoriteCount", post.getFavoriteCount());
+            map.put("createdAt", post.getCreatedAt());
+            map.put("favoritedAt", fav.getCreatedAt());
+            map.put("isLiked", false);
+            map.put("isFavorited", true);
+            map.put("images", parseImages(post.getImages()));
+
+            User user = userMapper.selectById(post.getUserId());
+            if (user != null) {
+                Map<String, Object> userInfo = new HashMap<>();
+                userInfo.put("id", user.getId());
+                userInfo.put("username", user.getNickname());
+                userInfo.put("avatar", user.getAvatar());
+                map.put("user", userInfo);
+            }
+
+            if (post.getItemId() != null) {
+                Item item = itemMapper.selectById(post.getItemId());
+                if (item != null) {
+                    Map<String, Object> itemInfo = new HashMap<>();
+                    itemInfo.put("id", item.getId());
+                    itemInfo.put("title", item.getTitle());
+                    itemInfo.put("price", item.getPrice());
+                    itemInfo.put("coverImage", item.getCoverImage());
+                    map.put("item", itemInfo);
+                }
+            }
+
+            return map;
+        }).filter(m -> m != null).collect(Collectors.toList());
+
+        PageVO<Map<String, Object>> pageVO = new PageVO<>();
+        pageVO.setRecords(records);
+        pageVO.setTotal(favResult.getTotal());
         pageVO.setPage(page);
         pageVO.setSize(size);
         return pageVO;

@@ -98,7 +98,14 @@ onMounted(fetchMyItems)
               <el-tag v-if="item.auditStatus === 1" :type="STATUS_MAP[item.status]?.type" size="small">
                 {{ STATUS_MAP[item.status]?.label }}
               </el-tag>
-              <span class="category">{{ item.category }}</span>
+            </div>
+            <div v-if="item.tags && item.tags.length" class="item-tags">
+              <el-tag
+                v-for="tag in item.tags"
+                :key="tag"
+                size="small"
+                :type="tag === item.category ? '' : 'info'"
+              >{{ tag }}</el-tag>
             </div>
             <!-- 拒绝原因提示 -->
             <div v-if="item.auditStatus === 2 && item.auditRemark" class="audit-remark">
@@ -231,6 +238,13 @@ onMounted(fetchMyItems)
   .item-time {
     font-size: 12px;
     color: $text-secondary;
+  }
+
+  .item-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-bottom: 4px;
   }
 
   .audit-remark {

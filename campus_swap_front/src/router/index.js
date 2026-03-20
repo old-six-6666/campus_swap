@@ -57,6 +57,12 @@ const routes = [
         component: () => import('@/views/category/CategoryView.vue'),
       },
       {
+        path: 'my-favorites',
+        name: 'MyFavorites',
+        component: () => import('@/views/square/MyFavoritesView.vue'),
+        meta: { requiresAuth: true },
+      },
+      {
         path: 'square',
         name: 'Square',
         component: () => import('@/views/square/SquareView.vue'),
@@ -65,6 +71,12 @@ const routes = [
         path: 'square/post/:id',
         name: 'PostDetail',
         component: () => import('@/views/square/PostDetailView.vue'),
+      },
+      {
+        path: 'square/post/:id/edit',
+        name: 'EditPost',
+        component: () => import('@/views/square/EditPostView.vue'),
+        meta: { requiresAuth: true },
       },
       {
         path: 'chat',
@@ -127,6 +139,17 @@ const routes = [
         name: 'VerifyManage',
         component: () => import('@/views/admin/VerifyManageView.vue'),
         meta: { requiresPermission: 'STUDENT_MANAGE' },
+      },
+      {
+        path: 'reports',
+        name: 'ReportManage',
+        component: () => import('@/views/admin/ReportManageView.vue'),
+        meta: { requiresPermission: 'CONTENT_AUDIT' },
+      },
+      {
+        path: 'announcements',
+        name: 'AnnouncementManage',
+        component: () => import('@/views/admin/AnnouncementManageView.vue'),
       },
     ],
   },

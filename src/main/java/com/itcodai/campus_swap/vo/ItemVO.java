@@ -18,6 +18,8 @@ public class ItemVO {
     private String description;
     private String coverImage;
     private List<String> images;
+    /** 标签列表 */
+    private List<String> tags;
     private Long sellerId;
     private String sellerNickname;
     private String sellerAvatar;

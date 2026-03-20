@@ -32,9 +32,13 @@ public interface PostService extends IService<Post> {
     boolean favoritePost(Long postId, Long userId);
     boolean unfavoritePost(Long postId, Long userId);
     Long createPost(Post post, Long userId);
+    boolean updatePost(Long postId, Post post, Long userId);
     Map<String, Object> getStats();
     boolean deletePost(Long postId, Long userId);
 
     /** 查询指定用户发布的动态列表（公开） */
     PageVO<Map<String, Object>> getUserPosts(Long userId, int page, int size, Long currentUserId);
+
+    /** 查询当前用户收藏的动态列表 */
+    PageVO<Map<String, Object>> getFavoritePosts(Long userId, int page, int size);
 }

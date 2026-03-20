@@ -1,9 +1,10 @@
 <script setup>
-import { reactive, ref, onMounted } from 'vue'
+import { reactive, ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { itemApi } from '@/api/modules/item'
 import { showSuccess, showError, showWarning } from '@/utils/notify'
 import { Plus } from '@element-plus/icons-vue'
+import { CATEGORIES, CATEGORY_TAGS, COMMON_TAGS } from '@/constants/itemTags'
 
 const router = useRouter()
 const route = useRoute()
@@ -17,6 +18,7 @@ const form = reactive({
   category: '',
   description: '',
   images: [],
+  tags: [],
 })
 
 const rules = {
@@ -25,12 +27,24 @@ const rules = {
   category: [{ required: true, message: '请选择分类', trigger: 'change' }],
 }
 
-const categories = ['数码', '书籍', '服饰', '生活用品', '其他']
+const availableTags = computed(() => {
+  if (!form.category) return []
+  return [...(CATEGORY_TAGS[form.category] || []), ...COMMON_TAGS]
+})
 
-// el-upload 展示用文件列表（含已有图片）
+function onCategoryChange(val) {
+  const valid = [...(CATEGORY_TAGS[val] || []), ...COMMON_TAGS]
+  form.tags = form.tags.filter(t => valid.includes(t))
+}
+
+function toggleTag(tag) {
+  const idx = form.tags.indexOf(tag)
+  if (idx === -1) form.tags.push(tag)
+  else form.tags.splice(idx, 1)
+}
+
 const fileList = ref([])
 
-// 加载现有商品数据
 onMounted(async () => {
   try {
     const item = await itemApi.getDetail(route.params.id)
@@ -39,12 +53,13 @@ onMounted(async () => {
     form.category = item.category
     form.description = item.description
     form.images = item.images ? [...item.images] : []
-    // 初始化 el-upload 文件列表，展示已有图片
+    // 过滤掉分类本身，只保留额外标签
+    form.tags = (item.tags || []).filter(t => t !== item.category)
     fileList.value = form.images.map((url, idx) => ({
       name: `image-${idx}`,
       url,
       status: 'success',
-      response: url, // handleRemove 通过 response 或 url 找到对应 URL
+      response: url,
     }))
   } catch {
     showError('商品信息加载失败')
@@ -78,7 +93,10 @@ async function handleSave() {
   await formRef.value.validate()
   loading.value = true
   try {
-    await itemApi.update(route.params.id, form)
+    const tags = form.tags.includes(form.category)
+      ? form.tags
+      : [form.category, ...form.tags]
+    await itemApi.update(route.params.id, { ...form, tags })
     await showSuccess('保存成功')
     router.push('/my-items')
   } finally {
@@ -110,9 +128,21 @@ async function handleSave() {
         </el-form-item>
 
         <el-form-item label="分类" prop="category">
-          <el-select v-model="form.category" placeholder="请选择分类">
-            <el-option v-for="c in categories" :key="c" :label="c" :value="c" />
+          <el-select v-model="form.category" placeholder="请选择分类" @change="onCategoryChange">
+            <el-option v-for="c in CATEGORIES" :key="c" :label="c" :value="c" />
           </el-select>
+        </el-form-item>
+
+        <el-form-item label="标签">
+          <div v-if="!form.category" class="tag-tip">请先选择分类</div>
+          <div v-else class="tag-selector">
+            <el-check-tag
+              v-for="tag in availableTags"
+              :key="tag"
+              :checked="form.tags.includes(tag)"
+              @change="toggleTag(tag)"
+            >{{ tag }}</el-check-tag>
+          </div>
         </el-form-item>
 
         <el-form-item label="描述">
@@ -161,5 +191,16 @@ async function handleSave() {
   color: $text-secondary;
   margin-bottom: 10px;
   letter-spacing: $letter-spacing-base;
+}
+
+.tag-selector {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tag-tip {
+  font-size: 13px;
+  color: #c0c4cc;
 }
 </style>
