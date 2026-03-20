@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * 以物换物交易控制器
@@ -131,6 +132,16 @@ public class TradeController {
                                               HttpServletRequest request) {
         Long userId = (Long) request.getAttribute("userId");
         return tradeService.getItemActiveTrade(userId, itemId);
+    }
+
+    /**
+     * 获取需要当前用户操作的交易数量（"交易"菜单红点用）
+     */
+    @GetMapping("/pending-count")
+    public Result<Map<String, Object>> pendingCount(HttpServletRequest request) {
+        Long userId = (Long) request.getAttribute("userId");
+        if (userId == null) return Result.success(Map.of("count", 0));
+        return Result.success(Map.of("count", tradeService.countPendingAction(userId)));
     }
 
     /**

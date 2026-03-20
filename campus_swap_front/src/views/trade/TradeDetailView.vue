@@ -39,12 +39,19 @@ const currentStep = computed(() => {
   if (!trade.value) return 0
   const cfg = STATUS_CONFIG[trade.value.status]
   if (!cfg) return 0
+  let step
   if (!trade.value.auditMode) {
     // 无审核时步骤偏移
     const noAuditMap = { 0: 0, 1: 1, 3: 2, 4: 3, 5: 4 }
-    return noAuditMap[cfg.step] ?? cfg.step
+    step = noAuditMap[cfg.step] ?? cfg.step
+  } else {
+    step = cfg.step
   }
-  return cfg.step
+  // step+1 让当前步骤变为 finish（绿色打勾），下一步变为 active
+  // 覆盖：BOTH_DELIVERED/WAITING_CONFIRM_RECEIPT（"双方发货"变绿）和 COMPLETED（全部变绿）
+  const advanceStatuses = ['BOTH_DELIVERED', 'WAITING_CONFIRM_RECEIPT', 'COMPLETED']
+  if (advanceStatuses.includes(trade.value.status)) step += 1
+  return step
 })
 
 const isTerminal = computed(() => {
