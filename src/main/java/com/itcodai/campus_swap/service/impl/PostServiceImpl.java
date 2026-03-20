@@ -18,6 +18,7 @@ import com.itcodai.campus_swap.mapper.PostFavoriteMapper;
 import com.itcodai.campus_swap.mapper.PostLikeMapper;
 import com.itcodai.campus_swap.mapper.PostMapper;
 import com.itcodai.campus_swap.mapper.PostTagMapper;
+import com.itcodai.campus_swap.mapper.TagMapper;
 import com.itcodai.campus_swap.mapper.TradeMapper;
 import com.itcodai.campus_swap.mapper.UserMapper;
 import com.itcodai.campus_swap.service.NotificationService;
@@ -49,6 +50,7 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements Po
     private final TradeMapper tradeMapper;
     private final NotificationService notificationService;
     private final PostTagMapper postTagMapper;
+    private final TagMapper tagMapper;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
 
@@ -61,13 +63,26 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements Po
         }
     }
 
+    /** 查询帖子关联的标签名列表 */
+    private List<String> getPostTagNames(Long postId) {
+        List<PostTag> postTags = postTagMapper.selectList(
+                new LambdaQueryWrapper<PostTag>().eq(PostTag::getPostId, postId));
+        if (postTags.isEmpty()) return Collections.emptyList();
+        return postTags.stream()
+                .map(pt -> tagMapper.selectById(pt.getTagId()))
+                .filter(tag -> tag != null)
+                .map(tag -> tag.getName())
+                .collect(Collectors.toList());
+    }
+
     public PostServiceImpl(UserMapper userMapper,
                            PostLikeMapper postLikeMapper,
                            PostFavoriteMapper postFavoriteMapper,
                            ItemMapper itemMapper,
                            TradeMapper tradeMapper,
                            NotificationService notificationService,
-                           PostTagMapper postTagMapper) {
+                           PostTagMapper postTagMapper,
+                           TagMapper tagMapper) {
         this.userMapper = userMapper;
         this.postLikeMapper = postLikeMapper;
         this.postFavoriteMapper = postFavoriteMapper;
@@ -75,6 +90,7 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements Po
         this.tradeMapper = tradeMapper;
         this.notificationService = notificationService;
         this.postTagMapper = postTagMapper;
+        this.tagMapper = tagMapper;
     }
 
     @Override
@@ -174,7 +190,7 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements Po
                 }
             }
 
-            map.put("tags", List.of("校园", "闲置"));
+            map.put("tags", getPostTagNames(post.getId()));
 
             return map;
         }).collect(Collectors.toList());
@@ -246,7 +262,7 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements Po
             }
         }
 
-        map.put("tags", List.of("校园", "闲置"));
+        map.put("tags", getPostTagNames(post.getId()));
         return map;
     }
 
@@ -560,7 +576,7 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements Po
                     map.put("item", itemInfo);
                 }
             }
-            map.put("tags", List.of("校园", "闲置"));
+            map.put("tags", getPostTagNames(post.getId()));
             return map;
         }).collect(Collectors.toList());
 
