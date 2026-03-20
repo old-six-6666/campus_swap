@@ -174,6 +174,12 @@ onMounted(async () => {
           <p class="item-price">¥ {{ item.price }}</p>
           <div class="item-tags">
             <el-tag class="item-category" size="small">{{ item.category }}</el-tag>
+            <el-tag
+              v-for="tag in item.tags"
+              :key="tag"
+              size="small"
+              type="info"
+            >{{ tag }}</el-tag>
             <!-- 商品状态标签 -->
             <el-tag
               v-if="item.status !== 0"

@@ -14,6 +14,7 @@ import com.itcodai.campus_swap.vo.ItemVO;
 import com.itcodai.campus_swap.vo.PageVO;
 import cn.hutool.json.JSONUtil;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -25,6 +26,7 @@ import java.util.stream.Collectors;
 /**
  * 商品服务实现
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ItemServiceImpl implements ItemService {
@@ -80,6 +82,9 @@ public class ItemServiceImpl implements ItemService {
             item.setCoverImage(defaultCover);
             item.setImages(JSONUtil.toJsonStr(List.of(defaultCover)));
         }
+        if (dto.getTags() != null && !dto.getTags().isEmpty()) {
+            item.setTags(JSONUtil.toJsonStr(dto.getTags()));
+        }
         itemMapper.insert(item);
         return item.getId();
     }
@@ -103,6 +108,8 @@ public class ItemServiceImpl implements ItemService {
             item.setCoverImage(defaultCover);
             item.setImages(JSONUtil.toJsonStr(List.of(defaultCover)));
         }
+        item.setTags(dto.getTags() != null && !dto.getTags().isEmpty()
+                ? JSONUtil.toJsonStr(dto.getTags()) : null);
         itemMapper.updateById(item);
     }
 
@@ -167,6 +174,11 @@ public class ItemServiceImpl implements ItemService {
             vo.setImages(JSONUtil.toList(item.getImages(), String.class));
         } else {
             vo.setImages(Collections.emptyList());
+        }
+        if (StringUtils.hasText(item.getTags())) {
+            vo.setTags(JSONUtil.toList(item.getTags(), String.class));
+        } else {
+            vo.setTags(Collections.emptyList());
         }
         User seller = userMapper.selectById(item.getSellerId());
         if (seller != null) {

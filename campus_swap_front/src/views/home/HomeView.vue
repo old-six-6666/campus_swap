@@ -69,6 +69,14 @@ onMounted(fetchItems)
             <div class="item-info">
               <p class="item-title">{{ item.title }}</p>
               <p class="item-price">¥ {{ item.price }}</p>
+              <div class="item-tags">
+                <el-tag
+                  v-for="tag in item.tags"
+                  :key="tag"
+                  size="small"
+                  :type="tag === item.category ? '' : 'info'"
+                >{{ tag }}</el-tag>
+              </div>
             </div>
           </el-card>
         </RouterLink>
@@ -134,6 +142,13 @@ onMounted(fetchItems)
       font-weight: 600;
       color: #f56c6c;
       margin: 0;
+    }
+
+    .item-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-top: 6px;
     }
   }
 }

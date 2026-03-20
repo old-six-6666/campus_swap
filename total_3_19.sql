@@ -64,6 +64,7 @@ CREATE TABLE `t_item` (
   `cover_image`  varchar(255)          DEFAULT NULL   COMMENT '封面图 URL',
   `seller_id`    bigint        NOT NULL               COMMENT '发布者用户 ID',
   `images`       text                  DEFAULT NULL   COMMENT '图片 URL 列表（JSON 数组）',
+  `tags`         varchar(500)          DEFAULT NULL   COMMENT '标签列表（JSON 数组，如 ["九成新","包邮"]）',
   `status`       tinyint       NOT NULL DEFAULT '0'   COMMENT '状态: 0-在售 1-已下架 2-已售出',
   `audit_status` tinyint       NOT NULL DEFAULT '0'   COMMENT '审核状态: 0-待审核 1-已通过 2-已拒绝',
   `audit_remark` varchar(200)          DEFAULT NULL   COMMENT '审核备注（拒绝原因）',
@@ -296,6 +297,45 @@ CREATE TABLE `t_post_tag` (
   KEY `idx_post_id` (`post_id`),
   KEY `idx_tag_id`  (`tag_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='动态标签关联表';
+
+
+-- ----------------------------
+-- 15. 学生档案表
+-- ----------------------------
+DROP TABLE IF EXISTS `t_student_record`;
+CREATE TABLE `t_student_record` (
+  `id`          bigint       NOT NULL AUTO_INCREMENT COMMENT '主键 ID',
+  `school`      varchar(100) NOT NULL                COMMENT '学校名称',
+  `student_id`  varchar(50)  NOT NULL                COMMENT '学号',
+  `real_name`   varchar(50)  NOT NULL                COMMENT '真实姓名',
+  `extra_info`  varchar(200)         DEFAULT NULL    COMMENT '附加信息（专业/年级等）',
+  `created_by`  bigint               DEFAULT NULL    COMMENT '录入管理员用户 ID',
+  `created_at`  datetime     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '录入时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_school_student` (`school`, `student_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='学生档案表';
+
+
+-- ----------------------------
+-- 16. 学生认证申请表
+-- ----------------------------
+DROP TABLE IF EXISTS `t_student_verify`;
+CREATE TABLE `t_student_verify` (
+  `id`           bigint       NOT NULL AUTO_INCREMENT COMMENT '主键 ID',
+  `user_id`      bigint       NOT NULL                COMMENT '申请用户 ID',
+  `school`       varchar(100) NOT NULL                COMMENT '填写的学校名称',
+  `student_id`   varchar(50)  NOT NULL                COMMENT '填写的学号',
+  `real_name`    varchar(50)  NOT NULL                COMMENT '填写的真实姓名',
+  `extra_info`   varchar(200)         DEFAULT NULL    COMMENT '补充说明',
+  `status`       tinyint      NOT NULL DEFAULT 0      COMMENT '状态: 0-待审核 1-已通过 2-已拒绝',
+  `remark`       varchar(200)         DEFAULT NULL    COMMENT '审核备注（拒绝原因）',
+  `reviewed_by`  bigint               DEFAULT NULL    COMMENT '审核管理员 ID',
+  `reviewed_at`  datetime             DEFAULT NULL    COMMENT '审核时间',
+  `created_at`   datetime     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '提交时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_user_id` (`user_id`),
+  KEY `idx_status`  (`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='学生认证申请表';
 
 
 SET FOREIGN_KEY_CHECKS = 1;
