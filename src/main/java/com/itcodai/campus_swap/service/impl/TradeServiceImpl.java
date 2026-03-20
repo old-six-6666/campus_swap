@@ -911,4 +911,9 @@ public class TradeServiceImpl implements TradeService {
         if (trade == null) return Result.success(null);
         return Result.success(buildTradeVO(trade, userId != null ? userId : 0L));
     }
+
+    @Override
+    public long countPendingAction(Long userId) {
+        return tradeMapper.countPendingAction(userId);
+    }
 }

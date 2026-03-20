@@ -1,16 +1,18 @@
 <script setup>
-import { ref, computed, onMounted, watch, nextTick } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { chatApi } from '@/api/modules/chat'
 import { notificationApi } from '@/api/modules/notification'
 import { userApi } from '@/api/modules/user'
 import { useUserStore } from '@/stores/useUserStore'
+import { useUnreadStore } from '@/stores/useUnreadStore'
 import { showInfo } from '@/utils/notify'
 import { ChatLineRound, ShoppingBag, Search, Plus } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
+const unreadStore = useUnreadStore()
 
 // ── 会话列表 ────────────────────────────────────────────────────────────
 const conversations = ref([])
@@ -27,7 +29,7 @@ const messagesEl = ref(null)
 // ── 通知 ──────────────────────────────────────────────────────────────────
 const activeTab = ref('chat')   // 'chat' | 'notification'
 const notifications = ref([])
-const notifUnread = ref(0)
+const notifUnread = computed(() => unreadStore.notifUnread)
 const notifLoading = ref(false)
 
 async function fetchNotifications() {
@@ -43,18 +45,15 @@ async function switchTab(tab) {
   activeTab.value = tab
   if (tab === 'notification') {
     await fetchNotifications()
-    if (notifUnread.value > 0) {
+    if (unreadStore.notifUnread > 0) {
       await notificationApi.markAllRead().catch(() => {})
-      notifUnread.value = 0
+      unreadStore.clearNotif()
     }
   }
 }
 
 async function fetchNotifUnread() {
-  try {
-    const data = await notificationApi.getUnreadCount()
-    notifUnread.value = data?.count || 0
-  } catch { /* ignore */ }
+  await unreadStore.refresh()
 }
 
 function notifTypeLabel(type) {
@@ -97,8 +96,10 @@ async function selectConv(conv) {
   if (conv.conversationId) {
     await fetchMessages()
     if (conv.unreadCount > 0) {
+      const delta = conv.unreadCount
       await chatApi.markRead(conv.conversationId).catch(() => {})
       conv.unreadCount = 0
+      await unreadStore.onConvRead(delta)
     }
   }
 }
@@ -264,10 +265,22 @@ watch(messages, async () => {
   scrollToBottom()
 })
 
+let chatPollTimer = null
+
 onMounted(async () => {
+  await unreadStore.refresh()
   await fetchConversations()
   await handleQueryNav()
   fetchNotifUnread()
+  // 在消息页内每 10 秒轮询一次，收到新消息时红点能及时出现
+  chatPollTimer = setInterval(async () => {
+    await unreadStore.refresh()
+    await fetchConversations()
+  }, 10000)
+})
+
+onUnmounted(() => {
+  clearInterval(chatPollTimer)
 })
 
 watch(() => route.query, async () => {

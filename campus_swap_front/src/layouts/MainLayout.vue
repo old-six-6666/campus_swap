@@ -1,17 +1,19 @@
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { RouterView, useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/useUserStore'
-import { chatApi } from '@/api/modules/chat'
-import { notificationApi } from '@/api/modules/notification'
+import { useUnreadStore } from '@/stores/useUnreadStore'
+import { tradeApi } from '@/api/modules/trade'
 import { userApi } from '@/api/modules/user'
 import { Search } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const route = useRoute()
 const userStore = useUserStore()
+const unreadStore = useUnreadStore()
 
-const unreadCount = ref(0)
+const messageUnreadCount = computed(() => unreadStore.chatUnread + unreadStore.notifUnread)
+const tradeUnreadCount = ref(0)    // 交易菜单：待操作交易
 let unreadTimer = null
 
 const userSearchKeyword = ref('')
@@ -39,16 +41,19 @@ function goUserHome(userId) {
 
 async function fetchUnread() {
   if (!userStore.isLoggedIn) return
-  try {
-    const [chatData, notifData] = await Promise.all([
-      chatApi.getUnreadCount(),
-      notificationApi.getUnreadCount(),
-    ])
-    unreadCount.value = (chatData?.totalUnread || 0) + (notifData?.count || 0)
-  } catch {
-    // ignore
-  }
+  const [tradeData] = await Promise.all([
+    tradeApi.getPendingCount().catch(() => null),
+    unreadStore.refresh(),
+  ])
+  tradeUnreadCount.value = tradeData?.count || 0
 }
+
+// 离开消息页时立即刷新（确保红点及时更新）
+watch(() => route.name, (name, prev) => {
+  if (prev === 'Chat' || prev === 'Notification') {
+    fetchUnread()
+  }
+})
 
 onMounted(() => {
   fetchUnread()
@@ -99,10 +104,10 @@ function handleCommand(command) {
           <RouterLink :to="{ name: 'Publish' }" class="nav-item" :class="{ active: route.name === 'Publish' }">发布闲置</RouterLink>
           <RouterLink :to="{ name: 'Square' }" class="nav-item" :class="{ active: route.name === 'Square' }">广场</RouterLink>
           <RouterLink v-if="userStore.isLoggedIn" :to="{ name: 'Chat' }" class="nav-item" :class="{ active: route.name === 'Chat' }">
-            <el-badge :value="unreadCount || 0" :hidden="!unreadCount" class="msg-badge">消息</el-badge>
+            <span class="nav-label">消息<el-badge v-if="messageUnreadCount > 0" :value="messageUnreadCount > 99 ? '99+' : messageUnreadCount" class="nav-badge" /></span>
           </RouterLink>
           <RouterLink v-if="userStore.isLoggedIn" :to="{ name: 'MyTrades' }" class="nav-item" :class="{ active: route.name === 'MyTrades' }">
-            交易
+            <span class="nav-label">交易<el-badge v-if="tradeUnreadCount > 0" :is-dot="true" class="nav-badge" /></span>
           </RouterLink>
         </nav>
 
@@ -175,7 +180,7 @@ function handleCommand(command) {
                   <el-dropdown-item command="myTrades">我的交易</el-dropdown-item>
                   <el-dropdown-item command="chat">
                     消息
-                    <el-badge v-if="unreadCount" :value="unreadCount" style="margin-left:6px" />
+                    <el-badge v-if="messageUnreadCount" :value="messageUnreadCount" style="margin-left:6px" />
                   </el-dropdown-item>
                   <el-dropdown-item command="changePassword">修改密码</el-dropdown-item>
                   <el-dropdown-item v-if="userStore.isAdmin" command="admin" divided>管理面板</el-dropdown-item>
@@ -296,6 +301,7 @@ function handleCommand(command) {
     background: #fff;      /* 变成纯白背景 */
     transform: none;       /* 强制取消之前的 translateY 浮动 */
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    .nav-dot { border-color: #fff; }
   }
 
   /* 保持激活状态（点击后）的效果 */
@@ -304,12 +310,27 @@ function handleCommand(command) {
     background: #fff;
     font-weight: 600;
     box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+    .nav-dot { border-color: #fff; }
   }
 
 
   :deep(.el-badge__content) {
     top: -4px;
     right: -14px;
+  }
+}
+
+.nav-label {
+  position: relative;
+  display: inline-block;
+}
+
+.nav-badge {
+  position: absolute;
+  top: -8px;
+  right: -18px;
+  :deep(.el-badge__content) {
+    border-color: transparent;
   }
 }
 

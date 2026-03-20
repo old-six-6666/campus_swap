@@ -33,4 +33,7 @@ export const tradeApi = {
 
   /** 查询物品当前活跃的交易（无需登录；silent=true 避免弹出错误提示） */
   getItemActiveTrade: (itemId) => request.get(`/trade/item/${itemId}`, { silent: true }),
+
+  /** 获取需要当前用户操作的交易数量（"交易"菜单红点用） */
+  getPendingCount: () => request.get('/trade/pending-count', { silent: true }),
 }
