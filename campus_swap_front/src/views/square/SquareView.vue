@@ -13,6 +13,7 @@ const selectedTags = ref([])
 const activeTab = ref('recommend') // recommend | latest | hot
 const stats = ref(null)
 const showPublishDialog = ref(false)
+const tagFilterRef = ref(null)
 
 // 公告
 const announcements = ref([])
@@ -156,6 +157,8 @@ function handlePostDeleted(postId) {
     // 更新总数
     pagination.total = Math.max(0, pagination.total - 1)
   }
+  // 刷新热门标签
+  tagFilterRef.value?.refresh()
 }
 
 // 监听Tab变化
@@ -192,6 +195,9 @@ function handlePublishClick() {
 function handlePublishSuccess() {
   // 发布成功后刷新动态列表
   reset()
+
+  // 刷新热门标签
+  tagFilterRef.value?.refresh()
 
   // 如果有统计信息，也刷新统计
   if (stats.value) {
@@ -302,7 +308,7 @@ function handlePublishSuccess() {
 
     <!-- 标签筛选 -->
     <div class="tag-filter-section">
-      <TagFilter v-model="selectedTags" />
+      <TagFilter ref="tagFilterRef" v-model="selectedTags" />
     </div>
 
     <!-- 动态列表 -->

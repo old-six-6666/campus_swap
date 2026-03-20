@@ -153,26 +153,11 @@ async function loadMySwapRecords() {
 
 async function loadTags() {
   try {
-    // 暂时使用模拟数据，避免API调用错误
-    availableTags.value = [
-      { id: 1, name: '数码' },
-      { id: 2, name: '书籍' },
-      { id: 3, name: '服饰' },
-      { id: 4, name: '生活用品' },
-      { id: 5, name: '体育用品' },
-      { id: 6, name: '文具' },
-      { id: 7, name: '美妆' },
-      { id: 8, name: '学习资料' },
-      { id: 9, name: '电子产品' },
-      { id: 10, name: '家居用品' },
-      { id: 11, name: '其他' }
-    ]
-    
-    // 实际API调用（暂时注释，等后端实现）
-    // const response = await squareApi.getHotTags()
-    // availableTags.value = response.data || []
+    const tags = await squareApi.getAllTags()
+    availableTags.value = tags || []
   } catch (error) {
     console.error('加载标签失败:', error)
+    availableTags.value = []
   }
 }
 

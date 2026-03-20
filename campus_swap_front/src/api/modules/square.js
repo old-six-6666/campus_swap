@@ -137,7 +137,17 @@ export const squareApi = {
   },
 
   /**
-   * 获取热门标签
+   * 获取所有标签（供发布动态时选择）
+   */
+  getAllTags() {
+    return request({
+      url: '/square/tags',
+      method: 'get'
+    })
+  },
+
+  /**
+   * 获取热门标签（按使用次数降序，仅返回有动态关联的标签）
    * @returns {Promise}
    */
   getHotTags() {

@@ -21,6 +21,14 @@ public class SquareController {
     private final TagMapper tagMapper;
 
     /**
+     * 获取所有标签（供发布动态时选择）
+     */
+    @GetMapping("/tags")
+    public Result<List<Map<String, Object>>> getAllTags() {
+        return Result.success(tagMapper.selectAllTags());
+    }
+
+    /**
      * 获取热门标签（按使用次数降序）
      */
     @GetMapping("/tags/hot")

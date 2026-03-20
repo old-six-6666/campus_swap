@@ -52,6 +52,12 @@ public class Post {
      */
     @TableField(exist = false)
     private List<String> imageList;
+
+    /**
+     * 前端传入的标签ID列表（不映射数据库列），由 service 写入 t_post_tag
+     */
+    @TableField(exist = false)
+    private List<Long> tagIds;
     
     /**
      * 点赞数

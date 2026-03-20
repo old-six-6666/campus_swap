@@ -139,7 +139,7 @@ onMounted(fetchVerifyStatus)
         </div>
         <div class="info-item">
           <span class="info-label">学生认证</span>
-          <el-tag v-if="userStore.userInfo?.isVerified === 1" size="small" effect="plain">已认证</el-tag>
+          <el-tag v-if="verifyInfo?.status === 1" size="small" effect="plain">已认证</el-tag>
           <el-tag v-else type="info" size="small" effect="plain">未认证</el-tag>
         </div>
       </div>

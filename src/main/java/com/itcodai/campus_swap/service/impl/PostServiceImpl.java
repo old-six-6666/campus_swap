@@ -10,12 +10,14 @@ import com.itcodai.campus_swap.entity.Item;
 import com.itcodai.campus_swap.entity.Post;
 import com.itcodai.campus_swap.entity.PostFavorite;
 import com.itcodai.campus_swap.entity.PostLike;
+import com.itcodai.campus_swap.entity.PostTag;
 import com.itcodai.campus_swap.entity.Trade;
 import com.itcodai.campus_swap.entity.User;
 import com.itcodai.campus_swap.mapper.ItemMapper;
 import com.itcodai.campus_swap.mapper.PostFavoriteMapper;
 import com.itcodai.campus_swap.mapper.PostLikeMapper;
 import com.itcodai.campus_swap.mapper.PostMapper;
+import com.itcodai.campus_swap.mapper.PostTagMapper;
 import com.itcodai.campus_swap.mapper.TradeMapper;
 import com.itcodai.campus_swap.mapper.UserMapper;
 import com.itcodai.campus_swap.service.NotificationService;
@@ -46,7 +48,9 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements Po
     private final ItemMapper itemMapper;
     private final TradeMapper tradeMapper;
     private final NotificationService notificationService;
+    private final PostTagMapper postTagMapper;
     private final ObjectMapper objectMapper = new ObjectMapper();
+
 
     private List<String> parseImages(String images) {
         if (images == null || images.isBlank()) return Collections.emptyList();
@@ -62,13 +66,15 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements Po
                            PostFavoriteMapper postFavoriteMapper,
                            ItemMapper itemMapper,
                            TradeMapper tradeMapper,
-                           NotificationService notificationService) {
+                           NotificationService notificationService,
+                           PostTagMapper postTagMapper) {
         this.userMapper = userMapper;
         this.postLikeMapper = postLikeMapper;
         this.postFavoriteMapper = postFavoriteMapper;
         this.itemMapper = itemMapper;
         this.tradeMapper = tradeMapper;
         this.notificationService = notificationService;
+        this.postTagMapper = postTagMapper;
     }
 
     @Override
@@ -83,7 +89,18 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements Po
         }
 
         if (tag != null && !tag.trim().isEmpty()) {
-            queryWrapper.like(Post::getContent, tag);
+            // tag 参数是逗号分隔的标签ID（如 "1,3,5"）
+            List<Long> postIds = baseMapper.selectPostIdsByTagIds(tag.trim());
+            if (postIds.isEmpty()) {
+                // 没有任何动态含这些标签，直接返回空结果
+                PageVO<Map<String, Object>> empty = new PageVO<>();
+                empty.setRecords(Collections.emptyList());
+                empty.setTotal(0L);
+                empty.setPage(page);
+                empty.setSize(size);
+                return empty;
+            }
+            queryWrapper.in(Post::getId, postIds);
         }
 
         if ("latest".equals(sort)) {
@@ -362,6 +379,18 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements Po
         post.setShareCount(0);
         post.setHotScore(0.0);
         this.save(post);
+
+        // 保存标签关联
+        List<Long> tagIds = post.getTagIds();
+        if (tagIds != null && !tagIds.isEmpty()) {
+            for (Long tagId : tagIds) {
+                PostTag pt = new PostTag();
+                pt.setPostId(post.getId());
+                pt.setTagId(tagId);
+                postTagMapper.insert(pt);
+            }
+        }
+
         log.info("用户 {} 创建了动态 {}", userId, post.getId());
         return post.getId();
     }

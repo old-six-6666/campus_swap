@@ -22,7 +22,11 @@ public interface TagMapper extends BaseMapper<Tag> {
             "FROM t_tag t " +
             "LEFT JOIN t_post_tag pt ON t.id = pt.tag_id " +
             "GROUP BY t.id, t.name " +
-            "ORDER BY count DESC " +
+            "ORDER BY count DESC, t.id ASC " +
             "LIMIT 20")
     List<Map<String, Object>> selectHotTags();
+
+    /** 查询所有标签（供发布动态时选择） */
+    @Select("SELECT id, name FROM t_tag ORDER BY id")
+    List<Map<String, Object>> selectAllTags();
 }

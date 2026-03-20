@@ -59,7 +59,7 @@ onUnmounted(() => {
   clearInterval(unreadTimer)
 })
 
-function handleCommand(command) {
+async function handleCommand(command) {
   if (command === 'logout') {
     userStore.logout()
     router.push('/login')
@@ -74,6 +74,8 @@ function handleCommand(command) {
   } else if (command === 'changePassword') {
     router.push('/change-password')
   } else if (command === 'admin') {
+    // 跳转前先刷新权限，避免 localStorage 缓存过期导致进不去
+    await userStore.fetchPermissions()
     router.push('/admin')
   } else if (command === 'chat') {
     router.push('/chat')

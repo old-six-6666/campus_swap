@@ -1,9 +1,11 @@
 package com.itcodai.campus_swap.service;
 
+import com.itcodai.campus_swap.vo.AdminConversationVO;
 import com.itcodai.campus_swap.vo.AdminDetailVO;
 import com.itcodai.campus_swap.vo.AdminUserVO;
 import com.itcodai.campus_swap.vo.ItemVO;
 import com.itcodai.campus_swap.vo.PageVO;
+import com.itcodai.campus_swap.vo.TradeVO;
 
 import java.util.List;
 
@@ -14,8 +16,8 @@ public interface AdminService {
 
     // ===== 用户管理 =====
 
-    /** 分页查询用户列表（支持关键词搜索） */
-    PageVO<AdminUserVO> listUsers(String keyword, int page, int size);
+    /** 分页查询用户列表（支持关键词搜索、角色过滤） */
+    PageVO<AdminUserVO> listUsers(String keyword, Integer role, int page, int size);
 
     /**
      * 更新用户账号状态（禁用/启用）
@@ -71,4 +73,20 @@ public interface AdminService {
      * 同时校验 adminId 必须是 role=1 的用户
      */
     void setAdminPermissions(Long adminId, List<String> permissions);
+
+    // ===== 聊天管理（需 CHAT_MANAGE 权限） =====
+
+    /** 分页查询所有会话（支持关键词搜索用户昵称） */
+    PageVO<AdminConversationVO> listConversations(String keyword, int page, int size);
+
+    /** 删除会话及其所有消息 */
+    void deleteConversation(Long convId);
+
+    // ===== 交易管理（需 TRADE_MANAGE 权限） =====
+
+    /** 分页查询所有交易（支持关键词搜索交易号、状态过滤） */
+    PageVO<TradeVO> listAllTrades(String keyword, String status, int page, int size);
+
+    /** 强制终止交易（仅限非终态交易） */
+    void forceTerminateTrade(Long tradeId, String reason);
 }

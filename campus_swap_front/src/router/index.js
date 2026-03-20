@@ -151,6 +151,18 @@ const routes = [
         name: 'AnnouncementManage',
         component: () => import('@/views/admin/AnnouncementManageView.vue'),
       },
+      {
+        path: 'chats',
+        name: 'ChatManage',
+        component: () => import('@/views/admin/ChatManageView.vue'),
+        meta: { requiresPermission: 'CHAT_MANAGE' },
+      },
+      {
+        path: 'trades',
+        name: 'TradeManage',
+        component: () => import('@/views/admin/TradeManageView.vue'),
+        meta: { requiresPermission: 'TRADE_MANAGE' },
+      },
     ],
   },
   {
@@ -186,10 +198,14 @@ const router = createRouter({
 
 /** 按用户权限返回管理台的第一个可访问路由名称，无权限时返回 null */
 function firstAdminRoute(userStore) {
-  if (userStore.hasPermission('USER_MANAGE')) return { name: 'AdminUsers' }
-  if (userStore.hasPermission('ITEM_MANAGE')) return { name: 'AdminItems' }
-  if (userStore.hasPermission('ITEM_AUDIT'))  return { name: 'ItemAudit' }
-  if (userStore.isSuperAdmin)                 return { name: 'AdminManage' }
+  if (userStore.hasPermission('USER_MANAGE'))  return { name: 'AdminUsers' }
+  if (userStore.hasPermission('ITEM_MANAGE'))  return { name: 'AdminItems' }
+  if (userStore.hasPermission('ITEM_AUDIT'))   return { name: 'ItemAudit' }
+  if (userStore.hasPermission('STUDENT_MANAGE')) return { name: 'StudentManage' }
+  if (userStore.hasPermission('CONTENT_AUDIT')) return { name: 'ReportManage' }
+  if (userStore.hasPermission('CHAT_MANAGE'))  return { name: 'ChatManage' }
+  if (userStore.hasPermission('TRADE_MANAGE')) return { name: 'TradeManage' }
+  if (userStore.isSuperAdmin)                  return { name: 'AdminManage' }
   return null
 }
 

@@ -65,6 +65,8 @@ onMounted(() => {
   fetchHotTags()
 })
 
+defineExpose({ refresh: fetchHotTags })
+
 // 监听props变化
 watch(() => props.selectedTags, (newVal) => {
   localSelectedTags.value = [...newVal]

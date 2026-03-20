@@ -29,6 +29,12 @@ const menuItems = computed(() => {
   if (userStore.hasPermission('CONTENT_AUDIT')) {
     items.push({ index: '/admin/reports', label: '举报审核', icon: 'Warning' })
   }
+  if (userStore.hasPermission('CHAT_MANAGE')) {
+    items.push({ index: '/admin/chats', label: '聊天管理', icon: 'ChatDotRound' })
+  }
+  if (userStore.hasPermission('TRADE_MANAGE')) {
+    items.push({ index: '/admin/trades', label: '交易管理', icon: 'Switch' })
+  }
   // 所有管理员均可管理公告
   items.push({ index: '/admin/announcements', label: '公告管理', icon: 'Bell' })
   if (userStore.isSuperAdmin) {

@@ -68,4 +68,16 @@ export const adminApi = {
   updateAnnouncementStatus: (id, status) => request.put(`/admin/announcements/${id}/status`, null, { params: { status } }),
   /** 删除公告 */
   deleteAnnouncement: (id) => request.delete(`/admin/announcements/${id}`),
+
+  // ===== 聊天管理（CHAT_MANAGE） =====
+  /** 分页查询所有会话 */
+  listChats: (params) => request.get('/admin/chats', { params }),
+  /** 删除会话及其所有消息 */
+  deleteChat: (id) => request.delete(`/admin/chats/${id}`),
+
+  // ===== 交易管理（TRADE_MANAGE） =====
+  /** 分页查询所有交易 */
+  listTrades: (params) => request.get('/admin/trades', { params }),
+  /** 强制终止交易 */
+  terminateTrade: (id, reason) => request.put(`/admin/trades/${id}/terminate`, null, { params: { reason } }),
 }

@@ -3,6 +3,7 @@ package com.itcodai.campus_swap.vo;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * 管理端用户信息 VO
@@ -20,4 +21,6 @@ public class AdminUserVO {
     /** 状态：0-正常  1-禁用 */
     private Integer status;
     private LocalDateTime createdAt;
+    /** 权限码列表（仅 role=1 时有值） */
+    private List<String> permissions;
 }

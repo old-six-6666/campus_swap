@@ -12,6 +12,7 @@ import com.itcodai.campus_swap.dto.StudentVerifyReviewDTO;
 import com.itcodai.campus_swap.service.AdminService;
 import com.itcodai.campus_swap.service.PostReportService;
 import com.itcodai.campus_swap.service.StudentService;
+import com.itcodai.campus_swap.vo.AdminConversationVO;
 import com.itcodai.campus_swap.vo.AdminDetailVO;
 import com.itcodai.campus_swap.vo.AdminUserVO;
 import com.itcodai.campus_swap.vo.ItemVO;
@@ -19,6 +20,7 @@ import com.itcodai.campus_swap.vo.PageVO;
 import com.itcodai.campus_swap.vo.PostReportVO;
 import com.itcodai.campus_swap.vo.StudentRecordVO;
 import com.itcodai.campus_swap.vo.StudentVerifyVO;
+import com.itcodai.campus_swap.vo.TradeVO;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -46,11 +48,12 @@ public class AdminController {
     @GetMapping("/users")
     public Result<PageVO<AdminUserVO>> listUsers(
             @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) Integer role,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "15") int size,
             HttpServletRequest request) {
         requirePermission(request, "USER_MANAGE");
-        return Result.success(adminService.listUsers(keyword, page, size));
+        return Result.success(adminService.listUsers(keyword, role, page, size));
     }
 
     /** 禁用 / 启用用户（管理员只能操作普通用户，超管可操作管理员） */
@@ -185,7 +188,8 @@ public class AdminController {
         int role = (int) request.getAttribute("userRole");
         if (role >= 2) {
             // 超级管理员拥有所有权限
-            return Result.success(List.of("USER_MANAGE", "ITEM_MANAGE", "ITEM_AUDIT", "STUDENT_MANAGE", "CONTENT_AUDIT"));
+            return Result.success(List.of("USER_MANAGE", "ITEM_MANAGE", "ITEM_AUDIT", "STUDENT_MANAGE", "CONTENT_AUDIT",
+                    "CHAT_MANAGE", "TRADE_MANAGE"));
         }
         Long userId = (Long) request.getAttribute("userId");
         return Result.success(adminService.getAdminPermissions(userId));
@@ -286,6 +290,56 @@ public class AdminController {
         requirePermission(request, "CONTENT_AUDIT");
         Long reviewerId = (Long) request.getAttribute("userId");
         postReportService.reviewReport(id, dto.getAction(), dto.getRemark(), reviewerId);
+        return Result.success();
+    }
+
+    // ================================================================
+    //  聊天管理（需 CHAT_MANAGE 权限）
+    // ================================================================
+
+    /** 分页查询所有会话（可按用户昵称关键词搜索） */
+    @GetMapping("/chats")
+    public Result<PageVO<AdminConversationVO>> listChats(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "15") int size,
+            HttpServletRequest request) {
+        requirePermission(request, "CHAT_MANAGE");
+        return Result.success(adminService.listConversations(keyword, page, size));
+    }
+
+    /** 删除会话及其所有消息 */
+    @DeleteMapping("/chats/{id:\\d+}")
+    public Result<Void> deleteChat(@PathVariable Long id,
+                                   HttpServletRequest request) {
+        requirePermission(request, "CHAT_MANAGE");
+        adminService.deleteConversation(id);
+        return Result.success();
+    }
+
+    // ================================================================
+    //  交易管理（需 TRADE_MANAGE 权限）
+    // ================================================================
+
+    /** 分页查询所有交易（可按交易号搜索、状态过滤） */
+    @GetMapping("/trades")
+    public Result<PageVO<TradeVO>> listTrades(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String status,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "15") int size,
+            HttpServletRequest request) {
+        requirePermission(request, "TRADE_MANAGE");
+        return Result.success(adminService.listAllTrades(keyword, status, page, size));
+    }
+
+    /** 强制终止交易 */
+    @PutMapping("/trades/{id:\\d+}/terminate")
+    public Result<Void> terminateTrade(@PathVariable Long id,
+                                       @RequestParam(required = false) String reason,
+                                       HttpServletRequest request) {
+        requirePermission(request, "TRADE_MANAGE");
+        adminService.forceTerminateTrade(id, reason);
         return Result.success();
     }
 
