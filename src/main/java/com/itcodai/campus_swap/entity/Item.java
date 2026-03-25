@@ -53,6 +53,9 @@ public class Item {
     /** 审核备注（拒绝原因） */
     private String auditRemark;
 
+    /** 是否在审核通过后同步发布广场动态：0-否 1-是 */
+    private Integer syncToSquare;
+
     /** 逻辑删除 */
     @TableLogic
     private Integer deleted;

@@ -3,17 +3,17 @@ import { ref, onMounted, watch } from 'vue'
 import { squareApi } from '@/api/modules/square'
 
 const props = defineProps({
-  selectedTags: {
+  modelValue: {
     type: Array,
     default: () => []
   }
 })
 
-const emit = defineEmits(['update:selectedTags'])
+const emit = defineEmits(['update:modelValue'])
 
 const tags = ref([])
 const loading = ref(false)
-const localSelectedTags = ref([...props.selectedTags])
+const localSelectedTags = ref([...props.modelValue])
 
 // 获取热门标签
 async function fetchHotTags() {
@@ -37,13 +37,13 @@ function toggleTag(tagId) {
   } else {
     localSelectedTags.value.splice(index, 1)
   }
-  emit('update:selectedTags', [...localSelectedTags.value])
+  emit('update:modelValue', [...localSelectedTags.value])
 }
 
 // 清空所有选择
 function clearSelection() {
   localSelectedTags.value = []
-  emit('update:selectedTags', [])
+  emit('update:modelValue', [])
 }
 
 // 根据数量计算标签大小
@@ -68,7 +68,7 @@ onMounted(() => {
 defineExpose({ refresh: fetchHotTags })
 
 // 监听props变化
-watch(() => props.selectedTags, (newVal) => {
+watch(() => props.modelValue, (newVal) => {
   localSelectedTags.value = [...newVal]
 }, { deep: true })
 </script>

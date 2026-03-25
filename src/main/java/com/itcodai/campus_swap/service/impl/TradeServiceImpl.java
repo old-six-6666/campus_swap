@@ -380,20 +380,138 @@ public class TradeServiceImpl implements TradeService {
 
         // 2. 权限：交易双方或管理员
         boolean isAdmin = isAdmin(userId);
-        boolean isParty = trade.getInitiatorId().equals(userId) ||
-                (trade.getReceiverId() != null && trade.getReceiverId().equals(userId));
-        if (!isAdmin && !isParty) {
+        boolean isInitiator = trade.getInitiatorId().equals(userId);
+        boolean isReceiver = trade.getReceiverId() != null && trade.getReceiverId().equals(userId);
+        if (!isAdmin && !isInitiator && !isReceiver) {
             throw new BusinessException(ResultCode.FORBIDDEN, "无权限终止此交易");
         }
 
         String reason = dto != null && dto.getReason() != null ? dto.getReason() : "用户主动取消";
-        trade.setTerminateReason(reason);
-        trade.setTerminatedAt(LocalDateTime.now());
 
-        doTransition(trade, TradeStatus.TERMINATED.getCode(), userId, reason, TRIGGER_MANUAL);
+        // 3. 管理员直接终止，无需对方确认
+        if (isAdmin) {
+            trade.setTerminateReason(reason);
+            trade.setTerminatedAt(LocalDateTime.now());
+            doTransition(trade, TradeStatus.TERMINATED.getCode(), userId, "管理员强制终止：" + reason, TRIGGER_MANUAL);
+            unlockItemsFromTrade(trade);
+            return Result.success();
+        }
 
-        // 解锁双方物品，恢复为在售状态（仅 MATCHED 及之后才锁定了物品）
-        unlockItemsFromTrade(trade);
+        // 4. PENDING_MATCH 阶段：甲方取消或乙方拒绝，单方直接终止（交易尚未正式锁定物品）
+        if ("PENDING_MATCH".equals(trade.getStatus())) {
+            trade.setTerminateReason(reason);
+            trade.setTerminatedAt(LocalDateTime.now());
+            doTransition(trade, TradeStatus.TERMINATED.getCode(), userId, reason, TRIGGER_MANUAL);
+            unlockItemsFromTrade(trade);
+            return Result.success();
+        }
+
+        // 5. 普通用户：申请终止（双方均申请后才真正终止）
+        if (isInitiator) {
+            if (Boolean.TRUE.equals(trade.getInitiatorWantTerminate())) {
+                throw new BusinessException(ResultCode.BAD_REQUEST, "您已提交过终止申请，等待对方确认");
+            }
+            trade.setInitiatorWantTerminate(true);
+        } else {
+            if (Boolean.TRUE.equals(trade.getReceiverWantTerminate())) {
+                throw new BusinessException(ResultCode.BAD_REQUEST, "您已提交过终止申请，等待对方确认");
+            }
+            trade.setReceiverWantTerminate(true);
+        }
+
+        // 6. 判断对方是否已申请
+        boolean otherAlsoWants = isInitiator
+                ? Boolean.TRUE.equals(trade.getReceiverWantTerminate())
+                : Boolean.TRUE.equals(trade.getInitiatorWantTerminate());
+
+        if (otherAlsoWants) {
+            // 双方均同意，执行终止
+            trade.setTerminateReason(reason);
+            trade.setTerminatedAt(LocalDateTime.now());
+            trade.setInitiatorWantTerminate(false);
+            trade.setReceiverWantTerminate(false);
+            doTransition(trade, TradeStatus.TERMINATED.getCode(), userId, "双方同意终止：" + reason, TRIGGER_MANUAL);
+            unlockItemsFromTrade(trade);
+        } else {
+            // 仅登记申请，等待对方确认
+            tradeMapper.updateById(trade);
+            String roleName = isInitiator ? "甲方" : "乙方";
+            writeLog(trade.getId(), trade.getStatus(), trade.getStatus(),
+                    TRIGGER_MANUAL, userId, roleName + "申请终止交易，原因：" + reason + "（等待对方确认）");
+        }
+
+        return Result.success();
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Result<Void> cancelTerminateRequest(Long userId, Long tradeId) {
+        Trade trade = getTradeOrThrow(tradeId);
+
+        TradeStatus current = TradeStatus.fromCode(trade.getStatus());
+        if (current != null && current.isTerminal()) {
+            throw new BusinessException(ResultCode.BAD_REQUEST, "交易已终止，无法撤回申请");
+        }
+
+        boolean isInitiator = trade.getInitiatorId().equals(userId);
+        boolean isReceiver = trade.getReceiverId() != null && trade.getReceiverId().equals(userId);
+        if (!isInitiator && !isReceiver) {
+            throw new BusinessException(ResultCode.FORBIDDEN, "无权操作此交易");
+        }
+
+        if (isInitiator) {
+            if (!Boolean.TRUE.equals(trade.getInitiatorWantTerminate())) {
+                throw new BusinessException(ResultCode.BAD_REQUEST, "您尚未提交终止申请");
+            }
+            trade.setInitiatorWantTerminate(false);
+        } else {
+            if (!Boolean.TRUE.equals(trade.getReceiverWantTerminate())) {
+                throw new BusinessException(ResultCode.BAD_REQUEST, "您尚未提交终止申请");
+            }
+            trade.setReceiverWantTerminate(false);
+        }
+
+        tradeMapper.updateById(trade);
+        String roleName = isInitiator ? "甲方" : "乙方";
+        writeLog(trade.getId(), trade.getStatus(), trade.getStatus(),
+                TRIGGER_MANUAL, userId, roleName + "撤回了终止申请");
+
+        return Result.success();
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Result<Void> rejectTerminateRequest(Long userId, Long tradeId) {
+        Trade trade = getTradeOrThrow(tradeId);
+
+        TradeStatus current = TradeStatus.fromCode(trade.getStatus());
+        if (current != null && current.isTerminal()) {
+            throw new BusinessException(ResultCode.BAD_REQUEST, "交易已终止");
+        }
+
+        boolean isInitiator = trade.getInitiatorId().equals(userId);
+        boolean isReceiver = trade.getReceiverId() != null && trade.getReceiverId().equals(userId);
+        if (!isInitiator && !isReceiver) {
+            throw new BusinessException(ResultCode.FORBIDDEN, "无权操作此交易");
+        }
+
+        // 清除对方（非自己）的申请标记
+        if (isInitiator) {
+            if (!Boolean.TRUE.equals(trade.getReceiverWantTerminate())) {
+                throw new BusinessException(ResultCode.BAD_REQUEST, "对方未提交终止申请");
+            }
+            trade.setReceiverWantTerminate(false);
+        } else {
+            if (!Boolean.TRUE.equals(trade.getInitiatorWantTerminate())) {
+                throw new BusinessException(ResultCode.BAD_REQUEST, "对方未提交终止申请");
+            }
+            trade.setInitiatorWantTerminate(false);
+        }
+
+        tradeMapper.updateById(trade);
+        String roleName = isInitiator ? "甲方" : "乙方";
+        writeLog(trade.getId(), trade.getStatus(), trade.getStatus(),
+                TRIGGER_MANUAL, userId, roleName + "拒绝了对方的终止申请，交易继续");
 
         return Result.success();
     }
@@ -787,6 +905,8 @@ public class TradeServiceImpl implements TradeService {
         vo.setInitiatorConfirmedReceipt(trade.getInitiatorConfirmedReceipt());
         vo.setReceiverConfirmedReceipt(trade.getReceiverConfirmedReceipt());
         vo.setTerminateReason(trade.getTerminateReason());
+        vo.setInitiatorWantTerminate(Boolean.TRUE.equals(trade.getInitiatorWantTerminate()));
+        vo.setReceiverWantTerminate(Boolean.TRUE.equals(trade.getReceiverWantTerminate()));
         vo.setDeliveryDeadline(trade.getDeliveryDeadline());
         vo.setReceiptDeadline(trade.getReceiptDeadline());
         vo.setMatchedAt(trade.getMatchedAt());

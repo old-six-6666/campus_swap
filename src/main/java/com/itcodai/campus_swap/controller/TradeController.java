@@ -24,7 +24,9 @@ import java.util.Map;
  * POST   /api/trade/{tradeId}/audit           管理员审核（需管理员权限）
  * POST   /api/trade/{tradeId}/deliver         一方确认发货
  * POST   /api/trade/{tradeId}/confirm-receipt 一方确认收货
- * POST   /api/trade/{tradeId}/terminate       终止交易
+ * POST   /api/trade/{tradeId}/terminate       申请终止交易（双方均申请后生效；管理员直接终止）
+ * POST   /api/trade/{tradeId}/cancel-terminate 撤回自己的终止申请
+ * POST   /api/trade/{tradeId}/reject-terminate 拒绝对方的终止申请
  * POST   /api/trade/{tradeId}/rollback        管理员回滚状态
  * POST   /api/trade/{tradeId}/appeal          提交申诉
  * GET    /api/trade/{tradeId}                 获取交易详情
@@ -105,13 +107,31 @@ public class TradeController {
     }
 
     /**
-     * 终止交易（任意非终态，双方或管理员均可操作）
+     * 申请终止交易（普通用户：双方均申请后才真正终止；管理员：直接终止）
      */
     @PostMapping("/{tradeId}/terminate")
     public Result<Void> terminate(@PathVariable Long tradeId,
                                   @RequestBody(required = false) TerminateTradeDTO dto,
                                   HttpServletRequest request) {
         return tradeService.terminateTrade(currentUserId(request), tradeId, dto);
+    }
+
+    /**
+     * 撤回自己的终止申请（在对方尚未同意前可撤回）
+     */
+    @PostMapping("/{tradeId}/cancel-terminate")
+    public Result<Void> cancelTerminate(@PathVariable Long tradeId,
+                                        HttpServletRequest request) {
+        return tradeService.cancelTerminateRequest(currentUserId(request), tradeId);
+    }
+
+    /**
+     * 拒绝对方的终止申请（清除对方申请标记，交易恢复正常）
+     */
+    @PostMapping("/{tradeId}/reject-terminate")
+    public Result<Void> rejectTerminate(@PathVariable Long tradeId,
+                                        HttpServletRequest request) {
+        return tradeService.rejectTerminateRequest(currentUserId(request), tradeId);
     }
 
     /**

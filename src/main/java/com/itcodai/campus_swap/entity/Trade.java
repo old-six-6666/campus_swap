@@ -72,6 +72,12 @@ public class Trade {
     /** 终止原因（TERMINATED 状态时填写） */
     private String terminateReason;
 
+    /** 甲方是否已申请终止（等待对方确认） */
+    private Boolean initiatorWantTerminate;
+
+    /** 乙方是否已申请终止（等待对方确认） */
+    private Boolean receiverWantTerminate;
+
     /** 发货超时小时数（默认 48，来自配置文件） */
     private Integer deliveryTimeoutHours;
 

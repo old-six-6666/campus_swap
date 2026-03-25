@@ -9,6 +9,7 @@ import com.itcodai.campus_swap.entity.AdminPermission;
 import com.itcodai.campus_swap.entity.Conversation;
 import com.itcodai.campus_swap.entity.Item;
 import com.itcodai.campus_swap.entity.Message;
+import com.itcodai.campus_swap.entity.Post;
 import com.itcodai.campus_swap.entity.Trade;
 import com.itcodai.campus_swap.entity.User;
 import com.itcodai.campus_swap.enums.TradeStatus;
@@ -16,9 +17,11 @@ import com.itcodai.campus_swap.mapper.AdminPermissionMapper;
 import com.itcodai.campus_swap.mapper.ConversationMapper;
 import com.itcodai.campus_swap.mapper.ItemMapper;
 import com.itcodai.campus_swap.mapper.MessageMapper;
+import com.itcodai.campus_swap.mapper.TagMapper;
 import com.itcodai.campus_swap.mapper.TradeMapper;
 import com.itcodai.campus_swap.mapper.UserMapper;
 import com.itcodai.campus_swap.service.AdminService;
+import com.itcodai.campus_swap.service.PostService;
 import com.itcodai.campus_swap.vo.AdminConversationVO;
 import com.itcodai.campus_swap.vo.AdminDetailVO;
 import com.itcodai.campus_swap.vo.AdminUserVO;
@@ -26,6 +29,7 @@ import com.itcodai.campus_swap.vo.ItemVO;
 import com.itcodai.campus_swap.vo.PageVO;
 import com.itcodai.campus_swap.vo.TradeVO;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -33,9 +37,11 @@ import org.springframework.util.StringUtils;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AdminServiceImpl implements AdminService {
@@ -46,6 +52,8 @@ public class AdminServiceImpl implements AdminService {
     private final ConversationMapper conversationMapper;
     private final MessageMapper messageMapper;
     private final TradeMapper tradeMapper;
+    private final PostService postService;
+    private final TagMapper tagMapper;
 
     /** 合法权限码集合 */
     private static final Set<String> VALID_PERM_CODES = Set.of(
@@ -230,6 +238,30 @@ public class AdminServiceImpl implements AdminService {
         item.setAuditStatus(action);
         item.setAuditRemark(action == 2 ? remark : null);
         itemMapper.updateById(item);
+
+        // 审核通过且用户勾选了"同步广场"时，自动创建广场动态
+        if (action == 1 && Integer.valueOf(1).equals(item.getSyncToSquare())) {
+            try {
+                // 查找"闲置"标签ID
+                List<Map<String, Object>> allTags = tagMapper.selectAllTags();
+                Long idleTagId = allTags.stream()
+                        .filter(t -> "闲置".equals(t.get("name")))
+                        .map(t -> ((Number) t.get("id")).longValue())
+                        .findFirst().orElse(null);
+
+                Post post = new Post();
+                post.setType(1);
+                post.setContent("我发布了新闲置：" + item.getTitle() + "，快来看看吧～");
+                post.setItemId(itemId);
+                post.setImages("[]");
+                if (idleTagId != null) {
+                    post.setTagIds(List.of(idleTagId));
+                }
+                postService.createPost(post, item.getSellerId());
+            } catch (Exception e) {
+                log.error("审核通过后同步广场动态失败 itemId={}", itemId, e);
+            }
+        }
     }
 
     // ===== 私有辅助 =====

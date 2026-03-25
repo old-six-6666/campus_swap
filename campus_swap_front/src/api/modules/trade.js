@@ -16,8 +16,14 @@ export const tradeApi = {
   /** 确认已收货 */
   confirmReceipt: (tradeId) => request.post(`/trade/${tradeId}/confirm-receipt`),
 
-  /** 终止/拒绝交易 */
+  /** 申请终止交易（双方均申请后生效；PENDING_MATCH阶段或管理员直接终止） */
   terminate: (tradeId, data) => request.post(`/trade/${tradeId}/terminate`, data || {}),
+
+  /** 撤回自己的终止申请 */
+  cancelTerminate: (tradeId) => request.post(`/trade/${tradeId}/cancel-terminate`),
+
+  /** 拒绝对方的终止申请 */
+  rejectTerminate: (tradeId) => request.post(`/trade/${tradeId}/reject-terminate`),
 
   /** 管理员回滚状态 */
   rollback: (tradeId, data) => request.post(`/trade/${tradeId}/rollback`, data || {}),

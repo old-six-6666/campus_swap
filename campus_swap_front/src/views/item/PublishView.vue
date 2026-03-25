@@ -2,7 +2,6 @@
 import { reactive, ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { itemApi } from '@/api/modules/item'
-import { squareApi } from '@/api/modules/square'
 import { showSuccess, showError, showWarning } from '@/utils/notify'
 import { Plus } from '@element-plus/icons-vue'
 import { CATEGORIES, CATEGORY_TAGS, COMMON_TAGS } from '@/constants/itemTags'
@@ -72,20 +71,9 @@ async function handlePublish() {
     const tags = form.tags.includes(form.category)
       ? form.tags
       : [form.category, ...form.tags]
-    const itemId = await itemApi.publish({ ...form, tags })
-    if (syncToSquare.value && itemId) {
-      try {
-        await squareApi.createPost({
-          type: 1,
-          content: `我发布了新闲置：${form.title}，快来看看吧～`,
-          itemId,
-          imageList: [],
-          tagIds: [],
-        })
-        await showSuccess('发布成功，已同步到广场')
-      } catch {
-        await showSuccess('发布成功，但同步广场失败')
-      }
+    await itemApi.publish({ ...form, tags, syncToSquare: syncToSquare.value })
+    if (syncToSquare.value) {
+      await showSuccess('发布成功，审核通过后将自动同步到广场')
     } else {
       await showSuccess('发布成功')
     }

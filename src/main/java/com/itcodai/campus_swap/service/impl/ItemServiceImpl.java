@@ -85,6 +85,7 @@ public class ItemServiceImpl implements ItemService {
         if (dto.getTags() != null && !dto.getTags().isEmpty()) {
             item.setTags(JSONUtil.toJsonStr(dto.getTags()));
         }
+        item.setSyncToSquare(Boolean.TRUE.equals(dto.getSyncToSquare()) ? 1 : 0);
         itemMapper.insert(item);
         return item.getId();
     }

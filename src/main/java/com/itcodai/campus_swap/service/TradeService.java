@@ -62,13 +62,30 @@ public interface TradeService {
 
     /**
      * 终止交易（任意非终态）
-     * <p>交易双方或管理员均可发起终止
+     * <p>普通用户调用时为"申请终止"：记录意向，双方均申请后才真正终止。
+     * 管理员调用时直接终止，无需对方确认。
      *
      * @param userId  操作人ID
      * @param tradeId 交易ID
      * @param dto     终止原因
      */
     Result<Void> terminateTrade(Long userId, Long tradeId, TerminateTradeDTO dto);
+
+    /**
+     * 撤回自己的终止申请（在对方尚未同意前可撤回）
+     *
+     * @param userId  操作人ID（需是交易双方之一）
+     * @param tradeId 交易ID
+     */
+    Result<Void> cancelTerminateRequest(Long userId, Long tradeId);
+
+    /**
+     * 拒绝对方的终止申请（清除对方的申请标记，交易恢复正常）
+     *
+     * @param userId  操作人ID（需是交易双方之一）
+     * @param tradeId 交易ID
+     */
+    Result<Void> rejectTerminateRequest(Long userId, Long tradeId);
 
     /**
      * 回滚交易状态（仅管理员可操作）

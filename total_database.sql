@@ -101,6 +101,8 @@ CREATE TABLE `t_trade` (
   `initiator_confirmed_receipt` tinyint(1)   NOT NULL DEFAULT '0'             COMMENT '甲方是否已确认收货',
   `receiver_confirmed_receipt`  tinyint(1)   NOT NULL DEFAULT '0'             COMMENT '乙方是否已确认收货',
   `terminate_reason`            varchar(500)         DEFAULT NULL             COMMENT '终止原因',
+  `initiator_want_terminate`    tinyint(1)   NOT NULL DEFAULT '0'             COMMENT '甲方是否已申请终止',
+  `receiver_want_terminate`     tinyint(1)   NOT NULL DEFAULT '0'             COMMENT '乙方是否已申请终止',
   `delivery_timeout_hours`      int          NOT NULL DEFAULT '48'            COMMENT '发货超时小时数',
   `receipt_timeout_hours`       int          NOT NULL DEFAULT '72'            COMMENT '收货确认超时小时数',
   `delivery_deadline`           datetime             DEFAULT NULL             COMMENT '发货截止时间',
@@ -418,3 +420,14 @@ INSERT INTO t_announcement (title, content, type, status, sort, created_at)
 VALUES
   ('欢迎使用换物广场', '欢迎来到校园换物广场！在这里，你可以发布闲置物品，和同学进行以物换物，让物品流转，让校园更环保。', 1, 1, 10, NOW()),
   ('文明换物倡议', '请遵守平台规范，发布真实信息，禁止发布违法违规内容。共建友好、诚信的校园换物社区。', 2, 1, 5, NOW());
+
+
+ALTER TABLE t_trade
+  ADD COLUMN `initiator_want_terminate` tinyint(1) NOT NULL DEFAULT 0 COMMENT '甲方是否已申请终止' AFTER `terminate_reason`,
+  ADD COLUMN `receiver_want_terminate`  tinyint(1) NOT NULL DEFAULT 0 COMMENT '乙方是否已申请终止' AFTER `initiator_want_terminate`;
+
+-- 插入"闲置"标签（用于广场热门标签筛选，一键发布闲置动态时自动关联）
+INSERT IGNORE INTO `t_tag` (`name`) VALUES ('闲置');
+
+-- 商品表增加"同步广场"标记列
+ALTER TABLE `t_item` ADD COLUMN `sync_to_square` tinyint(1) NOT NULL DEFAULT 0 COMMENT '审核通过后是否同步发布广场动态: 0-否 1-是';

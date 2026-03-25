@@ -57,6 +57,8 @@ public class TradeVO {
 
     // ===== 终止 =====
     private String terminateReason;
+    private Boolean initiatorWantTerminate;
+    private Boolean receiverWantTerminate;
 
     // ===== 时间线 =====
     private LocalDateTime deliveryDeadline;

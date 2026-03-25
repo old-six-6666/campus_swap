@@ -31,4 +31,7 @@ public class ItemPublishDTO {
 
     /** 标签列表，如 ["九成新","免议价"] */
     private List<String> tags;
+
+    /** 是否在审核通过后同步发布广场动态 */
+    private Boolean syncToSquare;
 }

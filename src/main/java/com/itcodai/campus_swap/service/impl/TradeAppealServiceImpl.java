@@ -4,10 +4,15 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.itcodai.campus_swap.common.exception.BusinessException;
 import com.itcodai.campus_swap.common.result.ResultCode;
+import com.itcodai.campus_swap.entity.Item;
 import com.itcodai.campus_swap.entity.Trade;
 import com.itcodai.campus_swap.entity.TradeAppeal;
+import com.itcodai.campus_swap.entity.TradeLog;
 import com.itcodai.campus_swap.entity.User;
+import com.itcodai.campus_swap.enums.TradeStatus;
+import com.itcodai.campus_swap.mapper.ItemMapper;
 import com.itcodai.campus_swap.mapper.TradeAppealMapper;
+import com.itcodai.campus_swap.mapper.TradeLogMapper;
 import com.itcodai.campus_swap.mapper.TradeMapper;
 import com.itcodai.campus_swap.mapper.UserMapper;
 import com.itcodai.campus_swap.service.TradeAppealService;
@@ -15,6 +20,7 @@ import com.itcodai.campus_swap.vo.PageVO;
 import com.itcodai.campus_swap.vo.TradeAppealVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -26,6 +32,8 @@ public class TradeAppealServiceImpl implements TradeAppealService {
 
     private final TradeAppealMapper tradeAppealMapper;
     private final TradeMapper tradeMapper;
+    private final ItemMapper itemMapper;
+    private final TradeLogMapper tradeLogMapper;
     private final UserMapper userMapper;
 
     private static final String[] STATUS_DESCS = {"待处理", "已处理", "已驳回"};
@@ -83,6 +91,7 @@ public class TradeAppealServiceImpl implements TradeAppealService {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void reviewAppeal(Long appealId, int action, String remark, Long reviewerId) {
         if (action != 1 && action != 2) {
             throw new BusinessException(ResultCode.BAD_REQUEST, "无效的处理动作");
@@ -94,11 +103,55 @@ public class TradeAppealServiceImpl implements TradeAppealService {
         if (appeal.getStatus() != 0) {
             throw new BusinessException(ResultCode.BAD_REQUEST, "申诉已处理，无法重复操作");
         }
+
+        // 更新申诉状态
         appeal.setStatus(action);
         appeal.setRemark(remark);
         appeal.setReviewedBy(reviewerId);
         appeal.setReviewedAt(LocalDateTime.now());
         tradeAppealMapper.updateById(appeal);
+
+        // action=1（已处理）：终止交易，双方商品重新上架
+        if (action == 1) {
+            Trade trade = tradeMapper.selectById(appeal.getTradeId());
+            if (trade == null) return;
+
+            // 已是终态则跳过
+            TradeStatus current = TradeStatus.fromCode(trade.getStatus());
+            if (current != null && current.isTerminal()) return;
+
+            String fromStatus = trade.getStatus();
+            trade.setStatus(TradeStatus.TERMINATED.getCode());
+            trade.setTerminateReason("管理员处理申诉后终止：" + (remark != null ? remark : ""));
+            trade.setTerminatedAt(LocalDateTime.now());
+            tradeMapper.updateById(trade);
+
+            // 解锁双方物品，恢复在售
+            unlockItem(trade.getInitiatorItemId());
+            unlockItem(trade.getReceiverItemId());
+
+            // 写操作日志
+            TradeLog log = new TradeLog();
+            log.setTradeId(trade.getId());
+            log.setFromStatus(fromStatus);
+            log.setToStatus(TradeStatus.TERMINATED.getCode());
+            log.setTriggerType(0); // 手动
+            log.setOperatorId(reviewerId);
+            log.setRemark("管理员处理申诉，交易终止，商品已重新上架");
+            tradeLogMapper.insert(log);
+        }
+        // action=2（已驳回）：交易不变，无需额外操作
+    }
+
+    private void unlockItem(Long itemId) {
+        if (itemId == null) return;
+        Item current = itemMapper.selectById(itemId);
+        if (current != null && current.getStatus() == 3) {
+            Item upd = new Item();
+            upd.setId(itemId);
+            upd.setStatus(0);
+            itemMapper.updateById(upd);
+        }
     }
 
     private TradeAppealVO toVO(TradeAppeal appeal, Trade trade) {
@@ -124,3 +177,4 @@ public class TradeAppealServiceImpl implements TradeAppealService {
         return vo;
     }
 }
+

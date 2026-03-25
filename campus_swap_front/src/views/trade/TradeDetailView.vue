@@ -95,6 +95,22 @@ const canAppeal = computed(() =>
   !isTerminal.value && (isInitiator.value || isReceiver.value)
 )
 
+// 我是否已申请终止
+const iWantTerminate = computed(() => {
+  if (!trade.value) return false
+  return isInitiator.value
+    ? trade.value.initiatorWantTerminate
+    : trade.value.receiverWantTerminate
+})
+
+// 对方是否已申请终止
+const otherWantTerminate = computed(() => {
+  if (!trade.value) return false
+  return isInitiator.value
+    ? trade.value.receiverWantTerminate
+    : trade.value.initiatorWantTerminate
+})
+
 // ===== 操作方法 =====
 async function handleAccept() {
   try {
@@ -182,14 +198,68 @@ async function handleConfirmReceipt() {
 
 async function handleTerminate() {
   try {
-    const { value: reason } = await ElMessageBox.prompt('请输入终止原因', '终止交易', {
-      confirmButtonText: '确认终止',
+    const { value: reason } = await ElMessageBox.prompt('请输入终止原因', '申请终止交易', {
+      confirmButtonText: '提交申请',
       cancelButtonText: '取消',
       inputPlaceholder: '填写原因...',
     })
     loading.value = true
     await tradeApi.terminate(trade.value.id, { reason })
+    ElMessage.info('终止申请已提交，等待对方确认')
+    await reload()
+  } catch (e) {
+    if (e !== 'cancel') ElMessage.error(e?.message || '操作失败')
+  } finally {
+    loading.value = false
+  }
+}
+
+async function handleCancelTerminate() {
+  try {
+    await ElMessageBox.confirm('确定撤回终止申请吗？撤回后交易将继续正常流转。', '撤回申请', {
+      confirmButtonText: '确定撤回',
+      cancelButtonText: '不撤回',
+      type: 'warning',
+    })
+    loading.value = true
+    await tradeApi.cancelTerminate(trade.value.id)
+    ElMessage.success('已撤回终止申请')
+    await reload()
+  } catch (e) {
+    if (e !== 'cancel') ElMessage.error(e?.message || '操作失败')
+  } finally {
+    loading.value = false
+  }
+}
+
+async function handleAgreeTerminate() {
+  try {
+    await ElMessageBox.confirm('确定同意终止交易吗？同意后交易将立即终止。', '同意终止', {
+      confirmButtonText: '确定同意',
+      cancelButtonText: '再想想',
+      type: 'warning',
+    })
+    loading.value = true
+    await tradeApi.terminate(trade.value.id, { reason: '双方同意终止' })
     ElMessage.info('交易已终止')
+    await reload()
+  } catch (e) {
+    if (e !== 'cancel') ElMessage.error(e?.message || '操作失败')
+  } finally {
+    loading.value = false
+  }
+}
+
+async function handleRejectTerminate() {
+  try {
+    await ElMessageBox.confirm('确定拒绝对方的终止申请吗？交易将继续正常流转。', '拒绝终止申请', {
+      confirmButtonText: '确定拒绝',
+      cancelButtonText: '取消',
+      type: 'info',
+    })
+    loading.value = true
+    await tradeApi.rejectTerminate(trade.value.id)
+    ElMessage.success('已拒绝终止申请，交易继续')
     await reload()
   } catch (e) {
     if (e !== 'cancel') ElMessage.error(e?.message || '操作失败')
@@ -281,6 +351,24 @@ function goItem(itemId) {
         class="terminated-alert"
       />
 
+      <!-- ===== 终止申请提示 ===== -->
+      <el-alert
+        v-if="otherWantTerminate && !isTerminal"
+        title="对方已申请终止交易，请在操作区处理"
+        type="warning"
+        show-icon
+        :closable="false"
+        class="terminated-alert"
+      />
+      <el-alert
+        v-if="iWantTerminate && !isTerminal"
+        title="您已提交终止申请，等待对方确认"
+        type="info"
+        show-icon
+        :closable="false"
+        class="terminated-alert"
+      />
+
       <!-- ===== 核心操作按钮 ===== -->
       <div class="action-bar">
         <el-button v-if="canAccept" type="success" size="large" :loading="loading" @click="handleAccept">
@@ -310,21 +398,38 @@ function goItem(itemId) {
         >
           🎉 确认已收货
         </el-button>
-        <el-button
-          v-if="canTerminate && !canAccept && !canReject && !canCancel"
-          type="danger"
-          plain
-          size="small"
-          :loading="loading"
-          @click="handleTerminate"
-        >
-          终止交易
-        </el-button>
+        <!-- 终止相关按钮组（仅在非等待匹配阶段、非终态时显示） -->
+        <template v-if="canTerminate && !canAccept && !canReject && !canCancel">
+          <!-- 对方已申请终止：显示同意/拒绝 -->
+          <template v-if="otherWantTerminate">
+            <el-button type="danger" size="large" :loading="loading" @click="handleAgreeTerminate">
+              同意终止交易
+            </el-button>
+            <el-button type="primary" plain size="large" :loading="loading" @click="handleRejectTerminate">
+              拒绝终止申请
+            </el-button>
+          </template>
+          <!-- 我已申请终止：显示等待提示和撤回按钮 -->
+          <template v-else-if="iWantTerminate">
+            <el-button type="danger" plain size="large" disabled>
+              已申请终止（等待对方确认）
+            </el-button>
+            <el-button type="warning" plain size="large" :loading="loading" @click="handleCancelTerminate">
+              撤回申请
+            </el-button>
+          </template>
+          <!-- 默认：显示申请终止按钮 -->
+          <template v-else>
+            <el-button type="danger" plain size="large" :loading="loading" @click="handleTerminate">
+              终止交易
+            </el-button>
+          </template>
+        </template>
         <el-button
           v-if="canAppeal"
           type="warning"
           plain
-          size="small"
+          size="large"
           :loading="loading"
           @click="appealDialogVisible = true"
         >
