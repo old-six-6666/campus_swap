@@ -10,6 +10,7 @@ import com.itcodai.campus_swap.service.AnnouncementService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -20,9 +21,14 @@ public class AnnouncementServiceImpl implements AnnouncementService {
 
     @Override
     public List<Announcement> listActive() {
+        LocalDateTime now = LocalDateTime.now();
         return announcementMapper.selectList(
                 new LambdaQueryWrapper<Announcement>()
                         .eq(Announcement::getStatus, 1)
+                        .and(w -> w.isNull(Announcement::getStartTime)
+                                   .or().le(Announcement::getStartTime, now))
+                        .and(w -> w.isNull(Announcement::getEndTime)
+                                   .or().gt(Announcement::getEndTime, now))
                         .orderByDesc(Announcement::getSort)
                         .orderByDesc(Announcement::getCreatedAt)
         );
@@ -46,6 +52,8 @@ public class AnnouncementServiceImpl implements AnnouncementService {
         ann.setSort(dto.getSort() != null ? dto.getSort() : 0);
         ann.setStatus(1);
         ann.setCreatedBy(createdBy);
+        ann.setStartTime(dto.getStartTime());
+        ann.setEndTime(dto.getEndTime());
         announcementMapper.insert(ann);
     }
 
@@ -61,6 +69,8 @@ public class AnnouncementServiceImpl implements AnnouncementService {
         if (dto.getSort() != null) {
             ann.setSort(dto.getSort());
         }
+        ann.setStartTime(dto.getStartTime());
+        ann.setEndTime(dto.getEndTime());
         announcementMapper.updateById(ann);
     }
 

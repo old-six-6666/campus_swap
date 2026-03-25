@@ -1,11 +1,14 @@
 package com.itcodai.campus_swap.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import org.hibernate.validator.constraints.Length;
+
+import java.time.LocalDateTime;
 
 /**
  * 创建/更新公告 DTO
@@ -28,4 +31,12 @@ public class AnnouncementDTO {
 
     /** 排序权重，越大越靠前 */
     private Integer sort;
+
+    /** 生效开始时间，null = 立即生效 */
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime startTime;
+
+    /** 过期时间，null = 永久有效 */
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime endTime;
 }

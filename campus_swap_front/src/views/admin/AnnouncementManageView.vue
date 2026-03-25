@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { adminApi } from '@/api/modules/admin'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
@@ -11,7 +11,12 @@ const dialogVisible = ref(false)
 const dialogTitle = ref('')
 const submitting = ref(false)
 const editingId = ref(null)
-const form = ref({ title: '', content: '', type: 1, sort: 0 })
+const form = ref({
+  title: '', content: '', type: 1, sort: 0,
+  validityMode: 'permanent',  // 'permanent' | 'duration' | 'range'
+  durationDays: 7,
+  timeRange: null,            // [startTime, endTime] for range mode
+})
 
 const TYPE_MAP = {
   1: { label: '普通', type: '' },
@@ -35,28 +40,65 @@ async function fetchList() {
 
 function openCreate() {
   editingId.value = null
-  form.value = { title: '', content: '', type: 1, sort: 0 }
+  form.value = { title: '', content: '', type: 1, sort: 0, validityMode: 'permanent', durationDays: 7, timeRange: null }
   dialogTitle.value = '新增公告'
   dialogVisible.value = true
 }
 
 function openEdit(row) {
   editingId.value = row.id
-  form.value = { title: row.title, content: row.content, type: row.type, sort: row.sort }
+  let validityMode = 'permanent'
+  let durationDays = 7
+  let timeRange = null
+  if (row.endTime) {
+    if (row.startTime) {
+      validityMode = 'range'
+      timeRange = [row.startTime, row.endTime]
+    } else {
+      validityMode = 'duration'
+      const remainingMs = new Date(row.endTime) - Date.now()
+      durationDays = Math.max(1, Math.ceil(remainingMs / 86400000))
+    }
+  }
+  form.value = {
+    title: row.title, content: row.content, type: row.type, sort: row.sort,
+    validityMode, durationDays, timeRange,
+  }
   dialogTitle.value = '编辑公告'
   dialogVisible.value = true
+}
+
+function buildPayload() {
+  const { title, content, type, sort, validityMode, durationDays, timeRange } = form.value
+  const payload = { title, content, type, sort, startTime: null, endTime: null }
+  if (validityMode === 'duration') {
+    const end = new Date()
+    end.setDate(end.getDate() + durationDays)
+    payload.endTime = formatDateTime(end)
+  } else if (validityMode === 'range' && timeRange) {
+    payload.startTime = timeRange[0]
+    payload.endTime = timeRange[1]
+  }
+  return payload
+}
+
+function formatDateTime(date) {
+  const pad = n => String(n).padStart(2, '0')
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`
 }
 
 async function submitForm() {
   if (!form.value.title?.trim()) return ElMessage.warning('请输入标题')
   if (!form.value.content?.trim()) return ElMessage.warning('请输入内容')
+  if (form.value.validityMode === 'range' && !form.value.timeRange) return ElMessage.warning('请选择时间段')
   submitting.value = true
   try {
+    const payload = buildPayload()
     if (editingId.value) {
-      await adminApi.updateAnnouncement(editingId.value, form.value)
+      await adminApi.updateAnnouncement(editingId.value, payload)
       ElMessage.success('已更新')
     } else {
-      await adminApi.createAnnouncement(form.value)
+      await adminApi.createAnnouncement(payload)
       ElMessage.success('已创建')
     }
     dialogVisible.value = false
@@ -83,6 +125,36 @@ async function handleDelete(row) {
   fetchList()
 }
 
+// 判断公告是否已过期
+function isExpired(row) {
+  if (!row.endTime) return false
+  return new Date(row.endTime) <= new Date()
+}
+
+// 判断公告是否未到生效时间
+function isNotStarted(row) {
+  if (!row.startTime) return false
+  return new Date(row.startTime) > new Date()
+}
+
+// 时效列文本
+function validityText(row) {
+  if (!row.endTime) return '永久'
+  const end = new Date(row.endTime)
+  if (row.startTime) {
+    const start = new Date(row.startTime)
+    return `${formatDateShort(start)} ~ ${formatDateShort(end)}`
+  }
+  if (isExpired(row)) return `已过期 (${formatDateShort(end)})`
+  const days = Math.ceil((end - Date.now()) / 86400000)
+  return `${days}天后到期`
+}
+
+function formatDateShort(date) {
+  const pad = n => String(n).padStart(2, '0')
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
+}
+
 onMounted(fetchList)
 </script>
 
@@ -93,7 +165,8 @@ onMounted(fetchList)
       <el-button type="primary" @click="openCreate">+ 新增公告</el-button>
     </div>
 
-    <el-table v-loading="loading" :data="list" border stripe>
+    <el-table v-loading="loading" :data="list" border stripe
+      :row-class-name="({ row }) => isExpired(row) ? 'row-expired' : ''">
       <el-table-column prop="id" label="ID" width="70" />
 
       <el-table-column prop="title" label="标题" min-width="140" show-overflow-tooltip />
@@ -110,11 +183,19 @@ onMounted(fetchList)
         </template>
       </el-table-column>
 
-      <el-table-column label="状态" width="90">
+      <el-table-column label="状态" width="110">
         <template #default="{ row }">
           <el-tag :type="STATUS_MAP[row.status]?.type" size="small">
             {{ STATUS_MAP[row.status]?.label }}
           </el-tag>
+          <el-tag v-if="isExpired(row)" type="danger" size="small" style="margin-left:4px">已过期</el-tag>
+          <el-tag v-else-if="isNotStarted(row)" type="info" size="small" style="margin-left:4px">未开始</el-tag>
+        </template>
+      </el-table-column>
+
+      <el-table-column label="时效" min-width="150">
+        <template #default="{ row }">
+          <span :style="isExpired(row) ? 'color:#f56c6c' : ''">{{ validityText(row) }}</span>
         </template>
       </el-table-column>
 
@@ -141,7 +222,7 @@ onMounted(fetchList)
     </el-table>
 
     <!-- 新增/编辑弹窗 -->
-    <el-dialog v-model="dialogVisible" :title="dialogTitle" width="520px" :close-on-click-modal="false">
+    <el-dialog v-model="dialogVisible" :title="dialogTitle" width="540px" :close-on-click-modal="false">
       <el-form :model="form" label-width="70px">
         <el-form-item label="标题">
           <el-input v-model="form.title" maxlength="100" show-word-limit placeholder="请输入公告标题" />
@@ -167,6 +248,28 @@ onMounted(fetchList)
           <el-input-number v-model="form.sort" :min="0" :max="9999" />
           <span style="margin-left: 8px; color: #909399; font-size: 12px">数值越大越靠前</span>
         </el-form-item>
+        <el-form-item label="时效">
+          <el-radio-group v-model="form.validityMode">
+            <el-radio value="permanent">永久</el-radio>
+            <el-radio value="duration">指定时长</el-radio>
+            <el-radio value="range">指定时间段</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item v-if="form.validityMode === 'duration'" label="">
+          <el-input-number v-model="form.durationDays" :min="1" :max="3650" />
+          <span style="margin-left: 8px; color: #909399; font-size: 12px">天后自动下线</span>
+        </el-form-item>
+        <el-form-item v-if="form.validityMode === 'range'" label="">
+          <el-date-picker
+            v-model="form.timeRange"
+            type="datetimerange"
+            range-separator="至"
+            start-placeholder="开始时间"
+            end-placeholder="结束时间"
+            value-format="YYYY-MM-DD HH:mm:ss"
+            style="width: 100%"
+          />
+        </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="dialogVisible = false">取消</el-button>
@@ -186,5 +289,10 @@ onMounted(fetchList)
   align-items: center;
   justify-content: space-between;
   margin-bottom: 16px;
+}
+
+:deep(.row-expired) {
+  color: #909399;
+  background-color: #fafafa;
 }
 </style>

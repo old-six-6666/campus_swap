@@ -356,11 +356,11 @@ async function submitReport() {
   .cover-img {
     width: 100%;
     display: block;
-    max-height: 420px;
+    max-height: 260px;
     :deep(img) {
       width: 100%;
       height: auto;
-      max-height: 420px;
+      max-height: 260px;
       object-fit: cover;
       display: block;
     }

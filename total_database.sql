@@ -411,6 +411,8 @@ CREATE TABLE IF NOT EXISTS t_announcement (
     status      TINYINT NOT NULL DEFAULT 1 COMMENT '状态: 0-下线 1-上线',
     sort        INT NOT NULL DEFAULT 0 COMMENT '排序，越大越靠前',
     created_by  BIGINT COMMENT '创建人ID',
+    start_time  DATETIME DEFAULT NULL COMMENT '生效开始时间，NULL表示立即生效',
+    end_time    DATETIME DEFAULT NULL COMMENT '过期时间，NULL表示永久有效',
     created_at  DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     updated_at  DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='公告表';
@@ -431,3 +433,9 @@ INSERT IGNORE INTO `t_tag` (`name`) VALUES ('闲置');
 
 -- 商品表增加"同步广场"标记列
 ALTER TABLE `t_item` ADD COLUMN `sync_to_square` tinyint(1) NOT NULL DEFAULT 0 COMMENT '审核通过后是否同步发布广场动态: 0-否 1-是';
+
+
+ALTER TABLE t_announcement
+  ADD COLUMN start_time DATETIME DEFAULT NULL COMMENT '生效开始时间，NULL表示立即生效',
+  ADD COLUMN end_time   DATETIME DEFAULT NULL COMMENT '过期时间，NULL表示永久有效';
+

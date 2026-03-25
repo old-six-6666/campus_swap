@@ -34,6 +34,12 @@ public class Announcement {
     /** 创建人ID */
     private Long createdBy;
 
+    /** 生效开始时间，NULL 表示立即生效 */
+    private LocalDateTime startTime;
+
+    /** 过期时间，NULL 表示永久有效 */
+    private LocalDateTime endTime;
+
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createdAt;
 
