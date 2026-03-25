@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { tradeApi } from '@/api/modules/trade'
 import { useUserStore } from '@/stores/useUserStore'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { showSuccess } from '@/utils/notify'
 
 const route = useRoute()
 const router = useRouter()
@@ -276,10 +277,10 @@ async function handleSubmitAppeal() {
   loading.value = true
   try {
     await tradeApi.submitAppeal(trade.value.id, { content: appealContent.value })
-    ElMessage.success('申诉已提交，等待管理员处理')
     appealDialogVisible.value = false
     appealContent.value = ''
     appeals.value = await tradeApi.getAppeals(trade.value.id)
+    setTimeout(() => showSuccess('申诉已提交，等待管理员处理'), 300)
   } catch (e) {
     ElMessage.error(e?.message || '提交失败')
   } finally {

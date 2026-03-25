@@ -240,14 +240,16 @@ img { display: block; max-width: 100%; }
 /* Message / Notification ─────────────────────────── */
 /* 消除"外圆内方"缺陷：外层容器 + 图标区 + 内容区统一圆角 */
 .el-message {
+  position: fixed !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
   border-radius: $border-radius-sm !important;
-  overflow: hidden !important;
+  overflow: visible !important;
   padding: 12px 20px !important;
 
   .el-message__content {
     border-radius: $border-radius-sm !important;
   }
-  // Element Plus v2 图标区
   .el-message__icon {
     border-radius: $border-radius-sm !important;
   }

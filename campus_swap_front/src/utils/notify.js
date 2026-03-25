@@ -7,6 +7,7 @@
 import { ElMessageBox } from 'element-plus'
 // 确保 ElMessageBox 的 CSS 在程序化调用时也被加载
 import 'element-plus/es/components/message-box/style/css'
+import 'element-plus/es/components/message/style/css'
 import 'element-plus/es/components/overlay/style/css'
 
 const TITLE = {
