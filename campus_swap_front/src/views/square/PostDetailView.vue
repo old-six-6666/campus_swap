@@ -211,7 +211,11 @@
                     <div
                       class="comment-content"
                       :class="{ 'ai-markdown': reply.userId === AI_USER_ID }"
-                      v-html="reply.userId === AI_USER_ID ? renderMarkdown(reply.content) : reply.content"
+                      v-html="reply.userId === AI_USER_ID
+                        ? (typingTexts[reply.id] !== undefined
+                            ? '<span style=\'white-space:pre-wrap\'>' + typingTexts[reply.id] + '<span class=\'typing-cursor\'>▋</span></span>'
+                            : renderMarkdown(reply.content))
+                        : reply.content"
                     ></div>
                     <!-- AI 回复下方提示可继续对话 -->
                     <div v-if="reply.userId === AI_USER_ID" class="ai-continue-hint">
@@ -308,6 +312,74 @@ const postingComment = ref(false)
 const replyTarget = ref(null)
 const replyContent = ref('')
 const postingReply = ref(false)
+
+// AI 轮询 & 打字动画
+let aiPollTimer = null
+let aiPollCount = 0
+const AI_POLL_MAX = 20       // 最多轮询 20 次（40秒）
+const AI_POLL_INTERVAL = 2000
+// key: replyId, value: 正在打字显示的文本
+const typingTexts = ref({})
+
+function getKnownAiReplyIds() {
+  const ids = new Set()
+  for (const c of comments.value) {
+    for (const r of (c.replies || [])) {
+      if (r.userId === AI_USER_ID) ids.add(r.id)
+    }
+  }
+  return ids
+}
+
+function startAiPolling() {
+  stopAiPolling()
+  const knownIds = getKnownAiReplyIds()
+  aiPollCount = 0
+  aiPollTimer = setInterval(async () => {
+    aiPollCount++
+    if (aiPollCount > AI_POLL_MAX) { stopAiPolling(); return }
+    try {
+      const res = await squareApi.getComments(postId.value)
+      const newComments = res || []
+      // 找出新增的 AI 回复
+      const newAiReplies = []
+      for (const c of newComments) {
+        for (const r of (c.replies || [])) {
+          if (r.userId === AI_USER_ID && !knownIds.has(r.id)) {
+            newAiReplies.push(r)
+            knownIds.add(r.id)
+          }
+        }
+      }
+      if (newAiReplies.length > 0) {
+        comments.value = newComments
+        stopAiPolling()
+        // 对每条新 AI 回复做打字动画
+        for (const r of newAiReplies) {
+          playTypingAnimation(r.id, r.content)
+        }
+      }
+    } catch { /* 忽略轮询中的网络错误 */ }
+  }, AI_POLL_INTERVAL)
+}
+
+function stopAiPolling() {
+  if (aiPollTimer) { clearInterval(aiPollTimer); aiPollTimer = null }
+}
+
+function playTypingAnimation(replyId, fullText) {
+  typingTexts.value[replyId] = ''
+  let i = 0
+  const tick = setInterval(() => {
+    i++
+    typingTexts.value[replyId] = fullText.slice(0, i)
+    if (i >= fullText.length) {
+      clearInterval(tick)
+      // 动画结束后删除 key，让模板切换回 markdown 渲染
+      delete typingTexts.value[replyId]
+    }
+  }, 18)
+}
 
 // emoji picker 控制
 const showCommentEmoji = ref(false)
@@ -423,7 +495,8 @@ async function handleComment() {
     commentContent.value = ''
     await loadComments()
     if (content.startsWith('@问一问')) {
-      ElMessage.success('已向 AI 提问，稍后刷新可查看回复')
+      ElMessage.success('已向 AI 提问，等待回复中...')
+      startAiPolling()
     } else {
       ElMessage.success('评论成功')
     }
@@ -460,7 +533,8 @@ async function handleReply(parentId) {
     replyTarget.value = null
     await loadComments()
     if (isAiConversation) {
-      ElMessage.success('已向 AI 追问，稍后刷新可查看回复')
+      ElMessage.success('已向 AI 追问，等待回复中...')
+      startAiPolling()
     } else {
       ElMessage.success('回复成功')
     }
@@ -496,6 +570,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)
+  stopAiPolling()
 })
 </script>
 
@@ -824,6 +899,15 @@ onUnmounted(() => {
             font-size: 11px;
             color: #a0a8c0;
             margin-top: 4px;
+          }
+
+          :deep(.typing-cursor) {
+            display: inline-block;
+            animation: blink 0.7s step-end infinite;
+          }
+          @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
           }
 
           .ai-markdown {
