@@ -80,4 +80,8 @@ export const adminApi = {
   listTrades: (params) => request.get('/admin/trades', { params }),
   /** 强制终止交易 */
   terminateTrade: (id, reason) => request.put(`/admin/trades/${id}/terminate`, null, { params: { reason } }),
+  /** 分页查询申诉列表（status: 0=待处理 1=已处理 2=已驳回） */
+  listAppeals: (params) => request.get('/admin/appeals', { params }),
+  /** 处理申诉：action=1 已处理  action=2 已驳回 */
+  reviewAppeal: (id, action, remark) => request.put(`/admin/appeals/${id}/review`, { action, remark }),
 }

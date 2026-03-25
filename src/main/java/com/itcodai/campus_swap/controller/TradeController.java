@@ -2,7 +2,9 @@ package com.itcodai.campus_swap.controller;
 
 import com.itcodai.campus_swap.common.result.Result;
 import com.itcodai.campus_swap.dto.*;
+import com.itcodai.campus_swap.service.TradeAppealService;
 import com.itcodai.campus_swap.service.TradeService;
+import com.itcodai.campus_swap.vo.TradeAppealVO;
 import com.itcodai.campus_swap.vo.TradeLogVO;
 import com.itcodai.campus_swap.vo.TradeVO;
 import jakarta.servlet.http.HttpServletRequest;
@@ -24,9 +26,11 @@ import java.util.Map;
  * POST   /api/trade/{tradeId}/confirm-receipt 一方确认收货
  * POST   /api/trade/{tradeId}/terminate       终止交易
  * POST   /api/trade/{tradeId}/rollback        管理员回滚状态
+ * POST   /api/trade/{tradeId}/appeal          提交申诉
  * GET    /api/trade/{tradeId}                 获取交易详情
  * GET    /api/trade/my                        获取我的交易列表
  * GET    /api/trade/{tradeId}/logs            获取状态变更日志
+ * GET    /api/trade/{tradeId}/appeals         查询我在该交易的申诉列表
  * </pre>
  *
  * 所有接口均需 JWT 认证（由 JwtInterceptor 拦截）。
@@ -38,6 +42,7 @@ import java.util.Map;
 public class TradeController {
 
     private final TradeService tradeService;
+    private final TradeAppealService tradeAppealService;
 
     /**
      * 获取当前登录用户ID（由 JwtInterceptor 注入到 request attribute）
@@ -171,5 +176,29 @@ public class TradeController {
     public Result<List<TradeLogVO>> getLogs(@PathVariable Long tradeId,
                                             HttpServletRequest request) {
         return tradeService.getTradeLogs(currentUserId(request), tradeId);
+    }
+
+    // ============================================================
+    // 申诉接口
+    // ============================================================
+
+    /**
+     * 提交申诉（甲方或乙方均可在交易进行中提交）
+     */
+    @PostMapping("/{tradeId}/appeal")
+    public Result<Void> submitAppeal(@PathVariable Long tradeId,
+                                     @RequestBody @Valid SubmitAppealDTO dto,
+                                     HttpServletRequest request) {
+        tradeAppealService.submitAppeal(tradeId, currentUserId(request), dto.getContent());
+        return Result.success();
+    }
+
+    /**
+     * 查询当前用户在该交易中提交的申诉列表
+     */
+    @GetMapping("/{tradeId}/appeals")
+    public Result<List<TradeAppealVO>> getMyAppeals(@PathVariable Long tradeId,
+                                                    HttpServletRequest request) {
+        return Result.success(tradeAppealService.getMyAppealsByTrade(tradeId, currentUserId(request)));
     }
 }

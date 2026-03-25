@@ -144,20 +144,7 @@ CREATE TABLE `t_trade_log` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='交易状态变更日志表';
 
 
--- ----------------------------
--- 6. 换物记录表（旧版，已由 t_trade 替代，保留兼容）
--- ----------------------------
-DROP TABLE IF EXISTS `t_swap_record`;
-CREATE TABLE `t_swap_record` (
-  `id`         bigint   NOT NULL AUTO_INCREMENT,
-  `item_a_id`  bigint   NOT NULL             COMMENT '物品A',
-  `item_b_id`  bigint   NOT NULL             COMMENT '物品B',
-  `user_a_id`  bigint   NOT NULL             COMMENT '用户A',
-  `user_b_id`  bigint   NOT NULL             COMMENT '用户B',
-  `status`     tinyint  NOT NULL DEFAULT '0' COMMENT '0-协商中 1-已完成',
-  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='换物记录表（旧版）';
+
 
 
 -- ----------------------------
@@ -390,6 +377,26 @@ CREATE TABLE IF NOT EXISTS `t_post_report` (
     INDEX `idx_created_at` (`created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='动态举报表';
 
+
+
+
+-- 交易申诉表
+CREATE TABLE IF NOT EXISTS `t_trade_appeal` (
+    `id`           BIGINT       NOT NULL AUTO_INCREMENT COMMENT '申诉ID',
+    `trade_id`     BIGINT       NOT NULL COMMENT '关联交易ID',
+    `appellant_id` BIGINT       NOT NULL COMMENT '申诉人用户ID',
+    `content`      VARCHAR(500) NOT NULL COMMENT '申诉内容',
+    `status`       TINYINT      NOT NULL DEFAULT 0 COMMENT '处理状态：0-待处理 1-已处理 2-已驳回',
+    `remark`       VARCHAR(500) DEFAULT NULL COMMENT '管理员处理备注',
+    `reviewed_by`  BIGINT       DEFAULT NULL COMMENT '处理管理员ID',
+    `reviewed_at`  DATETIME     DEFAULT NULL COMMENT '处理时间',
+    `created_at`   DATETIME     DEFAULT NULL COMMENT '申诉时间',
+    PRIMARY KEY (`id`),
+    INDEX `idx_trade_id` (`trade_id`),
+    INDEX `idx_appellant_id` (`appellant_id`),
+    INDEX `idx_status` (`status`),
+    INDEX `idx_created_at` (`created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='交易申诉表';
 
 
 

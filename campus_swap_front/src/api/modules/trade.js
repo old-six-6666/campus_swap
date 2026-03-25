@@ -36,4 +36,10 @@ export const tradeApi = {
 
   /** 获取需要当前用户操作的交易数量（"交易"菜单红点用） */
   getPendingCount: () => request.get('/trade/pending-count', { silent: true }),
+
+  /** 提交申诉 */
+  submitAppeal: (tradeId, data) => request.post(`/trade/${tradeId}/appeal`, data),
+
+  /** 查询当前用户在该交易中的申诉列表 */
+  getAppeals: (tradeId) => request.get(`/trade/${tradeId}/appeals`),
 }

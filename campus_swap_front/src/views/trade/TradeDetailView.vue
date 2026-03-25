@@ -11,10 +11,13 @@ const userStore = useUserStore()
 
 const trade = ref(null)
 const logs = ref([])
+const appeals = ref([])
 const loading = ref(false)
 const logLoading = ref(false)
 const deliverDialogVisible = ref(false)
 const logisticsInput = ref('')
+const appealDialogVisible = ref(false)
+const appealContent = ref('')
 
 // ===== 状态配置 =====
 const STATUS_CONFIG = {
@@ -86,6 +89,9 @@ const canConfirmReceipt = computed(() => {
   return false
 })
 const canTerminate = computed(() =>
+  !isTerminal.value && (isInitiator.value || isReceiver.value)
+)
+const canAppeal = computed(() =>
   !isTerminal.value && (isInitiator.value || isReceiver.value)
 )
 
@@ -192,12 +198,32 @@ async function handleTerminate() {
   }
 }
 
+async function handleSubmitAppeal() {
+  if (!appealContent.value.trim()) {
+    ElMessage.warning('请填写申诉内容')
+    return
+  }
+  loading.value = true
+  try {
+    await tradeApi.submitAppeal(trade.value.id, { content: appealContent.value })
+    ElMessage.success('申诉已提交，等待管理员处理')
+    appealDialogVisible.value = false
+    appealContent.value = ''
+    appeals.value = await tradeApi.getAppeals(trade.value.id)
+  } catch (e) {
+    ElMessage.error(e?.message || '提交失败')
+  } finally {
+    loading.value = false
+  }
+}
+
 // ===== 加载数据 =====
 async function reload() {
   const id = route.params.id
-  ;[trade.value, logs.value] = await Promise.all([
+  ;[trade.value, logs.value, appeals.value] = await Promise.all([
     tradeApi.getDetail(id),
     tradeApi.getLogs(id),
+    tradeApi.getAppeals(id),
   ])
 }
 
@@ -293,6 +319,16 @@ function goItem(itemId) {
           @click="handleTerminate"
         >
           终止交易
+        </el-button>
+        <el-button
+          v-if="canAppeal"
+          type="warning"
+          plain
+          size="small"
+          :loading="loading"
+          @click="appealDialogVisible = true"
+        >
+          提交申诉
         </el-button>
       </div>
 
@@ -443,6 +479,30 @@ function goItem(itemId) {
           </el-table-column>
         </el-table>
       </div>
+
+      <!-- ===== 我的申诉 ===== -->
+      <div v-if="appeals.length > 0" class="log-section">
+        <h3>我的申诉</h3>
+        <el-table :data="appeals" size="small" stripe>
+          <el-table-column label="提交时间" width="160">
+            <template #default="{ row }">{{ fmtTime(row.createdAt) }}</template>
+          </el-table-column>
+          <el-table-column label="申诉内容" min-width="200" show-overflow-tooltip>
+            <template #default="{ row }">{{ row.content }}</template>
+          </el-table-column>
+          <el-table-column label="状态" width="90">
+            <template #default="{ row }">
+              <el-tag
+                :type="row.status === 1 ? 'success' : row.status === 2 ? 'danger' : 'warning'"
+                size="small"
+              >{{ row.statusDesc }}</el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column label="管理员回复" min-width="180" show-overflow-tooltip>
+            <template #default="{ row }">{{ row.remark || '—' }}</template>
+          </el-table-column>
+        </el-table>
+      </div>
     </template>
 
     <!-- ===== 发货对话框 ===== -->
@@ -460,6 +520,23 @@ function goItem(itemId) {
       <template #footer>
         <el-button @click="deliverDialogVisible = false">取消</el-button>
         <el-button type="primary" :loading="loading" @click="handleDeliver">确认已发货</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- ===== 申诉对话框 ===== -->
+    <el-dialog v-model="appealDialogVisible" title="提交申诉" width="440px" :close-on-click-modal="false">
+      <p style="color:#606266; margin-bottom:12px;">请详细描述您遇到的问题，管理员将尽快处理。</p>
+      <el-input
+        v-model="appealContent"
+        type="textarea"
+        :rows="4"
+        placeholder="请描述申诉原因，例如：对方未按约定发货、物品与描述不符等..."
+        maxlength="500"
+        show-word-limit
+      />
+      <template #footer>
+        <el-button @click="appealDialogVisible = false">取消</el-button>
+        <el-button type="warning" :loading="loading" @click="handleSubmitAppeal">提交申诉</el-button>
       </template>
     </el-dialog>
   </div>

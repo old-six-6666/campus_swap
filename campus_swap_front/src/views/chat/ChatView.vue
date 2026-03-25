@@ -272,12 +272,36 @@ onMounted(async () => {
   await fetchConversations()
   await handleQueryNav()
   fetchNotifUnread()
-  // 在消息页内每 10 秒轮询一次，收到新消息时红点能及时出现
   chatPollTimer = setInterval(async () => {
     await unreadStore.refresh()
-    await fetchConversations()
-  }, 10000)
+
+    // 静默拉取会话列表，只有变化时才更新
+    const data = await chatApi.listConversations({ page: 1, size: 200 })
+    const all = data.records || []
+    const seen = new Set()
+    const newConvs = all.filter(c => {
+      if (seen.has(c.otherUserId)) return false
+      seen.add(c.otherUserId)
+      return true
+    })
+    const changed = newConvs.some((c, i) => {
+      const old = conversations.value[i]
+      return !old || old.lastMsg !== c.lastMsg || old.unreadCount !== c.unreadCount
+    }) || newConvs.length !== conversations.value.length
+    if (changed) conversations.value = newConvs
+
+    // 静默拉取当前聊天消息
+    if (currentConv.value?.conversationId) {
+      const msgData = await chatApi.listMessages(currentConv.value.conversationId, { page: 1, size: 100 })
+      const newRecords = msgData.records || []
+      if (newRecords.length !== messages.value.length) {
+        messages.value.splice(0, messages.value.length, ...newRecords)
+        await chatApi.markRead(currentConv.value.conversationId).catch(() => {})
+      }
+    }
+  }, 1000)
 })
+
 
 onUnmounted(() => {
   clearInterval(chatPollTimer)

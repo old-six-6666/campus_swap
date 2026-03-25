@@ -4,6 +4,7 @@ import com.itcodai.campus_swap.common.exception.BusinessException;
 import com.itcodai.campus_swap.common.result.Result;
 import com.itcodai.campus_swap.common.result.ResultCode;
 import com.itcodai.campus_swap.dto.AdminPermissionsDTO;
+import com.itcodai.campus_swap.dto.AppealReviewDTO;
 import com.itcodai.campus_swap.dto.BatchStudentRecordDTO;
 import com.itcodai.campus_swap.dto.ItemAuditDTO;
 import com.itcodai.campus_swap.dto.PostReportReviewDTO;
@@ -12,6 +13,7 @@ import com.itcodai.campus_swap.dto.StudentVerifyReviewDTO;
 import com.itcodai.campus_swap.service.AdminService;
 import com.itcodai.campus_swap.service.PostReportService;
 import com.itcodai.campus_swap.service.StudentService;
+import com.itcodai.campus_swap.service.TradeAppealService;
 import com.itcodai.campus_swap.vo.AdminConversationVO;
 import com.itcodai.campus_swap.vo.AdminDetailVO;
 import com.itcodai.campus_swap.vo.AdminUserVO;
@@ -20,6 +22,7 @@ import com.itcodai.campus_swap.vo.PageVO;
 import com.itcodai.campus_swap.vo.PostReportVO;
 import com.itcodai.campus_swap.vo.StudentRecordVO;
 import com.itcodai.campus_swap.vo.StudentVerifyVO;
+import com.itcodai.campus_swap.vo.TradeAppealVO;
 import com.itcodai.campus_swap.vo.TradeVO;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -39,6 +42,7 @@ public class AdminController {
     private final AdminService adminService;
     private final StudentService studentService;
     private final PostReportService postReportService;
+    private final TradeAppealService tradeAppealService;
 
     // ================================================================
     //  用户管理
@@ -340,6 +344,32 @@ public class AdminController {
                                        HttpServletRequest request) {
         requirePermission(request, "TRADE_MANAGE");
         adminService.forceTerminateTrade(id, reason);
+        return Result.success();
+    }
+
+    // ================================================================
+    //  交易申诉管理（需 TRADE_MANAGE 权限）
+    // ================================================================
+
+    /** 分页查询申诉列表（可按处理状态过滤） */
+    @GetMapping("/appeals")
+    public Result<PageVO<TradeAppealVO>> listAppeals(
+            @RequestParam(required = false) Integer status,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "15") int size,
+            HttpServletRequest request) {
+        requirePermission(request, "TRADE_MANAGE");
+        return Result.success(tradeAppealService.listAppeals(status, page, size));
+    }
+
+    /** 处理申诉（action=1 已处理，action=2 已驳回） */
+    @PutMapping("/appeals/{id:\\d+}/review")
+    public Result<Void> reviewAppeal(@PathVariable Long id,
+                                     @Valid @RequestBody AppealReviewDTO dto,
+                                     HttpServletRequest request) {
+        requirePermission(request, "TRADE_MANAGE");
+        Long reviewerId = (Long) request.getAttribute("userId");
+        tradeAppealService.reviewAppeal(id, dto.getAction(), dto.getRemark(), reviewerId);
         return Result.success();
     }
 

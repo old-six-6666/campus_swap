@@ -163,6 +163,12 @@ const routes = [
         component: () => import('@/views/admin/TradeManageView.vue'),
         meta: { requiresPermission: 'TRADE_MANAGE' },
       },
+      {
+        path: 'appeals',
+        name: 'AppealManage',
+        component: () => import('@/views/admin/AppealManageView.vue'),
+        meta: { requiresPermission: 'TRADE_MANAGE' },
+      },
     ],
   },
   {

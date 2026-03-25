@@ -14,6 +14,7 @@ import com.itcodai.campus_swap.vo.LoginVO;
 import com.itcodai.campus_swap.vo.UserVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 
 import java.util.Collections;
@@ -71,7 +72,11 @@ public class UserServiceImpl implements UserService {
         user.setEmail(dto.getEmail());
         user.setNickname(dto.getNickname());
         user.setPassword(BCrypt.hashpw(dto.getPassword()));
-        userMapper.insert(user);
+        try {
+            userMapper.insert(user);
+        } catch (DuplicateKeyException e) {
+            throw new BusinessException(ResultCode.BAD_REQUEST, "该邮箱已被注册");
+        }
     }
 
     @Override
