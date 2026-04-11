@@ -1,0 +1,113 @@
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v3.3.0)
+
+2026-04-10T14:15:38.092+08:00  INFO 21584 --- [campus_swap] [           main] c.i.campus_swap.CampusSwapApplication    : Starting CampusSwapApplication using Java 23.0.2 with PID 21584 (C:\code\workspace\campus_swap\target\classes started by Administrator in C:\code\workspace\campus_swap)
+2026-04-10T14:15:38.096+08:00 DEBUG 21584 --- [campus_swap] [           main] c.i.campus_swap.CampusSwapApplication    : Running with Spring Boot v3.3.0, Spring v6.1.8
+2026-04-10T14:15:38.098+08:00  INFO 21584 --- [campus_swap] [           main] c.i.campus_swap.CampusSwapApplication    : No active profile set, falling back to 1 default profile: "default"
+2026-04-10T14:15:39.207+08:00  INFO 21584 --- [campus_swap] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data Elasticsearch repositories in DEFAULT mode.
+2026-04-10T14:15:39.234+08:00  INFO 21584 --- [campus_swap] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 22 ms. Found 0 Elasticsearch repository interfaces.
+2026-04-10T14:15:39.244+08:00  INFO 21584 --- [campus_swap] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data Reactive Elasticsearch repositories in DEFAULT mode.
+2026-04-10T14:15:39.253+08:00  INFO 21584 --- [campus_swap] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 8 ms. Found 0 Reactive Elasticsearch repository interfaces.
+2026-04-10T14:15:39.982+08:00  INFO 21584 --- [campus_swap] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 18082 (http)
+2026-04-10T14:15:39.998+08:00  INFO 21584 --- [campus_swap] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-04-10T14:15:39.999+08:00  INFO 21584 --- [campus_swap] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.24]
+2026-04-10T14:15:40.067+08:00  INFO 21584 --- [campus_swap] [           main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2026-04-10T14:15:40.069+08:00  INFO 21584 --- [campus_swap] [           main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 1876 ms
+ _ _   |_  _ _|_. ___ _ |    _ 
+| | |\/|_)(_| | |_\  |_)||_|_\ 
+     /               |         
+                        3.5.7 
+2026-04-10T14:15:42.631+08:00  INFO 21584 --- [campus_swap] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 18082 (http) with context path '/'
+2026-04-10T14:15:42.645+08:00  INFO 21584 --- [campus_swap] [           main] c.i.campus_swap.CampusSwapApplication    : Started CampusSwapApplication in 5.053 seconds (process runni2026-04-10T14:15:52.003+08:00 DEBUG 6764 --- [campus_swap] [   scheduling-1] c.i.campus_swap.task.TradeTimeoutTask    : [定时任务] 开始扫描超时交易单...
+2026-04-10T14:15:52.011+08:00  INFO 6764 --- [campus_swap] [   scheduling-1] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-04-10T14:15:52.164+08:00  INFO 6764 --- [campus_swap] [   scheduling-1] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@392fc06f
+2026-04-10T14:15:52.166+08:00  INFO 6764 --- [campus_swap] [   scheduling-1] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-04-10T14:15:52.194+08:00 DEBUG 6764 --- [campus_swap] [   scheduling-1] c.i.c.m.T.selectTimeoutDeliveryTrades    : ==>  Preparing: SELECT * FROM t_trade WHERE deleted = 0 AND status = 'WAITING_DELIVERY' AND delivery_deadline IS NOT NULL AND delivery_deadline < NOW()
+2026-04-10T14:15:52.221+08:00 DEBUG 6764 --- [campus_swap] [   scheduling-1] c.i.c.m.T.selectTimeoutDeliveryTrades    : ==> Parameters: 
+2026-04-10T14:15:52.246+08:00 DEBUG 6764 --- [campus_swap] [   scheduling-1] c.i.c.m.T.selectTimeoutDeliveryTrades    : <==      Total: 0
+2026-04-10T14:15:52.251+08:00 DEBUG 6764 --- [campus_swap] [   scheduling-1] c.i.c.m.T.selectTimeoutReceiptTrades     : ==>  Preparing: SELECT * FROM t_trade WHERE deleted = 0 AND status = 'WAITING_CONFIRM_RECEIPT' AND receipt_deadline IS NOT NULL AND receipt_deadline < NOW()
+2026-04-10T14:15:52.252+08:00 DEBUG 6764 --- [campus_swap] [   scheduling-1] c.i.c.m.T.selectTimeoutReceiptTrades     : ==> Parameters: 
+2026-04-10T14:15:52.253+08:00 DEBUG 6764 --- [campus_swap] [   scheduling-1] c.i.c.m.T.selectTimeoutReceiptTrades     : <==      Total: 2026-04-10T14:16:42.656+08:00 DEBUG 21584 --- [campus_swap] [   scheduling-1] c.i.campus_swap.task.TradeTimeoutTask    : [定时任务] 开始扫描超时交易单.2026-04-10T14:25:52.012+08:00 DEBUG 6764 --- [campus_swap] [   scheduling-1] c.i.campus_swap.task.TradeTimeoutTask    : [定时任务] 开始扫描超时交易单...
+2026-04-10T14:25:52.053+08:00 DEBUG 6764 --- [campus_swap] [   scheduling-1] c.i.c.m.T.selectTimeoutDeliveryTrades    : ==>  Preparing: SELECT * FROM t_trade WHERE deleted = 0 AND status = 'WAITING_DELIVERY' AND delivery_deadline IS NOT NULL AND delivery_deadline < NOW()
+2026-04-10T14:25:52.057+08:00 DEBUG 6764 --- [campus_swap] [   scheduling-1] c.i.c.m.T.selectTimeoutDeliveryTrades    : ==> Parameters: 
+2026-04-10T14:25:52.068+08:00 DEBUG 6764 --- [campus_swap] [   scheduling-1] c.i.c.m.T.selectTimeoutDeliveryTrades    : <==      Total: 0
+2026-04-10T14:25:52.069+08:00 DEBUG 6764 --- [campus_swap] [   scheduling-1] c.i.c.m.T.selectTimeoutReceiptTrades     : ==>  Preparing: SELECT * FROM t_trade WHERE deleted = 0 AND status = 'WAITING_CONFIRM_RECEIPT' AND receipt_deadline IS NOT NULL AND receipt_deadline < NOW()
+2026-04-10T14:25:52.070+08:00 DEBUG 6764 --- [campus_swap] [   scheduling-1] c.i.c.m.T.selectTimeoutReceiptTrades     : ==> Parameters: 
+2026-04-10T14:25:52.071+08:00 DEBUG 6764 --- [campus_swap] [   scheduling-1] c.i.c.m.T.selectTimeoutReceiptTrades     : <==      Total: 0
+2026-2026-04-10T14:26:42.670+08:00 DEBUG 21584 --- [campus_swap] [   scheduling-1] c.i.campus_swap.task.TradeTimeoutTask    : [定时任务] 开始扫描超时�2026-04-10T14:35:51.989+08:00 DEBUG 6764 --- [campus_swap] [   scheduling-1] c.i.campus_swap.task.TradeTimeoutTask    : [定时任务] 开始扫描超时交易单...
+2026-04-10T14:35:51.995+08:00 DEBUG 6764 --- [campus_swap] [   scheduling-1] c.i.c.m.T.selectTimeoutDeliveryTrades    : ==>  Preparing: SELECT * FROM t_trade WHERE deleted = 0 AND status = 'WAITING_DELIVERY' AND delivery_deadline IS NOT NULL AND delivery_deadline < NOW()
+2026-04-10T14:35:51.995+08:00 DEBUG 6764 --- [campus_swap] [   scheduling-1] c.i.c.m.T.selectTimeoutDeliveryTrades    : ==> Parameters: 
+2026-04-10T14:35:51.999+08:00 DEBUG 6764 --- [campus_swap] [   scheduling-1] c.i.c.m.T.selectTimeoutDeliveryTrades    : <==      Total: 0
+2026-04-10T14:35:52.000+08:00 DEBUG 6764 --- [campus_swap] [   scheduling-1] c.i.c.m.T.selectTimeoutReceiptTrades     : ==>  Preparing: SELECT * FROM t_trade WHERE deleted = 0 AND status = 'WAITING_CONFIRM_RECEIPT' AND receipt_deadline IS NOT NULL AND receipt_deadline < NOW()
+2026-04-10T14:35:52.001+08:00 DEBUG 6764 --- [campus_swap] [   scheduling-1] c.i.c.m.T.selectTimeoutReceiptTrades     : ==> Parameters: 
+2026-04-10T14:35:52.003+08:00 DEBUG 6764 --- [campus_swap] [   scheduling-1] c.i.c.m.T.selectTimeoutReceiptTrades     : <==      Total: 0
+2026-04-10T142026-04-10T14:36:42.651+08:00 DEBUG 21584 --- [campus_swap] [   scheduling-1] c.i.campus_swap.task.TradeTimeoutTask    : [定时任务] 开始扫描2026-04-10T14:45:51.993+08:00 DEBUG 6764 --- [campus_swap] [   scheduling-1] c.i.campus_swap.task.TradeTimeoutTask    : [定时任务] 开始扫描超时交易单...
+2026-04-10T14:45:52.041+08:00 DEBUG 6764 --- [campus_swap] [   scheduling-1] c.i.c.m.T.selectTimeoutDeliveryTrades    : ==>  Preparing: SELECT * FROM t_trade WHERE deleted = 0 AND status = 'WAITING_DELIVERY' AND delivery_deadline IS NOT NULL AND delivery_deadline < NOW()
+2026-04-10T14:45:52.048+08:00 DEBUG 6764 --- [campus_swap] [   scheduling-1] c.i.c.m.T.selectTimeoutDeliveryTrades    : ==> Parameters: 
+2026-04-10T14:45:52.062+08:00 DEBUG 6764 --- [campus_swap] [   scheduling-1] c.i.c.m.T.selectTimeoutDeliveryTrades    : <==      Total: 0
+2026-04-10T14:45:52.065+08:00 DEBUG 6764 --- [campus_swap] [   scheduling-1] c.i.c.m.T.selectTimeoutReceiptTrades     : ==>  Preparing: SELECT * FROM t_trade WHERE deleted = 0 AND status = 'WAITING_CONFIRM_RECEIPT' AND receipt_deadline IS NOT NULL AND receipt_deadline < NOW()
+2026-04-10T14:45:52.066+08:00 DEBUG 6764 --- [campus_swap] [   scheduling-1] c.i.c.m.T.selectTimeoutReceiptTrades     : ==> Parameters: 
+2026-04-10T14:45:52.067+08:00 DEBUG 6764 --- [campus_swap] [   scheduling-1] c.i.c.m.T.selectTimeoutReceiptTrades     : <==      Total: 0
+2026-04-10T14:45:52.02026-04-10T14:46:42.669+08:00 DEBUG 21584 --- [campus_swap] [   scheduling-1] c.i.campus_swap.task.TradeTimeoutTask    : [定时任务] 开�2026-04-10T14:55:51.979+08:00 DEBUG 6764 --- [campus_swap] [   scheduling-1] c.i.campus_swap.task.TradeTimeoutTask    : [定时任务] 开始扫描超时交易单...
+2026-04-10T14:55:51.996+08:00 DEBUG 6764 --- [campus_swap] [   scheduling-1] c.i.c.m.T.selectTimeoutDeliveryTrades    : ==>  Preparing: SELECT * FROM t_trade WHERE deleted = 0 AND status = 'WAITING_DELIVERY' AND delivery_deadline IS NOT NULL AND delivery_deadline < NOW()
+2026-04-10T14:55:51.996+08:00 DEBUG 6764 --- [campus_swap] [   scheduling-1] c.i.c.m.T.selectTimeoutDeliveryTrades    : ==> Parameters: 
+2026-04-10T14:55:52.000+08:00 DEBUG 6764 --- [campus_swap] [   scheduling-1] c.i.c.m.T.selectTimeoutDeliveryTrades    : <==      Total: 0
+2026-04-10T14:55:52.003+08:00 DEBUG 6764 --- [campus_swap] [   scheduling-1] c.i.c.m.T.selectTimeoutReceiptTrades     : ==>  Preparing: SELECT * FROM t_trade WHERE deleted = 0 AND status = 'WAITING_CONFIRM_RECEIPT' AND receipt_deadline IS NOT NULL AND receipt_deadline < NOW()
+2026-04-10T14:55:52.003+08:00 DEBUG 6764 --- [campus_swap] [   scheduling-1] c.i.c.m.T.selectTimeoutReceiptTrades     : ==> Parameters: 
+2026-04-10T14:55:52.004+08:00 DEBUG 6764 --- [campus_swap] [   scheduling-1] c.i.c.m.T.selectTimeoutReceiptTrades     : <==      Total: 0
+2026-04-10T14:55:52.005+08:002026-04-10T14:56:42.654+08:00 DEBUG 21584 --- [campus_swap] [   scheduling-1] c.i.campus_swap.task.TradeTimeoutTask    : [定时任�2026-04-10T15:05:51.985+08:00 DEBUG 6764 --- [campus_swap] [   scheduling-1] c.i.campus_swap.task.TradeTimeoutTask    : [定时任务] 开始扫描超时交易单...
+2026-04-10T15:05:51.991+08:00 DEBUG 6764 --- [campus_swap] [   scheduling-1] c.i.c.m.T.selectTimeoutDeliveryTrades    : ==>  Preparing: SELECT * FROM t_trade WHERE deleted = 0 AND status = 'WAITING_DELIVERY' AND delivery_deadline IS NOT NULL AND delivery_deadline < NOW()
+2026-04-10T15:05:51.991+08:00 DEBUG 6764 --- [campus_swap] [   scheduling-1] c.i.c.m.T.selectTimeoutDeliveryTrades    : ==> Parameters: 
+2026-04-10T15:05:51.994+08:00 DEBUG 6764 --- [campus_swap] [   scheduling-1] c.i.c.m.T.selectTimeoutDeliveryTrades    : <==      Total: 0
+2026-04-10T15:05:51.995+08:00 DEBUG 6764 --- [campus_swap] [   scheduling-1] c.i.c.m.T.selectTimeoutReceiptTrades     : ==>  Preparing: SELECT * FROM t_trade WHERE deleted = 0 AND status = 'WAITING_CONFIRM_RECEIPT' AND receipt_deadline IS NOT NULL AND receipt_deadline < NOW()
+2026-04-10T15:05:51.995+08:00 DEBUG 6764 --- [campus_swap] [   scheduling-1] c.i.c.m.T.selectTimeoutReceiptTrades     : ==> Parameters: 
+2026-04-10T15:05:52.000+08:00 DEBUG 6764 --- [campus_swap] [   scheduling-1] c.i.c.m.T.selectTimeoutReceiptTrades     : <==      Total: 0
+2026-04-10T15:05:52.001+08:00 DEBUG 62026-04-10T15:06:42.657+08:00 DEBUG 21584 --- [campus_swap] [   scheduling-1] c.i.campus_swap.task.TradeTimeoutTask    : [�2026-04-10T15:15:51.980+08:00 DEBUG 6764 --- [campus_swap] [   scheduling-1] c.i.campus_swap.task.TradeTimeoutTask    : [定时任务] 开始扫描超时交易单...
+2026-04-10T15:15:51.989+08:00 DEBUG 6764 --- [campus_swap] [   scheduling-1] c.i.c.m.T.selectTimeoutDeliveryTrades    : ==>  Preparing: SELECT * FROM t_trade WHERE deleted = 0 AND status = 'WAITING_DELIVERY' AND delivery_deadline IS NOT NULL AND delivery_deadline < NOW()
+2026-04-10T15:15:51.990+08:00 DEBUG 6764 --- [campus_swap] [   scheduling-1] c.i.c.m.T.selectTimeoutDeliveryTrades    : ==> Parameters: 
+2026-04-10T15:15:51.992+08:00 DEBUG 6764 --- [campus_swap] [   scheduling-1] c.i.c.m.T.selectTimeoutDeliveryTrades    : <==      Total: 0
+2026-04-10T15:15:51.994+08:00 DEBUG 6764 --- [campus_swap] [   scheduling-1] c.i.c.m.T.selectTimeoutReceiptTrades     : ==>  Preparing: SELECT * FROM t_trade WHERE deleted = 0 AND status = 'WAITING_CONFIRM_RECEIPT' AND receipt_deadline IS NOT NULL AND receipt_deadline < NOW()
+2026-04-10T15:15:51.996+08:00 DEBUG 6764 --- [campus_swap] [   scheduling-1] c.i.c.m.T.selectTimeoutReceiptTrades     : ==> Parameters: 
+2026-04-10T15:15:51.998+08:00 DEBUG 6764 --- [campus_swap] [   scheduling-1] c.i.c.m.T.selectTimeoutReceiptTrades     : <==      Total: 0
+2026-04-10T15:15:51.999+08:00 DEBUG 6764 --- 2026-04-10T15:16:42.645+08:00 DEBUG 21584 --- [campus_swap] [   scheduling-1] c.i.campus_swap.task.TradeTimeoutTask 2026-04-10T15:25:52.019+08:00 DEBUG 6764 --- [campus_swap] [   scheduling-1] c.i.campus_swap.task.TradeTimeoutTask    : [定时任务] 开始扫描超时交易单...
+2026-04-10T15:25:52.181+08:00 DEBUG 6764 --- [campus_swap] [   scheduling-1] c.i.c.m.T.selectTimeoutDeliveryTrades    : ==>  Preparing: SELECT * FROM t_trade WHERE deleted = 0 AND status = 'WAITING_DELIVERY' AND delivery_deadline IS NOT NULL AND delivery_deadline < NOW()
+2026-04-10T15:25:52.201+08:00 DEBUG 6764 --- [campus_swap] [   scheduling-1] c.i.c.m.T.selectTimeoutDeliveryTrades    : ==> Parameters: 
+2026-04-10T15:25:52.243+08:00 DEBUG 6764 --- [campus_swap] [   scheduling-1] c.i.c.m.T.selectTimeoutDeliveryTrades    : <==      Total: 0
+2026-04-10T15:25:52.249+08:00 DEBUG 6764 --- [campus_swap] [   scheduling-1] c.i.c.m.T.selectTimeoutReceiptTrades     : ==>  Preparing: SELECT * FROM t_trade WHERE deleted = 0 AND status = 'WAITING_CONFIRM_RECEIPT' AND receipt_deadline IS NOT NULL AND receipt_deadline < NOW()
+2026-04-10T15:25:52.250+08:00 DEBUG 6764 --- [campus_swap] [   scheduling-1] c.i.c.m.T.selectTimeoutReceiptTrades     : ==> Parameters: 
+2026-04-10T15:25:52.252+08:00 DEBUG 6764 --- [campus_swap] [   scheduling-1] c.i.c.m.T.selectTimeoutReceiptTrades     : <==      Total: 0
+2026-04-10T15:25:52.260+08:00 DEBUG 6764 --- [campus_2026-04-10T15:26:42.682+08:00 DEBUG 21584 --- [campus_swap] [   scheduling-1] c.i.campus_swap.task.TradeTime2026-04-10T15:35:52.025+08:00 DEBUG 6764 --- [campus_swap] [   scheduling-1] c.i.campus_swap.task.TradeTimeoutTask    : [定时任务] 开始扫描超时交易单...
+2026-04-10T15:35:52.135+08:00 DEBUG 6764 --- [campus_swap] [   scheduling-1] c.i.c.m.T.selectTimeoutDeliveryTrades    : ==>  Preparing: SELECT * FROM t_trade WHERE deleted = 0 AND status = 'WAITING_DELIVERY' AND delivery_deadline IS NOT NULL AND delivery_deadline < NOW()
+2026-04-10T15:35:52.151+08:00 DEBUG 6764 --- [campus_swap] [   scheduling-1] c.i.c.m.T.selectTimeoutDeliveryTrades    : ==> Parameters: 
+2026-04-10T15:35:52.176+08:00 DEBUG 6764 --- [campus_swap] [   scheduling-1] c.i.c.m.T.selectTimeoutDeliveryTrades    : <==      Total: 0
+2026-04-10T15:35:52.182+08:00 DEBUG 6764 --- [campus_swap] [   scheduling-1] c.i.c.m.T.selectTimeoutReceiptTrades     : ==>  Preparing: SELECT * FROM t_trade WHERE deleted = 0 AND status = 'WAITING_CONFIRM_RECEIPT' AND receipt_deadline IS NOT NULL AND receipt_deadline < NOW()
+2026-04-10T15:35:52.182+08:00 DEBUG 6764 --- [campus_swap] [   scheduling-1] c.i.c.m.T.selectTimeoutReceiptTrades     : ==> Parameters: 
+2026-04-10T15:35:52.184+08:00 DEBUG 6764 --- [campus_swap] [   scheduling-1] c.i.c.m.T.selectTimeoutReceiptTrades     : <==      Total: 0
+2026-04-10T15:35:52.190+08:00 DEBUG 6764 --- [campus_swap] [ 2026-04-10T15:36:42.675+08:00 DEBUG 21584 --- [campus_swap] [   scheduling-1] c.i.campus_swap.task.T2026-04-10T15:45:51.993+08:00 DEBUG 6764 --- [campus_swap] [   scheduling-1] c.i.campus_swap.task.TradeTimeoutTask    : [定时任务] 开始扫描超时交易单...
+2026-04-10T15:45:52.004+08:00 DEBUG 6764 --- [campus_swap] [   scheduling-1] c.i.c.m.T.selectTimeoutDeliveryTrades    : ==>  Preparing: SELECT * FROM t_trade WHERE deleted = 0 AND status = 'WAITING_DELIVERY' AND delivery_deadline IS NOT NULL AND delivery_deadline < NOW()
+2026-04-10T15:45:52.006+08:00 DEBUG 6764 --- [campus_swap] [   scheduling-1] c.i.c.m.T.selectTimeoutDeliveryTrades    : ==> Parameters: 
+2026-04-10T15:45:52.010+08:00 DEBUG 6764 --- [campus_swap] [   scheduling-1] c.i.c.m.T.selectTimeoutDeliveryTrades    : <==      Total: 0
+2026-04-10T15:45:52.011+08:00 DEBUG 6764 --- [campus_swap] [   scheduling-1] c.i.c.m.T.selectTimeoutReceiptTrades     : ==>  Preparing: SELECT * FROM t_trade WHERE deleted = 0 AND status = 'WAITING_CONFIRM_RECEIPT' AND receipt_deadline IS NOT NULL AND receipt_deadline < NOW()
+2026-04-10T15:45:52.011+08:00 DEBUG 6764 --- [campus_swap] [   scheduling-1] c.i.c.m.T.selectTimeoutReceiptTrades     : ==> Parameters: 
+2026-04-10T15:45:52.012+08:00 DEBUG 6764 --- [campus_swap] [   scheduling-1] c.i.c.m.T.selectTimeoutReceiptTrades     : <==      Total: 0
+2026-04-10T15:45:52.013+08:00 DEBUG 6764 --- [campus_swap] [   schedu2026-04-10T15:46:42.651+08:00 DEBUG 21584 --- [campus_swap] [   scheduling-1] c.i.campus_swa2026-04-10T15:55:52.002+08:00 DEBUG 6764 --- [campus_swap] [   scheduling-1] c.i.campus_swap.task.TradeTimeoutTask    : [定时任务] 开始扫描超时交易单...
+2026-04-10T15:55:52.043+08:00 DEBUG 6764 --- [campus_swap] [   scheduling-1] c.i.c.m.T.selectTimeoutDeliveryTrades    : ==>  Preparing: SELECT * FROM t_trade WHERE deleted = 0 AND status = 'WAITING_DELIVERY' AND delivery_deadline IS NOT NULL AND delivery_deadline < NOW()
+2026-04-10T15:55:52.051+08:00 DEBUG 6764 --- [campus_swap] [   scheduling-1] c.i.c.m.T.selectTimeoutDeliveryTrades    : ==> Parameters: 
+2026-04-10T15:55:52.061+08:00 DEBUG 6764 --- [campus_swap] [   scheduling-1] c.i.c.m.T.selectTimeoutDeliveryTrades    : <==      Total: 0
+2026-04-10T15:55:52.065+08:00 DEBUG 6764 --- [campus_swap] [   scheduling-1] c.i.c.m.T.selectTimeoutReceiptTrades     : ==>  Preparing: SELECT * FROM t_trade WHERE deleted = 0 AND status = 'WAITING_CONFIRM_RECEIPT' AND receipt_deadline IS NOT NULL AND receipt_deadline < NOW()
+2026-04-10T15:55:52.066+08:00 DEBUG 6764 --- [campus_swap] [   scheduling-1] c.i.c.m.T.selectTimeoutReceiptTrades     : ==> Parameters: 
+2026-04-10T15:55:52.067+08:00 DEBUG 6764 --- [campus_swap] [   scheduling-1] c.i.c.m.T.selectTimeoutReceiptTrades     : <==      Total: 0
+2026-04-10T15:55:52.069+08:00 DEBUG 6764 --- [campus_swap] [   scheduling-1] 2026-04-10T15:56:42.706+08:00 DEBUG 21584 --- [campus_swap] [   scheduling-1] c.i.campus_swap.task.TradeTimeoutTask    : [定时任务] 开始扫描超时交易单...
+2026-04-10T15:56:42.831+08:00 DEBUG 21584 --- [campus_swap] [   scheduling-1] c.i.c.m.T.selectTimeoutDeliveryTrades    : ==>  Preparing: SELECT * FROM t_trade WHERE deleted = 0 AND status = 'WAITING_DELIVERY' AND delivery_deadline IS NOT NULL AND delivery_deadline < NOW()
+2026-04-10T15:56:42.849+08:00 DEBUG 21584 --- [campus_swap] [   scheduling-1] c.i.c.m.T.selectTimeoutDeliveryTrades    : ==> Parameters: 
+2026-04-10T15:56:42.875+08:00 DEBUG 21584 --- [campus_swap] [   scheduling-1] c.i.c.m.T.selectTimeoutDeliveryTrades    : <==      Total: 0
+2026-04-10T15:56:42.881+08:00 DEBUG 21584 --- [campus_swap] [   scheduling-1] c.i.c.m.T.selectTimeoutReceiptTrades     : ==>  Preparing: SELECT * FROM t_trade WHERE deleted = 0 AND status = 'WAITING_CONFIRM_RECEIPT' AND receipt_deadline IS NOT NULL AND receipt_deadline < NOW()
+2026-04-10T15:56:42.881+08:00 DEBUG 21584 --- [campus_swap] [   scheduling-1] c.i.c.m.T.selectTimeoutReceiptTrades     : ==> Parameters: 
+2026-04-10T15:56:42.884+08:00 DEBUG 21584 --- [campus_swap] [   scheduling-1] c.i.c.m.T.selectTimeoutReceiptTrades     : <==      Total: 0
+2026-04-10T15:56:42.891+08:00 DEBUG 21584 --- [campus_swap] [   scheduling-1] c.i.campus_swap.task.TradeTimeoutTask    : [定时任务] 超时交易扫描完成

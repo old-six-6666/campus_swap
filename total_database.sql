@@ -424,18 +424,321 @@ VALUES
   ('文明换物倡议', '请遵守平台规范，发布真实信息，禁止发布违法违规内容。共建友好、诚信的校园换物社区。', 2, 1, 5, NOW());
 
 
-ALTER TABLE t_trade
-  ADD COLUMN `initiator_want_terminate` tinyint(1) NOT NULL DEFAULT 0 COMMENT '甲方是否已申请终止' AFTER `terminate_reason`,
-  ADD COLUMN `receiver_want_terminate`  tinyint(1) NOT NULL DEFAULT 0 COMMENT '乙方是否已申请终止' AFTER `initiator_want_terminate`;
+-- ----------------------------
+-- 增量补丁（兼容旧库，可重复执行）
+-- 说明：
+-- 1. 全量初始化时，上面的 CREATE TABLE 已是最新结构；
+-- 2. 旧库升级时，执行以下补丁以补齐新增字段和索引。
+-- ----------------------------
+
+-- t_trade：补齐终止申请字段
+SET @sql = IF(
+  EXISTS(
+    SELECT 1
+    FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME = 't_trade'
+      AND COLUMN_NAME = 'initiator_want_terminate'
+  ),
+  'SELECT 1',
+  'ALTER TABLE `t_trade` ADD COLUMN `initiator_want_terminate` tinyint(1) NOT NULL DEFAULT 0 COMMENT ''甲方是否已申请终止'' AFTER `terminate_reason`'
+);
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @sql = IF(
+  EXISTS(
+    SELECT 1
+    FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME = 't_trade'
+      AND COLUMN_NAME = 'receiver_want_terminate'
+  ),
+  'SELECT 1',
+  'ALTER TABLE `t_trade` ADD COLUMN `receiver_want_terminate` tinyint(1) NOT NULL DEFAULT 0 COMMENT ''乙方是否已申请终止'' AFTER `initiator_want_terminate`'
+);
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+-- t_trade：补齐执行阶段时间字段
+SET @sql = IF(
+  EXISTS(
+    SELECT 1
+    FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME = 't_trade'
+      AND COLUMN_NAME = 'waiting_delivery_at'
+  ),
+  'SELECT 1',
+  'ALTER TABLE `t_trade` ADD COLUMN `waiting_delivery_at` DATETIME DEFAULT NULL COMMENT ''进入WAITING_DELIVERY状态的时间'' AFTER `audit_passed_at`'
+);
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @sql = IF(
+  EXISTS(
+    SELECT 1
+    FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME = 't_trade'
+      AND COLUMN_NAME = 'both_delivered_at'
+  ),
+  'SELECT 1',
+  'ALTER TABLE `t_trade` ADD COLUMN `both_delivered_at` DATETIME DEFAULT NULL COMMENT ''双方均发货完成的时间'' AFTER `waiting_delivery_at`'
+);
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+-- t_trade：补齐查询性能索引
+SET @sql = IF(
+  EXISTS(
+    SELECT 1
+    FROM INFORMATION_SCHEMA.STATISTICS
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME = 't_trade'
+      AND INDEX_NAME = 'idx_initiator'
+  ),
+  'SELECT 1',
+  'ALTER TABLE `t_trade` ADD KEY `idx_initiator` (`initiator_id`)'
+);
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @sql = IF(
+  EXISTS(
+    SELECT 1
+    FROM INFORMATION_SCHEMA.STATISTICS
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME = 't_trade'
+      AND INDEX_NAME = 'idx_receiver'
+  ),
+  'SELECT 1',
+  'ALTER TABLE `t_trade` ADD KEY `idx_receiver` (`receiver_id`)'
+);
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @sql = IF(
+  EXISTS(
+    SELECT 1
+    FROM INFORMATION_SCHEMA.STATISTICS
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME = 't_trade'
+      AND INDEX_NAME = 'idx_delivery_deadline'
+  ),
+  'SELECT 1',
+  'ALTER TABLE `t_trade` ADD KEY `idx_delivery_deadline` (`status`, `delivery_deadline`)'
+);
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @sql = IF(
+  EXISTS(
+    SELECT 1
+    FROM INFORMATION_SCHEMA.STATISTICS
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME = 't_trade'
+      AND INDEX_NAME = 'idx_receipt_deadline'
+  ),
+  'SELECT 1',
+  'ALTER TABLE `t_trade` ADD KEY `idx_receipt_deadline` (`status`, `receipt_deadline`)'
+);
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+-- t_trade_appeal：补齐处理结果字段
+SET @sql = IF(
+  EXISTS(
+    SELECT 1
+    FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME = 't_trade_appeal'
+      AND COLUMN_NAME = 'remark'
+  ),
+  'SELECT 1',
+  'ALTER TABLE `t_trade_appeal` ADD COLUMN `remark` VARCHAR(500) DEFAULT NULL COMMENT ''管理员处理备注'' AFTER `status`'
+);
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @sql = IF(
+  EXISTS(
+    SELECT 1
+    FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME = 't_trade_appeal'
+      AND COLUMN_NAME = 'reviewed_by'
+  ),
+  'SELECT 1',
+  'ALTER TABLE `t_trade_appeal` ADD COLUMN `reviewed_by` BIGINT DEFAULT NULL COMMENT ''处理管理员ID'' AFTER `remark`'
+);
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @sql = IF(
+  EXISTS(
+    SELECT 1
+    FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME = 't_trade_appeal'
+      AND COLUMN_NAME = 'reviewed_at'
+  ),
+  'SELECT 1',
+  'ALTER TABLE `t_trade_appeal` ADD COLUMN `reviewed_at` DATETIME DEFAULT NULL COMMENT ''处理时间'' AFTER `reviewed_by`'
+);
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+-- 广场社交表补齐（兼容旧库，可重复执行）
+CREATE TABLE IF NOT EXISTS `t_post_like` (
+  `id`         bigint   NOT NULL AUTO_INCREMENT,
+  `post_id`    bigint   NOT NULL COMMENT '动态ID',
+  `user_id`    bigint   NOT NULL COMMENT '点赞用户ID',
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '点赞时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_post_user` (`post_id`, `user_id`),
+  KEY `idx_post_id` (`post_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='动态点赞表';
+
+CREATE TABLE IF NOT EXISTS `t_post_favorite` (
+  `id`         bigint   NOT NULL AUTO_INCREMENT,
+  `post_id`    bigint   NOT NULL COMMENT '动态ID',
+  `user_id`    bigint   NOT NULL COMMENT '收藏用户ID',
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '收藏时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_post_user` (`post_id`, `user_id`),
+  KEY `idx_post_id` (`post_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='动态收藏表';
+
+CREATE TABLE IF NOT EXISTS `t_post_tag` (
+  `id`      bigint NOT NULL AUTO_INCREMENT,
+  `post_id` bigint NOT NULL COMMENT '动态ID',
+  `tag_id`  bigint NOT NULL COMMENT '标签ID',
+  PRIMARY KEY (`id`),
+  KEY `idx_post_id` (`post_id`),
+  KEY `idx_tag_id` (`tag_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='动态标签关联表';
 
 -- 插入"闲置"标签（用于广场热门标签筛选，一键发布闲置动态时自动关联）
 INSERT IGNORE INTO `t_tag` (`name`) VALUES ('闲置');
 
 -- 商品表增加"同步广场"标记列
-ALTER TABLE `t_item` ADD COLUMN `sync_to_square` tinyint(1) NOT NULL DEFAULT 0 COMMENT '审核通过后是否同步发布广场动态: 0-否 1-是';
+SET @sql = IF(
+  EXISTS(
+    SELECT 1
+    FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME = 't_item'
+      AND COLUMN_NAME = 'sync_to_square'
+  ),
+  'SELECT 1',
+  'ALTER TABLE `t_item` ADD COLUMN `sync_to_square` tinyint(1) NOT NULL DEFAULT 0 COMMENT ''审核通过后是否同步发布广场动态: 0-否 1-是'''
+);
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
 
+-- 公告表补齐创建人和生效时间字段
+SET @sql = IF(
+  EXISTS(
+    SELECT 1
+    FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME = 't_announcement'
+      AND COLUMN_NAME = 'created_by'
+  ),
+  'SELECT 1',
+  'ALTER TABLE `t_announcement` ADD COLUMN `created_by` BIGINT COMMENT ''创建人ID'' AFTER `sort`'
+);
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
 
-ALTER TABLE t_announcement
-  ADD COLUMN start_time DATETIME DEFAULT NULL COMMENT '生效开始时间，NULL表示立即生效',
-  ADD COLUMN end_time   DATETIME DEFAULT NULL COMMENT '过期时间，NULL表示永久有效';
+SET @sql = IF(
+  EXISTS(
+    SELECT 1
+    FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME = 't_announcement'
+      AND COLUMN_NAME = 'start_time'
+  ),
+  'SELECT 1',
+  'ALTER TABLE `t_announcement` ADD COLUMN `start_time` DATETIME DEFAULT NULL COMMENT ''生效开始时间，NULL表示立即生效'' AFTER `created_by`'
+);
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
 
+SET @sql = IF(
+  EXISTS(
+    SELECT 1
+    FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME = 't_announcement'
+      AND COLUMN_NAME = 'end_time'
+  ),
+  'SELECT 1',
+  'ALTER TABLE `t_announcement` ADD COLUMN `end_time` DATETIME DEFAULT NULL COMMENT ''过期时间，NULL表示永久有效'' AFTER `start_time`'
+);
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+-- 学生档案表：补齐旧库缺失字段
+SET @sql = IF(
+  EXISTS(
+    SELECT 1
+    FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME = 't_student_record'
+      AND COLUMN_NAME = 'extra_info'
+  ),
+  'SELECT 1',
+  'ALTER TABLE `t_student_record` ADD COLUMN `extra_info` varchar(200) DEFAULT NULL COMMENT ''附加信息（专业/年级等）'' AFTER `real_name`'
+);
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @sql = IF(
+  EXISTS(
+    SELECT 1
+    FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME = 't_student_record'
+      AND COLUMN_NAME = 'created_by'
+  ),
+  'SELECT 1',
+  'ALTER TABLE `t_student_record` ADD COLUMN `created_by` BIGINT DEFAULT NULL COMMENT ''录入管理员用户 ID'' AFTER `extra_info`'
+);
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+-- 学生认证申请表：兼容旧库补表
+CREATE TABLE IF NOT EXISTS `t_student_verify` (
+  `id`          bigint NOT NULL AUTO_INCREMENT,
+  `user_id`     bigint NOT NULL COMMENT '申请用户 ID',
+  `school`      varchar(100) NOT NULL COMMENT '填写的学校名称',
+  `student_id`  varchar(50) NOT NULL COMMENT '填写的学号',
+  `real_name`   varchar(50) NOT NULL COMMENT '填写的真实姓名',
+  `extra_info`  varchar(200) DEFAULT NULL COMMENT '补充说明',
+  `status`      tinyint NOT NULL DEFAULT 0 COMMENT '状态: 0-待审核 1-已通过 2-已拒绝',
+  `remark`      varchar(200) DEFAULT NULL COMMENT '审核备注（拒绝原因）',
+  `reviewed_by` bigint DEFAULT NULL COMMENT '审核管理员 ID',
+  `reviewed_at` datetime DEFAULT NULL COMMENT '审核时间',
+  `created_at`  timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '提交时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_user_id` (`user_id`),
+  KEY `idx_status` (`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='学生认证申请表';

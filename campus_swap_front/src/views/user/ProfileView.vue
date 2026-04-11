@@ -51,7 +51,8 @@ async function fetchVerifyStatus() {
   verifyLoading.value = true
   try {
     verifyInfo.value = await userApi.getMyVerification()
-  } catch {
+  } catch (error) {
+    console.error('获取认证状态失败:', error)
     verifyInfo.value = null
   } finally {
     verifyLoading.value = false

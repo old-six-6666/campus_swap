@@ -1,0 +1,37 @@
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v3.3.0)
+
+2026-04-10T14:21:14.690+08:00  INFO 8244 --- [campus_swap] [           main] c.i.campus_swap.CampusSwapApplication    : Starting CampusSwapApplication v1.0.0 using Java 23.0.2 with PID 8244 (C:\code\workspace\campus_swap\target\campus-swap-server-1.0.0.jar started by Administrator in C:\code\workspace\campus_swap)
+2026-04-10T14:21:14.703+08:00 DEBUG 8244 --- [campus_swap] [           main] c.i.campus_swap.CampusSwapApplication    : Running with Spring Boot v3.3.0, Spring v6.1.8
+2026-04-10T14:21:14.714+08:00  INFO 8244 --- [campus_swap] [           main] c.i.campus_swap.CampusSwapApplication    : No active profile set, falling back to 1 default profile: "default"
+2026-04-10T14:21:20.148+08:00  INFO 8244 --- [campus_swap] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data Elasticsearch repositories in DEFAULT mode.
+2026-04-10T14:21:20.200+08:00  INFO 8244 --- [campus_swap] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 41 ms. Found 0 Elasticsearch repository interfaces.
+2026-04-10T14:21:20.217+08:00  INFO 8244 --- [campus_swap] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data Reactive Elasticsearch repositories in DEFAULT mode.
+2026-04-10T14:21:20.227+08:00  INFO 8244 --- [campus_swap] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 8 ms. Found 0 Reactive Elasticsearch repository interfaces.
+2026-04-10T14:21:22.292+08:00  INFO 8244 --- [campus_swap] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 18083 (http)
+2026-04-10T14:21:22.344+08:00  INFO 8244 --- [campus_swap] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-04-10T14:21:22.345+08:00  INFO 8244 --- [campus_swap] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.24]
+2026-04-10T14:21:22.542+08:00  INFO 8244 --- [campus_swap] [           main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2026-04-10T14:21:22.547+08:00  INFO 8244 --- [campus_swap] [           main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 6948 ms
+ _ _   |_  _ _|_. ___ _ |    _ 
+| | |\/|_)(_| | |_\  |_)||_|_\ 
+     /               |         
+                        3.5.7 
+2026-04-10T14:21:29.992+08:00  INFO 8244 --- [campus_swap] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 18083 (http) with context path '/'
+2026-04-10T14:21:30.014+08:00  INFO 8244 --- [campus_swap] [           main] c.i.campus_swap.CampusSwapApplication    : Started CampusSwapApplication in 16.852 seconds (process running for 19.33)
+2026-04-10T14:21:30.986+08:00  INFO 8244 --- [campus_swap] [io-18083-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-04-10T14:21:30.987+08:00  INFO 8244 --- [campus_swap] [io-18083-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-04-10T14:21:30.989+08:00  INFO 8244 --- [campus_swap] [io-18083-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 1 ms
+2026-04-10T14:21:31.577+08:00  INFO 8244 --- [campus_swap] [io-18083-exec-1] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-04-10T14:21:31.948+08:00  INFO 8244 --- [campus_swap] [io-18083-exec-1] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@290d7af4
+2026-04-10T14:21:31.954+08:00  INFO 8244 --- [campus_swap] [io-18083-exec-1] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-04-10T14:21:31.970+08:00 DEBUG 8244 --- [campus_swap] [io-18083-exec-1] c.i.c.mapper.UserMapper.selectList       : ==>  Preparing: SELECT id,email,password,nickname,school,avatar,phone,role,status,is_verified,deleted,created_at,updated_at FROM t_user WHERE deleted=0 AND (email = ?)
+2026-04-10T14:21:32.025+08:00 DEBUG 8244 --- [campus_swap] [io-18083-exec-1] c.i.c.mapper.UserMapper.selectList       : ==> Parameters: nobody@example.com(String)
+2026-04-10T14:21:32.081+08:00 DEBUG 8244 --- [campus_swap] [io-18083-exec-1] c.i.c.mapper.UserMapper.selectList       : <==      Total: 0
+2026-04-10T14:21:32.097+08:00  WARN 8244 --- [campus_swap] [io-18083-exec-1] c.i.c.c.e.GlobalExceptionHandler         : 业务异常: 邮箱或密码错误

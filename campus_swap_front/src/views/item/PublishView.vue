@@ -13,7 +13,7 @@ const syncToSquare = ref(false)
 
 const form = reactive({
   title: '',
-  price: '',
+  price: null,
   category: '',
   description: '',
   images: [],

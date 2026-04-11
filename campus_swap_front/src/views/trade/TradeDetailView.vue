@@ -51,6 +51,12 @@ const currentStep = computed(() => {
   } else {
     step = cfg.step
   }
+  // 单方已发货时，仅将“等待发货”标记为成功态。
+  const myHasDelivered =
+    (trade.value.myRole === 'initiator' && Boolean(trade.value.initiatorDelivered)) ||
+    (trade.value.myRole === 'receiver' && Boolean(trade.value.receiverDelivered))
+  if (trade.value.status === 'WAITING_DELIVERY' && myHasDelivered) step += 1
+
   // step+1 让当前步骤变为 finish（绿色打勾），下一步变为 active
   // 覆盖：BOTH_DELIVERED/WAITING_CONFIRM_RECEIPT（"双方发货"变绿）和 COMPLETED（全部变绿）
   const advanceStatuses = ['BOTH_DELIVERED', 'WAITING_CONFIRM_RECEIPT', 'COMPLETED']

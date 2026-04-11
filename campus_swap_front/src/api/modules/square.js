@@ -153,7 +153,8 @@ export const squareApi = {
   getHotTags() {
     return request({
       url: '/square/tags/hot',
-      method: 'get'
+      method: 'get',
+      silent: true
     })
   },
 
